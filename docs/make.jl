@@ -1,5 +1,4 @@
-include("../src/HVDCstability.jl")
-using Documenter, .HVDCstability
+using Documenter, HVDCstability
 
 makedocs(
     modules = [HVDCstability],
@@ -25,7 +24,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/Aleksandra-Lekic/HVDCstability.jl.git",
+    repo = "github.com/Electa-Git/HVDCstability.jl.git",
     target = "build",
     deps   = nothing,
     make   = nothing,
