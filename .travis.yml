@@ -1,0 +1,29 @@
+
+language: julia
+os:
+  - linux
+julia:
+  - 1.2
+  - nightly
+matrix:
+  allow_failures:
+    - julia: nightly
+cache:
+ directories:
+   - /home/travis/.julia
+sudo: false
+
+before_install:
+  - julia -e 'using Pkg; Pkg.add("SymEngine"); Pkg.add("LinearAlgebra");
+              Pkg.add("Parameters"); Pkg.add("NLsolve"); Pkg.add("ForwardDiff");
+              Pkg.add("DataStructures"); Pkg.add("DelimitedFiles"); Pkg.add("FileIO");
+              Pkg.add("Plots"); Pkg.add("LaTeXStrings"); Pkg.add("DSP");
+              Pkg.add("Memento"); Pkg.add("Test"); Pkg.add("Compat")'
+  - julia -e 'using Pkg; if !("Documenter" in keys(Pkg.installed())) Pkg.add("Documenter") end'
+
+script:
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia -e 'using Pkg; Pkg.test("HVDCstability")'
+
+after_success:
+  - julia -e 'using Pkg; cd(Pkg.dir("HVDCstability")); include(joinpath("docs", "make.jl"))'
