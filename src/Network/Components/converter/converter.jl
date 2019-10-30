@@ -33,7 +33,7 @@ end
     function mmc(;args...)
 It constructs MMC operating both as a rectifier and an inverter. MMC is constructed as a struct with the
 following fields.
-```
+```julia
 f₀ :: Union{Int, Float64}  = 50             # nominal frequency
 ω₀ :: Union{Int, Float64} = 100*π
 

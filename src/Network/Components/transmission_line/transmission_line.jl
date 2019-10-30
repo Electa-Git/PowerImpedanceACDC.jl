@@ -52,7 +52,7 @@ form of struct `Transmission_line` fields:
 ...
 - length - line length [m]
 - conductors - defined in the
-```
+```julia
 struct Conductors
     nᵇ :: Int = 1                       # number of bundles (phases)
     nˢᵇ :: Int = 1                      # number of subconductors per bundle
@@ -71,7 +71,7 @@ struct Conductors
 end
 ```
 - groundwires - defined in the
-```
+```julia
 struct Groundwires
     nᵍ :: Int = 0                        # number of groundwires (typically 0 or 2)
     Δxᵍ :: Union{Int, Float64} = 0       # horizontal ofsset between groundwires [m]

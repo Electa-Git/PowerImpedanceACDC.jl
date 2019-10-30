@@ -1,4 +1,3 @@
-using SymEngine
 
 s = symbols("s")
 net = @network begin
@@ -13,4 +12,4 @@ net = @network begin
 end
 imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1],
                                         output_pins= Any[:gnd])
-bode(imp, omega = omega)
+# bode(imp, omega = omega)

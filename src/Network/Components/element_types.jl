@@ -5,8 +5,7 @@ include("impedance/impedance.jl")
 
 
 # Transfromer
-include("transformer/transformer_1p.jl")
-include("transformer/transformer_3p.jl")
+include("transformer/transformer.jl")
 
 # Cables and transmission lines
 # include("transmission_line/cable.jl")

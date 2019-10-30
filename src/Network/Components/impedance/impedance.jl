@@ -21,7 +21,7 @@ then the impedance has only diagonal nonzero values equal to `val`. In the case 
 the impedance has only diagonal nonzero values equal to the values in an array `val`. If the array has the size
 `pin × pin`, impedance matrix has the size `pin × pin` and all its values defined.
 Examples:
-```
+```julia
 impedance(z = [s], pins = 3)    # 3×3 impedance with diagonal values equal s
 impedance(z = [2,s,s/2], pins = 3) # 3×3 impedance with diagonal values equal 2, s, 0.5s, respectively
 impedance(z = [1,s,3,4], pins = 2) # 2×2 impedance with all values defined

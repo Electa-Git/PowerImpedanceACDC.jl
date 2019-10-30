@@ -88,13 +88,13 @@ function eval_abcd(element::Element, dict::Dict{Any,Any})
   end
 end
 
-function connect_serial!(a::ABCD_parameters, b::ABCD_parameters)
+function connect_series!(a::ABCD_parameters, b::ABCD_parameters)
     return a*b
 end
 
-connect_serial!(a::Element, b::Element) = connect_serial!(a.ABCD, b.ABCD)
-connect_serial!(a::Element, b::ABCD_parameters) = connect_serial!(a.ABCD, b)
-connect_serial!(a::ABCD_parameters, b::Element) = connect_serial!(a, b.ABCD)
+connect_series!(a::Element, b::Element) = connect_serial!(a.ABCD, b.ABCD)
+connect_series!(a::Element, b::ABCD_parameters) = connect_serial!(a.ABCD, b)
+connect_series!(a::ABCD_parameters, b::Element) = connect_serial!(a, b.ABCD)
 
 
 function connect_parallel!(ABCD₁::ABCD_parameters, ABCD₂::ABCD_parameters)

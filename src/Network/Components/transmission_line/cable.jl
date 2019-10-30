@@ -39,7 +39,7 @@ meaning ground (earth) relative premeability, relative permittivity and
 ground resistivity
 - conductors - dictionary with the key symbol being: C1, C2, C3 or C4, and the value
 given with the struct `Conductor`
-```
+```julia
 struct Conductor
     rᵢ :: Union{Int, Float64} = 0              # inner radius
     rₒ :: Union{Int, Float64} = 0              # outer radius
@@ -49,7 +49,7 @@ end
 ```
 - insulators - dictionary with the key being symbol: I1, I2, I3 and I4, and the value
 given with the struct `Insulator`
-```
+```julia
 struct Insulator
     rᵢ :: Union{Int, Float64} = 0               # inner radius
     rₒ :: Union{Int, Float64} = 0               # outer radius
