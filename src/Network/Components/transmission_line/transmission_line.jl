@@ -308,7 +308,7 @@ Form ABCD representation from known values for Y and Z and write values in the d
     ABCD = [cosh(Γl)    Yᶜ⁻¹sinh(Γl)
             Yᶜsinh(Γl)  cosh(Γl)]
 """
-function eval_abcd(element :: Element, tl :: Transmission_line, s :: Complex)
+function eval_abcd(tl :: Transmission_line, s :: Complex)
     (Z, Y) = eval_parameters(tl, s)
     γ = sqrt(Z*Y)
     Yc = inv(Z) * γ

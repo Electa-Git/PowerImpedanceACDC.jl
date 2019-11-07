@@ -62,10 +62,11 @@ D :: Array{Union{Int, Float64}} = [0]
 
 ```
 
-The constructed MMC has 3 pins on the AC side: `2.1`, `2.2`, and 2 pins on its
-DC-side: `1.1` and `1.2`.
+The constructed MMC has 3 pins on the AC side: `2.1`, `2.2`, and 1 pin on its
+DC-side: `1.1`.
 
-The component is described using two ABCD parameters' matrix sized 4×4.
+The component is described using two ABCD parameters' matrix sized 2×4 from DC
+to AC side.
 """
 function mmc(;args...)
     converter = MMC()
@@ -77,9 +78,6 @@ function mmc(;args...)
             setfield!(converter, key, val)
         end
     end
-
-
-    converter.Vᴳq = 0
 
     Lₑ = converter.Lₐᵣₘ / 2 + converter.Lᵣ
     Rₑ = converter.Rₐᵣₘ / 2 + converter.Rᵣ
@@ -93,6 +91,7 @@ function mmc(;args...)
         converter.Vᴳd = converter.V_base * sqrt(2/3)
         converter.I_base = 2converter.S_base / 3 / converter.V_base / sqrt(2/3)
     end
+    converter.Vᴳq = 0
 
     # setup control parameters and equations
     init_x = zeros(12, 1)
@@ -338,14 +337,7 @@ function mmc(;args...)
     converter.C[3,5] = 1
     converter.D = zeros(3,3)
 
-    elem = Element(input_pins = 2, output_pins = 2, element_value = converter)
-end
-
-function create_abcd!(element :: Element, mmc :: MMC)
-    n = 4
-    symbol = "mmc"
-    abcd_tf =  reshape([Basic(string(symbol,i)) for i in 1:n^2], n, n)
-    return abcd_tf
+    elem = Element(input_pins = 1, output_pins = 2, element_value = converter)
 end
 
 function eval_parameters(converter :: MMC, s :: Complex)
@@ -355,19 +347,12 @@ function eval_parameters(converter :: MMC, s :: Complex)
     return Y
 end
 
-function eval_abcd(element :: Element, mmc :: MMC, complex_s :: Complex)
-    n = 4
+function eval_abcd(mmc :: MMC, complex_s :: Complex)
     Y = eval_parameters(mmc,complex_s)
-
-    abcd = [-Y[1,1]/2/Y[1,3]  -Y[1,2]/2/Y[1,3]   1/2/Y[1,3]   0;
-            Y[2,1]/2/Y[2,3]   Y[2,2]/2/Y[2,3]    0            -1/2/Y[2,3];
-            (3Y[3,1]-3Y[1,1]*Y[3,3]/Y[1,3]) (3Y[3,2]-3Y[3,3]*Y[1,2]/Y[1,3]) 3Y[3,3]/Y[1,3] 0;
-            -(3Y[3,1]-3Y[2,1]*Y[3,3]/Y[2,3]) -(3Y[3,2]-3Y[3,3]*Y[2,2]/Y[2,3]) 0 -3Y[3,3]/Y[2,3]]
-
-    # println(complex_s)
-    # println(Y)
-    # println(abcd)
-    return abcd
+    Y_matrix = [3Y[3,3] 3Y[3,1] 3Y[3,2];
+                Y[1,3]  Y[1,1]  Y[1,2];
+                Y[2,3]  Y[2,1]  Y[2,2]]
+    return Y_matrix
 end
 
 

@@ -4,7 +4,7 @@ export closing_impedance, save_data, plot_data
 
 include("plot.jl")
 
-const ABCD_parameters = Union{Array{Basic}, Array{Array{Basic}}}
+const ABCD_parameters = Union{Array{Basic}, Array{Complex}}
 
 """
 Struct guarantees representation of the component like a multiport
@@ -14,10 +14,6 @@ network using ABCD parameters. It consists of:
 - number of input pins - `input_pins`
 - number of output pins - `output_pins`
 - component definition - `element_value`
-- ABCD multiport parameters - `ABCD`
-
-It generates ABCD matrix that maps:
-`output_pins(voltage, current) = [ABCD matrix] × input_pins(voltage, current)``
 """
 mutable struct Element
   symbol::Symbol
@@ -25,8 +21,6 @@ mutable struct Element
   input_pins :: Int
   output_pins :: Int
   element_value :: Any  # component defined type
-
-  ABCD :: Union{Array{Basic}, Array{Array{Basic}}}
 
   function Element(;args...)
     elem = new()
@@ -49,10 +43,6 @@ mutable struct Element
                         Dict{Symbol, Symbol}(Symbol(string("2.",i)) => Symbol() for i in 1:nop(elem)))
     end
 
-    if !(isdefined(elem, :ABCD))
-        tf = create_abcd!(elem, elem.element_value)
-        add!(elem, :ABCD, tf)
-    end
     elem
   end
 end
@@ -68,17 +58,14 @@ function add!(elem::Element, sym::Symbol, value::Any)
   end
 end
 
-function get_abcd(element::Element)
-    return element.ABCD
-end
-
 function get_abcd(element::Element, s::Complex)
-    return eval_abcd(element, element.element_value, s)
+    abcd = eval_abcd(element.element_value, s)
+    return abcd
 end
 
-nip_abcd(e::Element) = Int(size(get_abcd(e),1)/2)
-nop_abcd(e::Element) = Int(size(get_abcd(e),2)/2)
-np_abcd(e::Element) = nip_abcd(e) + nop_abcd(e) # number pins
+nip_abcd(e::Element) = size(get_abcd(e, 1im),1)
+nop_abcd(e::Element) = size(get_abcd(e, 1im),2)
+np_abcd(e::Element) = Int((nip_abcd(e) + nop_abcd(e))/2) # number pins
 
 function eval_abcd(element::Element, dict::Dict{Any,Any})
   s = symbols(:s)
@@ -91,11 +78,6 @@ end
 function connect_series!(a::ABCD_parameters, b::ABCD_parameters)
     return a*b
 end
-
-connect_series!(a::Element, b::Element) = connect_serial!(a.ABCD, b.ABCD)
-connect_series!(a::Element, b::ABCD_parameters) = connect_serial!(a.ABCD, b)
-connect_series!(a::ABCD_parameters, b::Element) = connect_serial!(a, b.ABCD)
-
 
 function connect_parallel!(ABCD₁::ABCD_parameters, ABCD₂::ABCD_parameters)
     n = Int(size(ABCD₁, 1)/2)
@@ -131,32 +113,6 @@ function connect_parallel!(ABCD₁::ABCD_parameters, ABCD₂::ABCD_parameters)
     ABCD = vcat(hcat(a,b), hcat(c,d))
     return ABCD
 end
-connect_parallel!(a::Element, b::Element) = connect_parallel!(a.ABCD, b.ABCD)
-connect_parallel!(a::Element, b::ABCD_parameters) = connect_parallel!(a.ABCD, b)
-connect_parallel!(a::ABCD_parameters, b::Element) = connect_parallel!(a, b.ABCD)
-
-
-function closing_impedance(ABCD :: ABCD_parameters, Zₜ :: Union{Array{Basic}, Int, Float64}, direction = :output)
-    n = Int(size(ABCD, 1)/2)
-    (a, b, c, d) = (ABCD[1:n,1:n], ABCD[1:n,n+1:end], ABCD[n+1:end,1:n], ABCD[n+1:end, n+1:end])
-
-    Zₑ = 0
-    if (n == 1)
-        if (direction == :output)
-            Zₑ = (a .* Zₜ + b) ./ (c .* Zₜ + d)
-        else
-            Zₑ = (d .* Zₜ - b) ./ (c .* Zₜ - a)
-        end
-    else
-        I = convert(Array{Basic}, Diagonal([1 for dummy in 1:n]))
-        if (direction == :output)
-            Zₑ = (a * Zₜ + b) * inv(c * Zₜ + d)
-        else
-            Zₑ = inv(Zₜ * c - a) * (Zₜ * d - b)
-        end
-    end
-    return Zₑ
-end
 
 function closing_impedance(ABCD :: Array{Complex}, Zₜ :: Union{Array{Complex}, Int, Float64, Complex}, direction = :output)
     n = Int(size(ABCD, 1)/2)
@@ -181,18 +137,15 @@ function closing_impedance(ABCD :: Array{Complex}, Zₜ :: Union{Array{Complex},
 end
 
 
-closing_impedance(elem :: Element, Zₜ :: Union{Array{Basic}, Array{Complex}, Int, Float64, Complex}, direction = :output) =
-    closing_impedance(elem.ABCD, Zₜ, direction)
-
 function get_nodes(element::Element)
     return values(element.pins)
 end
 
-# gets
 function get_nodes(element::Element, pin::Symbol)
     array = Symbol[]
     for (key, val) in element.pins
-        !occursin(string(pin)[1:2], string(key)) && push!(array, val)
+        (pin != key) && push!(array, val)
+        # !occursin(string(pin)[1:2], string(key)) && push!(array, val)
     end
     return array
 end

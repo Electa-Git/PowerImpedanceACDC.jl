@@ -1,7 +1,7 @@
 export transformer
 
 @with_kw mutable struct Transformer
-    value :: Array{Basic} = []          # ABCD value
+    ABCD :: Array{Basic} = []          # ABCD value
 
     pins :: Int = 1                     # marks single or three phase
     organization :: Symbol = :YY        # three phase organization (:YY or :ΔY)
@@ -109,7 +109,7 @@ function transformer(;args...)
     Z = connect_parallel!(Z, Z_stray)
 
     if (t.pins == 1)
-        t.value = Z
+        t.ABCD = Z
     else
         if (t.organization == :YY)
             Z₃ₚ = zeros(Basic, 6, 6)
@@ -120,7 +120,7 @@ function transformer(;args...)
                 Z₃ₚ[3+i,3+i] = Z[2,2]
             end
 
-            t.value = Z₃ₚ
+            t.ABCD = Z₃ₚ
         else
             Zˢ_winding = convert(Array{Basic},Diagonal([1 for i in 1:6]))
             Y_turn = convert(Array{Basic},Diagonal([1 for i in 1:6]))
@@ -146,17 +146,13 @@ function transformer(;args...)
                 Z = Z_inner
             end
 
-            t.value = Z
+            t.ABCD = Z
         end
     end
 
     elem = Element(input_pins = t.pins, output_pins = t.pins, element_value = t)
 end
 
-function create_abcd!(elem :: Element, t :: Transformer)
-    return t.value
-end
-
-function eval_abcd(element :: Element, t :: Transformer, s :: Complex)
-    return N.(subs.(element.ABCD, symbols(:s), s))
+function eval_abcd(t :: Transformer, s :: Complex)
+    return N.(subs.(t.ABCD, symbols(:s), s))
 end

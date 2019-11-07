@@ -221,7 +221,7 @@ function eval_parameters(c :: Cable, s :: Complex)
     return (Z,Y)
 end
 
-function eval_abcd(element :: Element, c :: Cable, s :: Complex)
+function eval_abcd(c :: Cable, s :: Complex)
     (Z, Y) = eval_parameters(c, s)
     γ = sqrt(Z*Y)
     Yc = inv(Z) * γ

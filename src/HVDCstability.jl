@@ -18,7 +18,6 @@ module HVDCstability
     using LinearAlgebra
     using NLsolve, ForwardDiff  # solve diffs and nonlinear equations
 
-
     # file includes
     include("Network/compat.jl")
     include("Network/Components/AbstractElement.jl")

@@ -32,7 +32,7 @@ function create_abcd!(element :: Element, m :: Mixed_OHL_cable)
     return abcd_tf
 end
 
-function eval_abcd(element :: Element, m :: Mixed_OHL_cable, s :: Complex)
+function eval_abcd(m :: Mixed_OHL_cable, s :: Complex)
     abcd = 0
     for (key, val) in m.parts
         if (abcd == 0)
