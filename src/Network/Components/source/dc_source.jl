@@ -1,10 +1,6 @@
 export dc_source
 
-@with_kw mutable struct Source
-    value :: Union{Float64, Int} = 0      # impedance value
-    pins :: Int = 1
-    ABCD :: Array{Basic} = Basic[]
-end
+include("source.jl")
 
 """
     dc_source(voltage, exp)
@@ -19,13 +15,9 @@ Plus pin is connected to `1.1` and minus to `2.1`. To ground the source,
 connect the pin to the ground while constructing the network.
 """
 function dc_source(; voltage = 0)
-    source = Source(value = voltage, pins = 1)
+    source = Source(V = voltage, pins = 1)
     source.ABCD = convert(Array{Basic}, Diagonal([1 for dummy in 1:2]))
     elem = Element(input_pins = 1, output_pins = 1,
         element_value = source)
     elem
-end
-
-function eval_abcd(source :: Source, s :: Complex)
-    abcd = N.(source.ABCD)
 end

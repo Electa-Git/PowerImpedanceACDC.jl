@@ -58,6 +58,20 @@ function add!(elem::Element, sym::Symbol, value::Any)
   end
 end
 
+function get_nodes(element::Element)
+    return values(element.pins)
+end
+
+function get_nodes(element::Element, pin::Symbol)
+    array = Symbol[]
+    for (key, val) in element.pins
+        (pin != key) && push!(array, val)
+        # !occursin(string(pin)[1:2], string(key)) && push!(array, val)
+    end
+    return array
+end
+
+################### ABCD functions ################################
 function get_abcd(element::Element, s::Complex)
     abcd = eval_abcd(element.element_value, s)
     return abcd
@@ -67,13 +81,7 @@ nip_abcd(e::Element) = size(get_abcd(e, 1im),1)
 nop_abcd(e::Element) = size(get_abcd(e, 1im),2)
 np_abcd(e::Element) = Int((nip_abcd(e) + nop_abcd(e))/2) # number pins
 
-function eval_abcd(element::Element, dict::Dict{Any,Any})
-  s = symbols(:s)
-  abcd = eval_abcd(element.element_value, dict[s])
-  for i in 1:length(abcd)
-      dict[Basic(string(element.symbol,i))] = abcd[i]
-  end
-end
+
 
 function connect_series!(a::ABCD_parameters, b::ABCD_parameters)
     return a*b
@@ -136,20 +144,21 @@ function closing_impedance(ABCD :: Array{Complex}, Zₜ :: Union{Array{Complex},
     return Zₑ
 end
 
-
-function get_nodes(element::Element)
-    return values(element.pins)
+######################### Element type #############################
+function is_passive(element :: Element)
+    (isa(element.element_value, MMC) || isa(element.element_value, Source)) && return false
+    true
 end
 
-function get_nodes(element::Element, pin::Symbol)
-    array = Symbol[]
-    for (key, val) in element.pins
-        (pin != key) && push!(array, val)
-        # !occursin(string(pin)[1:2], string(key)) && push!(array, val)
-    end
-    return array
+function is_source(element :: Element)
+    isa(element.element_value, Source)
 end
 
+function is_converter(element :: Element)
+    isa(element.element_value, MMC)
+end
+
+####################### Save/plot ##################################
 """
     function save_data(element :: Element, file_name :: String; omega_range = (-3, 5, 1000),
         scale = :log)
@@ -171,12 +180,19 @@ function save_data(element :: Element, file_name :: String; omega_range = (-3, 5
     end
 
     file_name = string("./files/",  file_name)
-    save_data(element.element_value, file_name, omega_range = omega_range, scale = scale)
+    save_data(element.element_value, file_name, omegas)
 end
 
 """
-    function plot_data(element :: Element)
-Component defined function for plotting data. It differs from component to component.
+    function plot_data(element :: Element; omega_range = (-3, 5, 1000),
+        scale = :log)
+
+It plots the component defined data with the desired frequency range.
+It differs from component to component.
+
+Additional parameter `omega_range` provides possibility to manually add the
+frequency scale for saving data. Scale can be given as logarithmic (`:log`) and
+linear (`:lin`).
 """
 function plot_data(element :: Element; omega_range = (-3, 5, 1000),
     scale = :log)

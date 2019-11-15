@@ -6,7 +6,7 @@ export transformer
     pins :: Int = 1                     # marks single or three phase
     organization :: Symbol = :YY        # three phase organization (:YY or :ΔY)
 
-    ω :: Union{Int, Float64} = 2*π*50   # rated frequency in [Hz]
+    ω :: Union{Int, Float64} = 2*π*50   # rated frequency in [rad/s]
     V₁ᵒ :: Union{Int, Float64} = 0      # open circuit primary voltage [V]
     V₁ˢ :: Union{Int, Float64} = 0      # short circuit primary voltage [V]
     I₁ᵒ :: Union{Int, Float64} = 0      # open circuit primary current [V]
@@ -154,5 +154,46 @@ function transformer(;args...)
 end
 
 function eval_abcd(t :: Transformer, s :: Complex)
-    return N.(subs.(t.ABCD, symbols(:s), s))
+    value = N.(subs.(t.ABCD, symbols(:s), s))
+    return convert(Array{Complex}, value)
+end
+
+function make_power_flow_ac!(t :: Transformer, dict :: Dict{String, Any},
+            global_dict :: Dict{String, Any})
+    key = string(length(dict["branch"]))
+    ((dict["branch"])[string(key)])["transformer"] = true
+
+    ((dict["branch"])[string(key)])["shift"] = 0
+    ((dict["branch"])[string(key)])["c_rating_a"] = 1
+
+    abcd = eval_abcd(t, global_dict["omega"] * 1im)
+    n = 3
+    (a, b, c, d) = (abcd[1:n,1:n], abcd[1:n, n+1:end], abcd[n+1:end,1:n], abcd[n+1:end,n+1:end])
+    Y = [d*inv(b) c-d*inv(b)*a; -inv(b) a*inv(b)] * global_dict["Z"]
+
+    tap = sqrt(real(Y[n+1,n+1]/Y[1,1]))
+    ys = -Y[1,n+1]*tap
+    yc = Y[n+1,n+1] - ys
+
+    ((dict["branch"])[string(key)])["tap"] = tap
+    ((dict["branch"])[string(key)])["br_r"] = real(1/ys)
+    ((dict["branch"])[string(key)])["br_x"] = imag(1/ys)
+    ((dict["branch"])[string(key)])["g_fr"] = real(yc)
+    ((dict["branch"])[string(key)])["b_fr"] = imag(yc)
+    ((dict["branch"])[string(key)])["g_to"] = real(yc)
+    ((dict["branch"])[string(key)])["b_to"] = imag(yc)
+end
+
+function make_power_flow_dc!(t :: Transformer, dict :: Dict{String, Any},
+            global_dict :: Dict{String, Any})
+    key = length(dict["branchdc"])
+    ((dict["branchdc"])[string(key)])["l"] = 0
+    ((dict["branchdc"])[string(key)])["c"] = 0
+
+    abcd = eval_abcd(t, 1e-6*1im)
+    (a,b,c,d) = abcd
+
+    tap = sqrt(real(a/d))
+    rs = real(b/tap) / global_dict["Z"]
+    ((dict["branchdc"])[string(key)])["r"] = rs
 end

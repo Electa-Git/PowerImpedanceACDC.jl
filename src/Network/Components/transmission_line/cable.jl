@@ -1,11 +1,15 @@
 export cable
 export Cable, Insulator, Conductor
 
+include("transmission_line.jl")
+
 @with_kw mutable struct Conductor
     rᵢ :: Union{Int, Float64} = 0              # inner radius
     rₒ :: Union{Int, Float64} = 0              # outer radius
     ρ  :: Union{Int, Float64} = 0              # conductor resistivity [Ωm]
     μᵣ  :: Union{Int, Float64} = 1             # relative permeability
+
+    A :: Union{Int, Float64} = 0               # nominal area
 end
 
 @with_kw mutable struct Insulator
@@ -13,20 +17,19 @@ end
     rₒ :: Union{Int, Float64} = 0               # outer radius
     ϵᵣ :: Union{Int, Float64} = 1               # relative permittivity
     μᵣ :: Union{Int, Float64} = 1               # relative permeability
+
+    a :: Union{Int, Float64} = 0                # inner semiconductor outer radius
+    b :: Union{Int, Float64} = 0                # outer semiconductor inner radius
 end
 
-@with_kw mutable struct Cable
+@with_kw mutable struct Cable <: Transmission_line
     length :: Union{Int, Float64} = 0                    # line length [km]
     conductors :: OrderedDict{Symbol, Conductor} = OrderedDict{Symbol, Conductor}()
     insulators :: OrderedDict{Symbol, Insulator} = OrderedDict{Symbol, Insulator}()
     positions :: Vector{Tuple{Real,Real}} = []
-    earth_parameters :: NTuple{N, Union{Int,Float64}} where N = (1,1,1) # (μᵣ_earth, ϵᵣ_earth, ρ_earth) in units ([], [], [Ωm])
+    earth_parameters :: NTuple{N, Union{Int,Float64}} where N = (1,1,1) # (μᵣ, ϵᵣ, ρ) in units ([], [], [Ωm])
     configuration :: Symbol = :coaxial
-
-    # formed parameters
-    r_array :: Vector{Union{Int, Float64}} = []
-    ρ_array :: Vector{Union{Int, Float64}} = []
-    μ_array :: Vector{Union{Int, Float64}} = []
+    type :: Symbol = :underground   # or aerial
 end
 
 """
@@ -38,28 +41,39 @@ form of struct `Cable` fields:
 meaning ground (earth) relative premeability, relative permittivity and
 ground resistivity
 - conductors - dictionary with the key symbol being: C1, C2, C3 or C4, and the value
-given with the struct `Conductor`
+given with the struct `Conductor`. If the sheath consists of metalic screen and sheath,
+then add screen with a key symbol SC and sheath with C2.
 ```julia
 struct Conductor
     rᵢ :: Union{Int, Float64} = 0              # inner radius
     rₒ :: Union{Int, Float64} = 0              # outer radius
     ρ  :: Union{Int, Float64} = 0              # conductor resistivity [Ωm]
     μᵣ  :: Union{Int, Float64} = 1             # relative premeability
+
+    A :: Union{Int, Float64} = 0               # nominal area
+
+    screen_r :: Union{Int, Float64} = 0        # metalic screen outer radius
+    screen_ρ :: Union{Int, Float64} = 0        # metalic screen resistivity [Ωm]
 end
 ```
 - insulators - dictionary with the key being symbol: I1, I2, I3 and I4, and the value
-given with the struct `Insulator`
+given with the struct `Insulator`. For the insulator 2 the semiconducting layers
+can be added by specifying outer radius of the inner semiconducting layer and
+inner radius of the outer semiconducting layer.
 ```julia
 struct Insulator
     rᵢ :: Union{Int, Float64} = 0               # inner radius
     rₒ :: Union{Int, Float64} = 0               # outer radius
     ϵᵣ :: Union{Int, Float64} = 1               # relative permittivity
     μᵣ :: Union{Int, Float64} = 1               # relative permeability
+
+    a :: Union{Int, Float64} = 0                # inner semiconductor outer radius
+    b :: Union{Int, Float64} = 0                # outer semiconductor inner radius
 end
 ```
 - positions - given as an array in (x,y) format
 - configuration - symbol with two possible values: coaxial (default) and pipe-type
-
+- type - symbol representing underground or aerial cable
 """
 function cable(;args...)
     c = Cable()
@@ -77,18 +91,44 @@ function cable(;args...)
             c.insulators[key] = val
         end
     end
+
+    # conversion procedure
+    # core outer radius
+    (c.conductors[:C1].A != 0) ? c.conductors[:C1].ρ = c.conductors[:C1].ρ * π *
+                        c.conductors[:C1].rₒ^2 / c.conductors[:C1].A : nothing
+    # add metalic screen conversions, equivalent sheat layer
+    if in(:SC, keys(c.conductors))
+        !in(:C2, keys(c.conductors)) && throw(ArgumentError("There must be present sheath together with screen layer."))
+        if (c.conductors[:SC].A != 0)
+            c.conductors[:C2].rᵢ = sqrt(c.conductors[:SC].rₒ^2 - c.conductors[:SC].A / π)
+        else
+            c.conductors[:C2].rᵢ = c.conductors[:SC].rᵢ
+        end
+        c.conductors[:C2].rₒ = sqrt((c.conductors[:C2].rₒ^2 - c.conductors[:SC].rₒ^2) *
+                    c.conductors[:SC].ρ / c.conductors[:C2].ρ + c.conductors[:SC].rₒ^2)
+        delete!(c.conductors, :SC)
+
+        # change Insulator 1
+        c.insulators[:I1].rₒ = c.conductors[:C2].rᵢ
+        # change Insulator 2
+        if in(:I2, keys(c.insulators))
+            x = log(c.insulators[:I2].rₒ / c.conductors[:C2].rₒ) / log(c.insulators[:I2].rₒ / c.insulators[:I2].rᵢ)
+            c.insulators[:I2].rᵢ = c.conductors[:C2].rₒ
+            c.insulators[:I2].ϵᵣ *=  x
+            c.insulators[:I2].μᵣ /= x
+        end
+    end
+    # semiconductor configuration
+    if in(:I1, keys(c.insulators)) && (c.insulators[:I1].a != 0)
+        x = log(c.insulators[:I1].rₒ / c.insulators[:I1].rᵢ) / log(c.insulators[:I1].b / c.insulators[:I1].a)
+        c.insulators[:I1].ϵᵣ *=  x
+        N = 1.4
+        c.insulators[:I1].μᵣ = c.insulators[:I1].μᵣ * (1 + 2π^2 * N^2 * (c.insulators[:I1].rₒ^2 - c.insulators[:I1].rᵢ^2) / log(c.insulators[:I1].rₒ / c.insulators[:I1].rᵢ))
+    end
+
     n = length(c.positions)
     elem = Element(input_pins = n, output_pins = n, element_value = c)
 end
-
-#     cond_dict = Dict("Cu" => (1.72e-8, 1),
-#                      "Pb" => (22e-8, 1),
-#                      "Al" => (2.83e-8, 1),
-#                      "steel" => (18e-8, 10))
-#     insulator_dict = Dict("XLPE" => (2.3, 1),
-#                           "mass-impreganted" => (4.2, 1),
-#                           "fluid-filled" => (3.5, 1))
-
 
 function eval_parameters(c :: Cable, s :: Complex)
     (μᵣᵍ, ϵᵣᵍ, ρᵍ) = c.earth_parameters
@@ -106,7 +146,7 @@ function eval_parameters(c :: Cable, s :: Complex)
     Z = zeros(Complex,n*nₗ,n*nₗ)    # series impedance matrix
     P = zeros(Complex,n*nₗ,n*nₗ)
 
-    # add conductor series impedance
+    # make series impedance
     i = 1
     for key in keys(c.conductors)
         (rᵢ, rₒ, μ, ρ) = (c.conductors[key].rᵢ, c.conductors[key].rₒ, c.conductors[key].μᵣ*μ₀, c.conductors[key].ρ)
@@ -132,13 +172,12 @@ function eval_parameters(c :: Cable, s :: Complex)
             dᵢⱼ = max(maximum([r.rₒ for r in values(c.conductors)]), maximum([r.rₒ for r in values(c.insulators)]))
             x = dᵢⱼ
             Zᵍ = s*μᵍ/(2π) * (-log(γ*m*dᵢⱼ/2) + 0.5 - 2*m*H/3)
-            # Zᵍ = s*μᵍ/(2π) * (-bessely0(m*dᵢⱼ) + 2/(4 + (m*x)^2) * exp(-m*H))
             Z[i,i] += Zᵍ
         end
         i += 1
     end
 
-    # add insulators
+    # make shunt admittance
     i = 1
     for key in keys(c.insulators)
         (rᵢ, rₒ, μ, ϵ) = (c.insulators[key].rᵢ, c.insulators[key].rₒ, c.insulators[key].μᵣ*μ₀, c.insulators[key].ϵᵣ*ϵ₀)
@@ -146,25 +185,21 @@ function eval_parameters(c :: Cable, s :: Complex)
         Pⁱ = log(rₒ/rᵢ) / (2π*ϵ)
 
         Z[i,i] += Zⁱ
-        for j in 1:i
-            for k in 1:i
-                P[j,k] += Pⁱ
-            end
-        end
+        P[1:i,1:i] += ones(i,i) * Pⁱ
         i += 1
     end
 
-    # adding earth return impedance
+
     for i in 1:n
         Z[(i-1)*nₗ+1:i*nₗ, (i-1)*nₗ+1:i*nₗ] = Z[1:nₗ,1:nₗ]
         P[(i-1)*nₗ+1:i*nₗ, (i-1)*nₗ+1:i*nₗ] = P[1:nₗ,1:nₗ]
         for j in i+1:n
+            # adding earth return impedance
             m = sqrt(s*μᵍ/ρᵍ)
             H = c.positions[i][2] + c.positions[j][2]
             dᵢⱼ = sqrt((c.positions[i][1] - c.positions[j][1])^2 + (c.positions[i][2] - c.positions[j][2])^2)
             x = abs(c.positions[i][1] - c.positions[j][1])
             Zᵍ = s*μᵍ/(2π) * (-log(γ*m*dᵢⱼ/2) + 0.5 - 2*m*H/3)
-            # Zᵍ = s*μᵍ/(2π) * (-bessely0(m*dᵢⱼ) + 2/(4 + (m*x)^2) * exp(-m*H))
             Z[i*nₗ, j*nₗ] += Zᵍ
             Z[j*nₗ, i*nₗ] += Zᵍ
         end
@@ -186,19 +221,17 @@ function eval_parameters(c :: Cable, s :: Complex)
         end
     end
 
-    for i in 1:n
-        for j in 1:n
-            H = c.positions[i][2] + c.positions[j][2]
-            x = abs(c.positions[i][1] - c.positions[j][1])
-            y = abs(c.positions[i][2] - c.positions[j][2])
-            (i == j) ? D₁ = max(maximum([r.rₒ for r in values(c.conductors)]), maximum([r.rₒ for r in values(c.insulators)])) : D₁ = sqrt(x^2 + y^2)
-            (i == j) ? D₂ = H : D₂ = sqrt(x^2 + H^2)
-            Pᵢⱼ = log(D₂ / D₁) / (2π*ϵ₀)
+    if (c.type == :underground)
+        for i in 1:n
+            for j in 1:n
+                H = c.positions[i][2] + c.positions[j][2]
+                x = abs(c.positions[i][1] - c.positions[j][1])
+                y = abs(c.positions[i][2] - c.positions[j][2])
+                (i == j) ? D₁ = max(maximum([r.rₒ for r in values(c.conductors)]), maximum([r.rₒ for r in values(c.insulators)])) : D₁ = sqrt(x^2 + y^2)
+                (i == j) ? D₂ = H : D₂ = sqrt(x^2 + H^2)
+                Pᵢⱼ = log(D₂ / D₁) / (2π*ϵ₀)
 
-            for k in 1:nₗ
-                for l in 1:nₗ
-                    P[(i-1)nₗ+k, (j-1)nₗ+l] += Pᵢⱼ
-                end
+                P[(i-1)nₗ+1:i*nₗ , (j-1)nₗ+1:j*nₗ] += ones(nₗ, nₗ) * Pᵢⱼ
             end
         end
     end

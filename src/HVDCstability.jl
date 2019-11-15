@@ -18,7 +18,13 @@ module HVDCstability
     using LinearAlgebra
     using NLsolve, ForwardDiff  # solve diffs and nonlinear equations
 
+    # Power flow
+    using PowerModelsACDC, PowerModels
+    using Ipopt
+
     # file includes
+    include("Network/globals.jl")
+
     include("Network/compat.jl")
     include("Network/Components/AbstractElement.jl")
     #include("GUI/Interactions.jl")

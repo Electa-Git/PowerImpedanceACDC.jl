@@ -1,39 +1,25 @@
 export ac_source_3Φ, ac_source
 
-"""
-    ac_source(amplitude, frequency, phase, impedance)
-
-Creates 1 and 3 phase ac source with specified amplitude, frequency and
-phase shift (in radians), respectively.
-
-Internal impedance can be added with a command impedance.
-
-Pins: `1.1` and `2.1`
-
-Plus pin is connected to "1.1" and minus to "2.1". To ground the source,
-connect the pin to the ground while constructing the network.
-"""
-function ac_source(; amplitude = 0, frequency = 0, phase = 0, impedance = 0)
-    source = Source(value = amplitude, pins = 1)
-    source.ABCD = convert(Array{Basic}, Diagonal([1 for dummy in 1:2]))
-    elem = Element(input_pins = 1, output_pins = 1, element_value = source)
-    elem
-end
+include("source.jl")
 
 """
-    ac_source_3Φ(;amplitude, frequency, phase, impedance)
+    ac_source(;args...)
 
-Creates  3 phase ac source with specified amplitude, frequency and
-phase shift (in radians), respectively.
+Creates  n phase ac source with specified amplitude V,
+phase shift (in radians) θ, reference active power P, reference reactive power Q,
+maximum and minimum generated active and reactive powers.
 
 Pins: `1.1`, `1.2`, `1.3`, and `2.1`, `2.2`, `2.3`
 
 Plus pin is connected to `1.x` and minus to `2.x`. To ground the source,
 connect the pin to the ground while constructing the network.
 """
-function ac_source_3Φ(; amplitude = 0, frequency = 0, phase = 0, impedance = 0)
-    source = Source(value = amplitude, pins = 3)
+function ac_source(;args...)
+    source = Source()
+    for (key, val) in kwargs_pairs(args)
+        setfield!(source, key, val)
+    end
     source.ABCD = convert(Array{Basic}, Diagonal([1 for dummy in 1:6]))
-    elem = Element(input_pins = 3, output_pins = 3, element_value = source)
+    elem = Element(input_pins = source.pins, output_pins = source.pins, element_value = source)
     elem
 end

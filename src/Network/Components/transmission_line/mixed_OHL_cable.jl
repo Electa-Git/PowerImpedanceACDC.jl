@@ -1,11 +1,10 @@
 export mixed_OHL_cable
 
-include("cable.jl")
 include("transmission_line.jl")
 
 
-@with_kw mutable struct Mixed_OHL_cable
-    parts :: Dict{Symbol, Union{Cable, Transmission_line}} = Dict{Symbol, Union{Cable, Transmission_line}}()
+@with_kw mutable struct Mixed_OHL_cable <: Transmission_line
+    parts :: Dict{Symbol, Transmission_line} = Dict{Symbol, Transmission_line}()
 end
 
 """
@@ -24,12 +23,6 @@ function mixed_OHL_cable(;args...)
 
     elem = Element(input_pins = pins,
                     output_pins = pins, element_value = m)
-end
-
-function create_abcd!(element :: Element, m :: Mixed_OHL_cable)
-    n = Int(np(element))
-    abcd_tf =  reshape([Basic(string(element.symbol,i)) for i in 1:n^2], n, n)
-    return abcd_tf
 end
 
 function eval_abcd(m :: Mixed_OHL_cable, s :: Complex)

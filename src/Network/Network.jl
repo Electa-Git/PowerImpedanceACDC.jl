@@ -2,6 +2,7 @@
 
 export Network, add!, connect!, disconnect!, @network,
         composite_element
+export power_flow  # for testing
 
 import Base: delete!
 
@@ -225,6 +226,177 @@ function check_lumped_elements(net :: Network)
     end
 end
 
+function power_flow(net :: Network)
+    global global_dict
+    global ang_min, ang_max
+    global max_gen
+    global_dict = PowerModelsACDC.get_pu_bases(100, 345)
+    global_dict["omega"] = 2π * 50
+
+    ang_min = deg2rad(360)
+    ang_max = deg2rad(-360)
+
+    function add_bus_ac(data :: Dict{String, Any})
+        key = string(length(data["bus"]) + 1)
+        (data["bus"])[key] = Dict{String, Any}()
+        ((data["bus"])[key])["source_id"] = Any["bus", parse(Int, key)]
+        ((data["bus"])[key])["index"] = parse(Int, key)
+        ((data["bus"])[key])["bus_i"] = parse(Int, key)
+        ((data["bus"])[key])["zone"] = 1
+        ((data["bus"])[key])["area"] = 1
+        ((data["bus"])[key])["vmin"] = 0.9
+        ((data["bus"])[key])["vmax"] = 1.1
+        ((data["bus"])[key])["vm"] = 1
+        ((data["bus"])[key])["va"] = 0
+        ((data["bus"])[key])["base_kv"] = global_dict["V"] / 1e3
+        ((data["bus"])[key])["bus_type"] = 1 # bus type - depend on components
+    end
+    function add_bus_dc(data :: Dict{String, Any})
+        key = string(length(data["busdc"]) + 1)
+        (data["busdc"])[key] = Dict{String, Any}()
+        ((data["busdc"])[key])["busdc_i"] = key
+        ((data["busdc"])[key])["source_id"] = Any["busdc", key]
+        ((data["busdc"])[key])["grid"] = 1
+        ((data["busdc"])[key])["index"] = key
+        ((data["busdc"])[key])["Cdc"] = 0
+        ((data["busdc"])[key])["Vdc"] = 1
+        ((data["busdc"])[key])["Vdcmax"] = 1.1
+        ((data["busdc"])[key])["Vdcmin"] = 0.9
+        ((data["busdc"])[key])["Pdc"] = 0
+        ((data["busdc"])[key])["basekVdc"] = global_dict["V"] / 1e3
+    end
+
+    function make_branch_ac(data :: Dict{String, Any}, element :: Element, dict_ac :: Array{Any}, new_i :: Array{Symbol}, new_o :: Array{Symbol})
+        !isempty(new_i) ? (push!(dict_ac, new_i); add_bus_ac(data); key_i = length(data["bus"])) :
+                            key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
+        !isempty(new_o) ? (push!(dict_ac, new_o); add_bus_ac(data); key_o = length(data["bus"])) :
+                            key_o = findfirst(p -> in(element.pins[Symbol(2.1)], p), dict_ac)
+        key_e = length(data["branch"])+1
+        (data["branch"])[string(key_e)] = Dict{String, Any}()
+        ((data["branch"])[string(key_e)])["f_bus"] = key_i
+        ((data["branch"])[string(key_e)])["t_bus"] = key_o
+        ((data["branch"])[string(key_e)])["source_id"] = Any["branch", key_e]
+        ((data["branch"])[string(key_e)])["index"] = key_e
+        ((data["branch"])[string(key_e)])["rate_a"] = 1
+        ((data["branch"])[string(key_e)])["rate_b"] = 1
+        ((data["branch"])[string(key_e)])["rate_c"] = 1
+        ((data["branch"])[string(key_e)])["br_status"] = 1
+        ((data["branch"])[string(key_e)])["angmin"] = ang_min
+        ((data["branch"])[string(key_e)])["angmax"] = ang_max
+
+        make_power_flow_ac!(element.element_value, data, global_dict)
+    end
+    function make_branch_dc(data :: Dict{String, Any}, element :: Element, dict_dc :: Array{Any}, new_i :: Array{Symbol}, new_o :: Array{Symbol})
+        !isempty(new_i) ? (push!(dict_dc, new_i); add_bus_dc(data); key_i = length(data["busdc"])) :
+                            key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_dc)
+        !isempty(new_o) ? (push!(dict_dc, new_o); add_bus_dc(data); key_o = length(data["busdc"])) :
+                            key_o = findfirst(p -> in(element.pins[Symbol(2.1)], p), dict_dc)
+        key_e = length(data["branchdc"])+1
+        (data["branchdc"])[string(key_e)] = Dict{String, Any}()
+        ((data["branchdc"])[string(key_e)])["fbusdc"] = key_i
+        ((data["branchdc"])[string(key_e)])["tbusdc"] = key_o
+        ((data["branchdc"])[string(key_e)])["source_id"] = Any["branchdc", key_e]
+        ((data["branchdc"])[string(key_e)])["index"] = key_e
+        ((data["branchdc"])[string(key_e)])["rateA"] = global_dict["S"]
+        ((data["branchdc"])[string(key_e)])["rateB"] = global_dict["S"]
+        ((data["branchdc"])[string(key_e)])["rateC"] = global_dict["S"]
+        ((data["branchdc"])[string(key_e)])["status"] = 1
+
+        make_power_flow_dc!(element.element_value, data, global_dict)
+    end
+
+    function make_generator(data :: Dict{String, Any}, element :: Element, dict_dc :: Array{Any}, new_i :: Array{Symbol}, new_o :: Array{Symbol})
+        !isempty(new_i) ? (!any(occursin("gnd", string(x)) for x in new_i) && (push!(dict_ac, new_i); add_bus_ac(data))) : nothing
+        key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
+        !isempty(new_o) ? (!any(occursin("gnd", string(x)) for x in new_o) && (push!(dict_ac, new_o); add_bus_ac(data))) : nothing
+        key_o = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
+
+        (key_i == nothing) ? key_b = key_o : key_b = key_i
+
+        if isapprox(max_gen, element.element_value.P)
+            ((data["bus"])[string(key_b)])["bus_type"] = 3
+        else
+            ((data["bus"])[string(key_b)])["bus_type"] = 2
+        end
+
+        key = length(data["gen"])+1
+        (data["gen"])[string(key)] = Dict{String, Any}()
+        ((data["gen"])[string(key)])["mBase"] = global_dict["S"] / 1e6
+        ((data["gen"])[string(key)])["gen_bus"] = key_b
+
+        make_power_flow_ac!(element.element_value, data, global_dict)
+    end
+
+    function make_converter(data :: Dict{String, Any}, element :: Element,
+        dict_dc :: Array{Any}, dict_ac :: Array{Any}, new_i :: Array{Symbol}, new_o :: Array{Symbol})
+        !isempty(new_i) ? (push!(dict_dc, new_i); add_bus_dc(data); key_i = length(data["busdc"])) :
+                            key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_dc)
+        !isempty(new_o) ? (push!(dict_ac, new_o); add_bus_ac(data); key_o = length(data["bus"])) :
+                            key_o = findfirst(p -> in(element.pins[Symbol(2.1)], p), dict_ac)
+
+        key = length(data["convdc"])+1
+        (data["convdc"])[string(key)] = Dict{String, Any}()
+        ((data["convdc"])[string(key)])["busdc_i"] = key_i
+        ((data["convdc"])[string(key)])["busac_i"] = key_o
+
+        make_power_flow!(element.element_value, data, global_dict)
+    end
+
+    dict_ac = Any[]
+    dict_dc = Any[]
+
+    data = Dict{String, Any}()
+    data["source_type"] = "matpower"
+    data["name"] = "network"
+    data["source_version"] = "0.0.0"
+    data["per_unit"] = true
+    data["dcpol"] = 1 # monopole converter topology
+    data["baseMVA"] = global_dict["S"] / 1e6
+    data["bus"] = Dict{String, Any}()
+    data["busdc"] = Dict{String, Any}()
+    data["shunt"] = Dict{String, Any}()     # empty
+    data["dcline"] = Dict{String, Any}()    # empty
+    data["storage"] = Dict{String, Any}()   # empty
+    data["load"] = Dict{String, Any}()      # empty
+    data["branch"] = Dict{String, Any}()
+    data["branchdc"] = Dict{String, Any}()
+    data["gen"] = Dict{String, Any}()
+    data["convdc"] = Dict{String, Any}()
+
+    processed = Symbol[]
+    max_gen = 0
+    for element in values(net.elements)
+       if is_source(element)
+           max_gen = max(max_gen, element.element_value.P)
+       end
+    end
+    for (symbol, element) in net.elements
+        new_i = Symbol[]
+        new_o = Symbol[]
+
+        for (key, val) in element.pins
+            if !in(val, processed)
+                push!(processed, val)
+                (parse(Int, string(key)[1]) == 1) ? push!(new_i, val) : push!(new_o, val)
+            end
+        end
+
+        if is_passive(element)
+            if (np(element) == 6)
+                make_branch_ac(data, element, dict_ac, new_i, new_o)
+            else
+                make_branch_dc(data, element, dict_dc, new_i, new_o)
+            end
+        elseif is_source(element) && (np(element) == 6)
+            make_generator(data, element, dict_ac, new_i, new_o)
+        elseif is_converter(element)
+            make_converter(data, element, dict_dc, dict_ac, new_i, new_o)
+        end
+    end
+
+    return data
+end
+
 @doc doc"""
     @network begin #= ... =# end
 Provides a simple domain-specific language to decribe networks. The
@@ -356,6 +528,7 @@ macro network(cdef)
     # here you can add functions for network before the end of the code
     push!(ccode.args, :(check_lumped_elements(network)))
     push!(ccode.args, :(connect!(network)))
+    # push!(ccode.args, :(power_flow(network)))
     push!(ccode.args, :(network))
     return ccode
 end
