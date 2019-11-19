@@ -22,6 +22,8 @@ mutable struct Element
   output_pins :: Int
   element_value :: Any  # component defined type
 
+  transformation :: Bool
+
   function Element(;args...)
     elem = new()
     for (key, val) in kwargs_pairs(args)
@@ -43,6 +45,9 @@ mutable struct Element
                         Dict{Symbol, Symbol}(Symbol(string("2.",i)) => Symbol() for i in 1:nop(elem)))
     end
 
+    if !isdefined(elem, :transformation)
+        elem.transformation = false
+    end
     elem
   end
 end
@@ -74,6 +79,10 @@ end
 ################### ABCD functions ################################
 function get_abcd(element::Element, s::Complex)
     abcd = eval_abcd(element.element_value, s)
+
+    if (element.transformation)
+        return transformation_dc(abcd)
+    end
     return abcd
 end
 
@@ -142,6 +151,15 @@ function closing_impedance(ABCD :: Array{Complex}, Zₜ :: Union{Array{Complex},
         end
     end
     return Zₑ
+end
+
+# making 2×2 matrix from 4×4
+function transformation_dc(ABCD :: ABCD_parameters)
+    n = Int(size(ABCD, 1)/2)
+    (a, b, c, d) = (ABCD[1:n,1:n], ABCD[1:n,n+1:end], ABCD[n+1:end,1:n], ABCD[n+1:end, n+1:end])
+
+    ABCD = [(a[1,1]+a[2,2]-a[1,2]-a[2,1])/2 b[1,1]+b[2,2]-b[1,2]-b[2,1]
+            (c[1,1]+c[2,1]-c[1,2]-a[2,2])/2 d[1,1]+d[2,1]-d[1,2]-d[2,2]]
 end
 
 ######################### Element type #############################

@@ -1,6 +1,7 @@
 # include("../../src/HVDCstability.jl")
 # using .HVDCstability
 
+# not working atm, fix transformations
 net = @network begin
         c = mmc(energy = PI_control(Kₚ = 120, Kᵢ = 400),
                 occ = PI_control(ζ = 0.7, bandwidth = 1000),

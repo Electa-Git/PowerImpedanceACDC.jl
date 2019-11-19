@@ -34,7 +34,7 @@ function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
                 push!(mag, convert(Float64, 20log10(abs(imp[i,j]))))
                 push!(phase, angle(imp[i,j]))
             end
-            unwrap!(convert.(Float64,phase), dims = ndims(phase))
+            # unwrap!(convert.(Float64,phase), dims = ndims(phase))
             phase = rad2deg.(phase)
 
             open(string("files/", Dates.Date(Dates.now()), "_", Dates.format(now(), "HH_MM"), "_z", i, j, ".txt"), "w") do io

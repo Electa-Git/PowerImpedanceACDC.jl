@@ -1,8 +1,5 @@
 export mixed_OHL_cable
 
-include("transmission_line.jl")
-
-
 @with_kw mutable struct Mixed_OHL_cable <: Transmission_line
     parts :: Dict{Symbol, Transmission_line} = Dict{Symbol, Transmission_line}()
 end

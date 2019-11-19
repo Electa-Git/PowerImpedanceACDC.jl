@@ -230,7 +230,7 @@ function power_flow(net :: Network)
     global global_dict
     global ang_min, ang_max
     global max_gen
-    global_dict = PowerModelsACDC.get_pu_bases(100, 345)
+    global_dict = PowerModelsACDC.get_pu_bases(100, 320)
     global_dict["omega"] = 2π * 50
 
     ang_min = deg2rad(360)
@@ -249,20 +249,20 @@ function power_flow(net :: Network)
         ((data["bus"])[key])["vm"] = 1
         ((data["bus"])[key])["va"] = 0
         ((data["bus"])[key])["base_kv"] = global_dict["V"] / 1e3
-        ((data["bus"])[key])["bus_type"] = 1 # bus type - depend on components
+        ((data["bus"])[key])["bus_type"] = 1 # bus type - depends on components
     end
     function add_bus_dc(data :: Dict{String, Any})
         key = string(length(data["busdc"]) + 1)
         (data["busdc"])[key] = Dict{String, Any}()
-        ((data["busdc"])[key])["busdc_i"] = key
-        ((data["busdc"])[key])["source_id"] = Any["busdc", key]
+        ((data["busdc"])[key])["busdc_i"] = parse(Int, key)
+        ((data["busdc"])[key])["source_id"] = Any["busdc", parse(Int, key)]
         ((data["busdc"])[key])["grid"] = 1
-        ((data["busdc"])[key])["index"] = key
+        ((data["busdc"])[key])["index"] = parse(Int, key)
         ((data["busdc"])[key])["Cdc"] = 0
         ((data["busdc"])[key])["Vdc"] = 1
         ((data["busdc"])[key])["Vdcmax"] = 1.1
         ((data["busdc"])[key])["Vdcmin"] = 0.9
-        ((data["busdc"])[key])["Pdc"] = 0
+        ((data["busdc"])[key])["Pdc"] = 100
         ((data["busdc"])[key])["basekVdc"] = global_dict["V"] / 1e3
     end
 
@@ -297,9 +297,9 @@ function power_flow(net :: Network)
         ((data["branchdc"])[string(key_e)])["tbusdc"] = key_o
         ((data["branchdc"])[string(key_e)])["source_id"] = Any["branchdc", key_e]
         ((data["branchdc"])[string(key_e)])["index"] = key_e
-        ((data["branchdc"])[string(key_e)])["rateA"] = global_dict["S"]
-        ((data["branchdc"])[string(key_e)])["rateB"] = global_dict["S"]
-        ((data["branchdc"])[string(key_e)])["rateC"] = global_dict["S"]
+        ((data["branchdc"])[string(key_e)])["rateA"] = 100
+        ((data["branchdc"])[string(key_e)])["rateB"] = 100
+        ((data["branchdc"])[string(key_e)])["rateC"] = 100
         ((data["branchdc"])[string(key_e)])["status"] = 1
 
         make_power_flow_dc!(element.element_value, data, global_dict)
@@ -313,18 +313,22 @@ function power_flow(net :: Network)
 
         (key_i == nothing) ? key_b = key_o : key_b = key_i
 
-        if isapprox(max_gen, element.element_value.P)
-            ((data["bus"])[string(key_b)])["bus_type"] = 3
-        else
-            ((data["bus"])[string(key_b)])["bus_type"] = 2
-        end
-
         key = length(data["gen"])+1
         (data["gen"])[string(key)] = Dict{String, Any}()
         ((data["gen"])[string(key)])["mBase"] = global_dict["S"] / 1e6
         ((data["gen"])[string(key)])["gen_bus"] = key_b
 
         make_power_flow_ac!(element.element_value, data, global_dict)
+
+        if isapprox(max_gen, element.element_value.P)
+            ((data["bus"])[string(key_b)])["bus_type"] = 3
+        else
+            ((data["bus"])[string(key_b)])["bus_type"] = 2
+        end
+        ((data["bus"])[string(key_b)])["bus_type"] = 3
+        ((data["bus"])[string(key_b)])["vm"] = ((data["gen"])[string(key)])["vg"]
+        ((data["bus"])[string(key_b)])["vmin"] =  0.9*((data["gen"])[string(key)])["vg"]
+        ((data["bus"])[string(key_b)])["vmax"] =  1.1*((data["gen"])[string(key)])["vg"]
     end
 
     function make_converter(data :: Dict{String, Any}, element :: Element,
@@ -350,13 +354,14 @@ function power_flow(net :: Network)
     data["name"] = "network"
     data["source_version"] = "0.0.0"
     data["per_unit"] = true
-    data["dcpol"] = 1 # monopole converter topology
+    data["dcpol"] = 2 # bipolar converter topologym check in the future
     data["baseMVA"] = global_dict["S"] / 1e6
     data["bus"] = Dict{String, Any}()
     data["busdc"] = Dict{String, Any}()
     data["shunt"] = Dict{String, Any}()     # empty
     data["dcline"] = Dict{String, Any}()    # empty
     data["storage"] = Dict{String, Any}()   # empty
+    data["switch"] = Dict{String, Any}()    # empty
     data["load"] = Dict{String, Any}()      # empty
     data["branch"] = Dict{String, Any}()
     data["branchdc"] = Dict{String, Any}()
@@ -394,7 +399,13 @@ function power_flow(net :: Network)
         end
     end
 
-    return data
+    PowerModelsACDC.process_additional_data!(data)
+    ipopt = JuMP.with_optimizer(Ipopt.Optimizer, tol=1e-6, print_level=0)
+    s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => true)
+
+    result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
+
+    return data, result
 end
 
 @doc doc"""

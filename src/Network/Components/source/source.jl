@@ -5,10 +5,10 @@
 
     P   :: Union{Float64, Int} = 0      # active power output [MW]
     Q   :: Union{Float64, Int} = 0      # reactive power output [MVAr]
-    P_min :: Union{Float64, Int} = 0    # min active power output
-    P_max :: Union{Float64, Int} = 0    # max active power output
-    Q_min :: Union{Float64, Int} = 0    # min reactive power output
-    Q_max :: Union{Float64, Int} = 0    # max reactive power output
+    P_min :: Union{Float64, Int} = 0    # min active power output [MW]
+    P_max :: Union{Float64, Int} = 0    # max active power output [MW]
+    Q_min :: Union{Float64, Int} = 0    # min reactive power output [MVA]
+    Q_max :: Union{Float64, Int} = 0    # max reactive power output [MVA]
 
     pins :: Int = 1
     ABCD :: Array{Basic} = Basic[]

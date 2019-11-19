@@ -29,8 +29,9 @@ function make_power_flow_dc!(tl :: Transmission_line, dict :: Dict{String, Any},
     ((dict["branchdc"])[string(key)])["c"] = 0
 
     abcd = eval_abcd(tl, 1e-6*1im)
-    Z = abcd[1,2] / global_dict["Z"]
-    Y = abcd[2,1] / abcd[2,2] * global_dict["Z"]
+    n = Int(size(abcd, 1)/2)
+    Z = (abcd[1:n,n+1:end])[1,1] / global_dict["Z"]
+    Y = (abcd[n+1:end,1:n] * inv(abcd[n+1:end,n+1:end]))[1,1] * global_dict["Z"]
     ((dict["branchdc"])[string(key)])["r"] = real(Z)
 end
 

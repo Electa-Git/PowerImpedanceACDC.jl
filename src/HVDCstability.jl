@@ -10,7 +10,6 @@ module HVDCstability
 
     # plotting
     using Plots, LaTeXStrings
-    using DSP
     using Compat, Compat.Dates  # compatibility across Julia
 
     # symbolic and numerical calculations
@@ -19,8 +18,9 @@ module HVDCstability
     using NLsolve, ForwardDiff  # solve diffs and nonlinear equations
 
     # Power flow
-    using PowerModelsACDC, PowerModels
+    using PowerModels, PowerModelsACDC
     using Ipopt
+    using JuMP
 
     # file includes
     include("Network/globals.jl")

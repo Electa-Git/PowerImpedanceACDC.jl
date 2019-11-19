@@ -1,8 +1,6 @@
 export cable
 export Cable, Insulator, Conductor
 
-include("transmission_line.jl")
-
 @with_kw mutable struct Conductor
     rᵢ :: Union{Int, Float64} = 0              # inner radius
     rₒ :: Union{Int, Float64} = 0              # outer radius

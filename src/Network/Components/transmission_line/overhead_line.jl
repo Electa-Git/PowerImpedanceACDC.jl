@@ -1,8 +1,6 @@
 export overhead_line
 export Overhead_line, Conductors, Groundwires
 
-include("transmission_line.jl")
-
 @with_kw mutable struct Conductors
     nᵇ :: Int = 1                       # number of bundles (phases)
     nˢᵇ :: Int = 1                      # number of subconductors per bundle
@@ -44,6 +42,8 @@ end
     r_array :: Vector{Union{Int, Float64}} = []
     ρ_array :: Vector{Union{Int, Float64}} = []
     μ_array :: Vector{Union{Int, Float64}} = []
+
+    transformation :: Bool = false
 end
 
 """
@@ -220,7 +220,14 @@ function overhead_line(;args...)
         push!(tl.μ_array, tl.groundwires.μᵣᵍ*μ₀)
     end
 
-    elem = Element(input_pins = tl.conductors.nᵇ, output_pins = tl.conductors.nᵇ, element_value = tl)
+    if (tl.transformation)
+        elem = Element(input_pins = tl.conductors.nᵇ-1, output_pins = tl.conductors.nᵇ-1, element_value = tl,
+                    transformation = tl.transformation)
+    else
+        elem = Element(input_pins = tl.conductors.nᵇ, output_pins = tl.conductors.nᵇ, element_value = tl,
+                    transformation = tl.transformation)
+    end
+
 end
 
 function eval_parameters(tl :: Overhead_line, s :: Complex)

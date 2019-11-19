@@ -10,11 +10,16 @@ include("controller.jl")
     S_base :: Union{Int, Float64} = 1000e6      # power rating of the system
     V_base :: Union{Int, Float64} = 333e3       # base voltage rating
     I_base :: Union{Int, Float64} = 0           # base current rating
+
     P :: Union{Int, Float64} = -10              # active power [MW]
     Q :: Union{Int, Float64} = 3                # reactive power [MVA]
-    Vm :: Union{Int, Float64} = 333             # AC voltage [kV]
+    P_min :: Union{Float64, Int} = -100         # min active power output [MW]
+    P_max :: Union{Float64, Int} = 100          # max active power output [MW]
+    Q_min :: Union{Float64, Int} = -50          # min reactive power output [MVA]
+    Q_max :: Union{Float64, Int} = 50           # max reactive power output [MVA]
+    Vₘ :: Union{Int, Float64} = 333             # AC voltage [kV]
 
-    Vᵈᶜ :: Union{Int, Float64} = 640e3          # DC-bus voltage
+    Vᵈᶜ :: Union{Int, Float64} = 640            # DC-bus voltage [kV]
     Vᴳd :: Union{Int, Float64} = 0
     Vᴳq :: Union{Int, Float64} = 0
 
@@ -84,6 +89,10 @@ function mmc(;args...)
         end
     end
 
+    elem = Element(input_pins = 2, output_pins = 3, element_value = converter)
+end
+
+function update_mmc(converter :: MMC)
     Lₑ = converter.Lₐᵣₘ / 2 + converter.Lᵣ
     Rₑ = converter.Rₐᵣₘ / 2 + converter.Rᵣ
     N = converter.N
@@ -341,8 +350,6 @@ function mmc(;args...)
     converter.C[2,2] = 1
     converter.C[3,5] = 1
     converter.D = zeros(3,3)
-
-    elem = Element(input_pins = 1, output_pins = 2, element_value = converter)
 end
 
 function eval_parameters(converter :: MMC, s :: Complex)
