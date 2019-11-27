@@ -13,6 +13,11 @@ Component data can be saved in text files using a function:
 HVDCstability.save_data
 ```
 
+Component specific data can be plotted using a function:
+```@docs
+HVDCstability.plot_data
+```
+
 ## Plotting
 ```@docs
 HVDCstability.bode
