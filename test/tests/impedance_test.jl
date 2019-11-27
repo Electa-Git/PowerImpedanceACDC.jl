@@ -1,7 +1,7 @@
 
 s = symbols("s")
 net = @network begin
-    vs = dc_source(voltage = 5)
+    vs = dc_source(V = 5)
     z1 = impedance(z = s+2, pins = 1)
     z2 = impedance(z = s, pins = 1)
     z3 = impedance(z = s, pins = 1)

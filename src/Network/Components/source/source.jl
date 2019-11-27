@@ -1,6 +1,6 @@
 
 @with_kw mutable struct Source
-    impedance :: Union{Float64, Int, Basic} = 0
+    Z :: Union{Float64, Int, Basic} = 0 # source series impedance [Ω]
     V :: Union{Float64, Int} = 0        # DC voltage or voltage magnitude [kV]
 
     P   :: Union{Float64, Int} = 0      # active power output [MW]
@@ -14,9 +14,15 @@
     ABCD :: Array{Basic} = Basic[]
 end
 
+function make_abcd(source :: Source)
+    source.ABCD = convert(Array{Basic}, Diagonal([1 for dummy in 1:2source.pins]))
+    source.ABCD[1:source.pins, source.pins+1:end] = convert(Array{Basic}, Diagonal([source.Z for dummy in 1:source.pins]))
+end
+
 function eval_abcd(source :: Source, s :: Complex)
     abcd = N.(source.ABCD)
 end
+
 
 
 function make_power_flow_dc!(source :: Source, dict :: Dict{String, Any},

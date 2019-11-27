@@ -1,5 +1,8 @@
+include("../../src/HVDCstability.jl")
+using .HVDCstability
+
 net = @network begin
-    gen1 = ac_source(pins = 3, P_max = 250, P_min = 100, P = 150, Q = 0, Q_max = 500, Q_min = -500,
+    gen1 = ac_source(pins = 3, P_max = 250, P_min = 100, P = 100, Q = 0, Q_max = 500, Q_min = -500,
                     V = 320)
     gen2 = ac_source(pins = 3, P_max = 150, P_min = -100, P = -100, Q = 0, Q_max = 300, Q_min = -300,
                     V = 320)
@@ -20,16 +23,16 @@ net = @network begin
     earth_parameters = (1,1,100),
     groundwires = Groundwires(nᵍ = 2, Δxᵍ = 6.5, Δyᵍ = 7.5, Rᵍᵈᶜ = 0.9196, rᵍ = 0.0062, dᵍˢᵃᵍ = 10))
 
-    c1 = mmc(Vᵈᶜ = 640, Vₘ = 320,
-            P_max = 250, P_min = 100, P = 100, Q = 0, Q_max = 500, Q_min = -500,
+    c1 = mmc(Vᵈᶜ = 320, Vₘ = 320,
+            P_max = 250, P_min = 100, P = -100, Q = 0, Q_max = 500, Q_min = -500, P_dc = 100,
             energy = PI_control(Kₚ = 120, Kᵢ = 400),
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
             zcc = PI_control(ζ = 0.7, bandwidth = 300),
             dc = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04)
             )
-    c2 = mmc(Vᵈᶜ = 640, Vₘ = 320,
-            P_max = 150, P_min = -150, P = -100, Q = 0, Q_max = 300, Q_min = -300,
+    c2 = mmc(Vᵈᶜ = 320, Vₘ = 320,
+            P_max = 150, P_min = -150, P = 100, Q = 0, Q_max = 300, Q_min = -300, P_dc = -100,
             energy = PI_control(Kₚ = 120, Kᵢ = 400),
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
@@ -62,4 +65,4 @@ net = @network begin
     gen2[1.3] ⟷ tl2[2.3]
     gen2[2.1] ⟷ gen2[2.2] ⟷ gen2[2.3] ⟷ gnd2
 end
-data, result = power_flow(net)
+result = power_flow(net)

@@ -27,7 +27,6 @@ end
     Rᵍᵈᶜ :: Union{Int, Float64} = 0      # groundwire DC resistance [Ω/m]
     μᵣᵍ :: Union{Int, Float64} = 1       # relative groundwire permeability
     positions :: Tuple{Vector{Union{Int, Float64}}, Vector{Union{Int, Float64}}} = ([],[])    # add absolute positions manually
-    eliminate :: Bool = true
 end
 
 @with_kw mutable struct Overhead_line <: Transmission_line
@@ -36,14 +35,10 @@ end
     groundwires :: Groundwires = Groundwires()
     earth_parameters :: NTuple{N, Union{Int,Float64}} where N = (1,1,1) # (μᵣ_earth, ϵᵣ_earth, ρ_earth) in units ([], [], [Ωm])
 
-    # formed parameters
-    x_array :: Vector{Union{Int, Float64}} = []
-    y_array :: Vector{Union{Int, Float64}} = []
-    r_array :: Vector{Union{Int, Float64}} = []
-    ρ_array :: Vector{Union{Int, Float64}} = []
-    μ_array :: Vector{Union{Int, Float64}} = []
+    P :: Array{Basic} = []
+    Z :: Array{Basic} = []
 
-    transformation :: Bool = false
+    eliminate :: Bool = true
 end
 
 """
@@ -97,9 +92,14 @@ groundwires = Groundwires(nᵍ = 2, Δxᵍ = 6.5, Δyᵍ = 7.5, Rᵍᵈᶜ = 0.9
 """
 function overhead_line(;args...)
     tl = Overhead_line()
+    transformation = false
     for (key, val) in kwargs_pairs(args)
         if in(key, propertynames(tl))
             setfield!(tl, key, val)
+        elseif (key == :transformation)
+            transformation = val
+        else
+            throw(ArgumentError("Unknown property $(key) of the overhead line."))
         end
     end
 
@@ -187,7 +187,19 @@ function overhead_line(;args...)
         end
     end
 
+    (μᵣ_earth, ϵᵣ_earth, ρ_earth) = tl.earth_parameters
     μ₀ = 4*π*1e-7
+    ϵ = 8.85e-12
+    μ_earth = μᵣ_earth*μ₀
+    ϵ_earth = ϵᵣ_earth*ϵ
+    σ_earth = 1/ρ_earth
+
+    x_array = []
+    y_array = []
+    r_array = []
+    ρ_array = []
+    μ_array = []
+
     if !(in(tl.conductors.organization, keys(dict_organization)) || isempty(tl.conductors.positions))
         throw(ArgumentError("Conductor positions are not defined."))
     else
@@ -198,14 +210,12 @@ function overhead_line(;args...)
             (x,y) = tl.conductors.positions
         end
         (xˢᵇ, yˢᵇ) = bundle_position(tl.conductors.nˢᵇ, tl.conductors.dˢᵇ)
-        for i in 1:tl.conductors.nᵇ
-            for j in 1:tl.conductors.nˢᵇ
-                push!(tl.x_array, x[i] + xˢᵇ[j])
-                push!(tl.y_array, y[i] + yˢᵇ[j] -2/3*tl.conductors.dˢᵃᵍ)
-                push!(tl.r_array, tl.conductors.rᶜ)
-                push!(tl.ρ_array, tl.conductors.Rᵈᶜ*1e-3)
-                push!(tl.μ_array, tl.conductors.μᵣᶜ*μ₀)
-            end
+        for i in 1:tl.conductors.nᵇ, j in 1:tl.conductors.nˢᵇ
+            push!(x_array, x[i] + xˢᵇ[j])
+            push!(y_array, y[i] + yˢᵇ[j] -2/3*tl.conductors.dˢᵃᵍ)
+            push!(r_array, tl.conductors.rᶜ)
+            push!(ρ_array, tl.conductors.Rᵈᶜ*1e-3)
+            push!(μ_array, tl.conductors.μᵣᶜ*μ₀)
         end
     end
 
@@ -213,44 +223,27 @@ function overhead_line(;args...)
     n = tl.groundwires.nᵍ
     (x,y) = ([tl.groundwires.Δxᵍ*i for i in -(n-1)/2:1:(n-1)/2], [tl.conductors.yᵇᶜ+tl.groundwires.Δyᵍ for i in 1:n])
     for i in 1:n
-        push!(tl.x_array, x[i])
-        push!(tl.y_array, y[i]-2/3*tl.groundwires.dᵍˢᵃᵍ)
-        push!(tl.r_array, tl.groundwires.rᵍ)
-        push!(tl.ρ_array, tl.groundwires.Rᵍᵈᶜ*1e-3)
-        push!(tl.μ_array, tl.groundwires.μᵣᵍ*μ₀)
+        push!(x_array, x[i])
+        push!(y_array, y[i]-2/3*tl.groundwires.dᵍˢᵃᵍ)
+        push!(r_array, tl.groundwires.rᵍ)
+        push!(ρ_array, tl.groundwires.Rᵍᵈᶜ*1e-3)
+        push!(μ_array, tl.groundwires.μᵣᵍ*μ₀)
     end
 
-    if (tl.transformation)
-        elem = Element(input_pins = tl.conductors.nᵇ-1, output_pins = tl.conductors.nᵇ-1, element_value = tl,
-                    transformation = tl.transformation)
-    else
-        elem = Element(input_pins = tl.conductors.nᵇ, output_pins = tl.conductors.nᵇ, element_value = tl,
-                    transformation = tl.transformation)
-    end
-
-end
-
-function eval_parameters(tl :: Overhead_line, s :: Complex)
-    (μᵣ_earth, ϵᵣ_earth, ρ_earth) = tl.earth_parameters
-    μ₀ = 4*π*1e-7
-    ϵ = 8.85e-12
-    μ_earth = μᵣ_earth*μ₀
-    ϵ_earth = ϵᵣ_earth*ϵ
-    σ_earth = 1/ρ_earth
 
     Num = tl.conductors.nᵇ * tl.conductors.nˢᵇ + tl.groundwires.nᵍ
-    # matrix initialization
-    P = zeros(Complex, Num,Num)
-    Z = zeros(Complex, Num,Num)
+    P = zeros(Basic, Num,Num)
+    Z = zeros(Basic, Num,Num)
 
+    s = symbols(:s)
     dₑ = sqrt(1/(s * μ_earth * (σ_earth + s*ϵ_earth)))       # depth of penetration
     for iPhase in 1:Num
-        (xᵢ, yᵢ, rᵢ) = (tl.x_array[iPhase], tl.y_array[iPhase], tl.r_array[iPhase])
-        (ρ, μ) = (tl.ρ_array[iPhase]*(π*rᵢ^2), tl.μ_array[iPhase])
+        (xᵢ, yᵢ, rᵢ) = (x_array[iPhase], y_array[iPhase], r_array[iPhase])
+        (ρ, μ) = (ρ_array[iPhase]*(π*rᵢ^2), μ_array[iPhase])
         m = sqrt(s*μ/ρ)
 
         for jPhase in 1:Num
-            (xⱼ, yⱼ) = (tl.x_array[jPhase], tl.y_array[jPhase])
+            (xⱼ, yⱼ) = (x_array[jPhase], y_array[jPhase])
             (Dᵢⱼ, D̂ᵢⱼ, dᵢⱼ) = (sqrt((xᵢ-xⱼ)^2+(yᵢ+yⱼ)^2), sqrt((xᵢ-xⱼ)^2+(yᵢ+yⱼ+2*dₑ)^2), sqrt((xᵢ-xⱼ)^2+(yᵢ-yⱼ)^2))
 
             if (iPhase != jPhase)
@@ -263,33 +256,43 @@ function eval_parameters(tl :: Overhead_line, s :: Complex)
         end
     end
 
-    #apply Kron elimination to bundled subconductors
-    if (tl.groundwires.nᵍ + tl.conductors.nˢᵇ != 0)
-        if (tl.conductors.nˢᵇ != 0)
-            cond_noElim = [(i-1)*tl.conductors.nˢᵇ + 1 for i in 1:tl.conductors.nᵇ]
-            cond_Elim = setdiff(1:Num, cond_noElim)
-            n_noElim = length(cond_noElim)
-            for iPhase in 1:tl.conductors.nᵇ
-                cond_noElim_curr = tl.conductors.nˢᵇ*(iPhase - 1) + 1
-                for iCond in tl.conductors.nˢᵇ*(iPhase-1)+2 : tl.conductors.nˢᵇ*iPhase
-                    # println(iCond)
-                    Z[:,iCond] -= Z[:,cond_noElim_curr]
-                    Z[iCond,:] -= Z[cond_noElim_curr,:]
+    if (tl.conductors.nˢᵇ != 0)
+        cond_noElim = [(i-1)*tl.conductors.nˢᵇ + 1 for i in 1:tl.conductors.nᵇ]
+        for iPhase in 1:tl.conductors.nᵇ
+            cond_noElim_curr = cond_noElim[iPhase]
+            for iCond in tl.conductors.nˢᵇ*(iPhase-1)+2 : tl.conductors.nˢᵇ*iPhase
+                Z[:,iCond] -= Z[:,cond_noElim_curr]
+                Z[iCond,:] -= Z[cond_noElim_curr,:]
 
-                    P[:,iCond] -= P[:,cond_noElim_curr]
-                    P[iCond,:] -= P[cond_noElim_curr,:]
-                end
+                P[:,iCond] -= P[:,cond_noElim_curr]
+                P[iCond,:] -= P[cond_noElim_curr,:]
             end
-            Z = Z[[cond_noElim; cond_Elim],:]
-            Z = Z[:,[cond_noElim; cond_Elim]]
-            P = P[[cond_noElim; cond_Elim],:]
-            P = P[:,[cond_noElim; cond_Elim]]
         end
-        # matrix to be reduced
-        Z = Z[1:n_noElim,1:n_noElim] - Z[1:n_noElim,1+n_noElim:end]*
-        inv(Z[1+n_noElim:end,1+n_noElim:end])*Z[1+n_noElim:end,1:n_noElim]
-        P = P[1:n_noElim,1:n_noElim] - P[1:n_noElim,1+n_noElim:end]*
-        inv(P[1+n_noElim:end,1+n_noElim:end])*P[1+n_noElim:end,1:n_noElim]
+    end
+
+    tl.P = P
+    tl.Z = Z
+
+    elem = Element(input_pins = tl.conductors.nᵇ, output_pins = tl.conductors.nᵇ, element_value = tl,
+                    transformation = transformation)
+
+
+end
+
+function eval_parameters(tl :: Overhead_line, s :: Complex)
+    P = N.(subs.(tl.P, symbols(:s), s))
+    P = convert(Array{Float64}, real(P)) + 1im*convert(Array{Float64}, imag(P))
+    P = convert(Array{Complex}, P)
+
+    Z = N.(subs.(tl.Z, symbols(:s), s))
+    Z = convert(Array{Float64}, real(Z)) + 1im*convert(Array{Float64}, imag(Z))
+    Z = convert(Array{Complex}, Z)
+
+    #apply Kron elimination to bundled subconductors
+    if (tl.groundwires.nᵍ + tl.conductors.nˢᵇ > 1)
+        cond_noElim = [(i-1)*tl.conductors.nˢᵇ + 1 for i in 1:tl.conductors.nᵇ]
+        Z = kron(Z, cond_noElim)
+        P = kron(P, cond_noElim)
     end
 
     #invert to get the Y matrix
@@ -308,10 +311,10 @@ Form ABCD representation from known values for Y and Z and write values in the d
 """
 function eval_abcd(tl :: Overhead_line, s :: Complex)
     (Z, Y) = eval_parameters(tl, s)
-    γ = sqrt(Z*Y)
+    γ = sqrt(convert(Array{Complex},Z*Y))
     Yc = inv(Z) * γ
 
-    n = tl.conductors.nᵇ
+    n = Int(size(Yc,1))
     abcd = zeros(Complex, 2n, 2n)
 
     abcd[1:n, 1:n] = cosh(γ*tl.length)

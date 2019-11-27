@@ -29,7 +29,8 @@ impedance(z = [1,s,3,4], pins = 2) # 2×2 impedance with all values defined
 ```
 
 """
-function impedance(;z :: Union{Int, Float64, Basic, Array{Basic}} = 0, pins :: Int = 0)
+function impedance(;z :: Union{Int, Float64, Basic, Array{Basic}} = 0, pins :: Int = 0,
+        transformation = false)
     if !isempty(z)
         if (pins != 0)
             if (length(z) === pins)
@@ -68,14 +69,18 @@ function impedance(;z :: Union{Int, Float64, Basic, Array{Basic}} = 0, pins :: I
         end
         imp.ABCD = m1\m2
 
-        element = Element(element_value = imp, input_pins = pins, output_pins = pins)
+        element = Element(element_value = imp, input_pins = pins, output_pins = pins,
+            transformation = transformation)
     end
     element
 end
 
 
 function eval_abcd(imp :: Impedance, s :: Complex)
-    return N.(subs.(imp.ABCD, symbols(:s), s))
+    abcd = N.(subs.(imp.ABCD, symbols(:s), s))
+    abcd = convert(Array{Float64}, real(abcd)) + 1im*convert(Array{Float64}, imag(abcd))
+    abcd = convert(Array{Complex}, abcd)
+    return abcd
 end
 
 # POWER FLOW

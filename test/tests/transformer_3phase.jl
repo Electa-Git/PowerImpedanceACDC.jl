@@ -1,7 +1,7 @@
 
 s = symbols("s")
 net = @network begin
-    vs = ac_source_3Φ(amplitude = 100)
+    vs = ac_source(V = 10, pins = 3)
     t = transformer(V₁ᵒ = 2.4e3, V₁ˢ = 51.87, V₂ᵒ = 240, P₁ᵒ = 171.1, P₁ˢ = 642.1,
                     I₁ᵒ = 0.48, I₁ˢ = 20.83, Cₛ = 12e-6, Cₜ = 7e-6, pins = 3)
     z = impedance(pins = 3, z = 25e-3*s)

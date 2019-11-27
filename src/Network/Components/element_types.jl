@@ -5,10 +5,12 @@ include("impedance/impedance.jl")
 
 # Transfromer
 include("transformer/transformer.jl")
+include("transformer/autotransformer.jl")
 
 # Cables and transmission lines
 include("transmission_line/transmission_line.jl")
 include("transmission_line/cable.jl")
+include("transmission_line/crossbonded_cable.jl")
 include("transmission_line/overhead_line.jl")
 include("transmission_line/mixed_OHL_cable.jl")
 

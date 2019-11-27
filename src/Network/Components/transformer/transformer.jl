@@ -67,9 +67,14 @@ Pins: `1.1`, `2.1` for single phase transformer and `1.1`, `1.2`, `1.3`, `2.1`,
 """
 function transformer(;args...)
     t = Transformer()
+    transformation = false
     for (key, val) in kwargs_pairs(args)
         if in(key, propertynames(t))
             setfield!(t, key, val)
+        elseif (key == :transformation)
+            transformation = val
+        else
+            throw(ArgumentError("Transformer does not have a property $(key)."))
         end
     end
 
@@ -150,7 +155,8 @@ function transformer(;args...)
         end
     end
 
-    elem = Element(input_pins = t.pins, output_pins = t.pins, element_value = t)
+    elem = Element(input_pins = t.pins, output_pins = t.pins, element_value = t,
+        transformation = transformation)
 end
 
 function eval_abcd(t :: Transformer, s :: Complex)

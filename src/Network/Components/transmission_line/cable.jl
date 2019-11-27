@@ -28,6 +28,11 @@ end
     earth_parameters :: NTuple{N, Union{Int,Float64}} where N = (1,1,1) # (μᵣ, ϵᵣ, ρ) in units ([], [], [Ωm])
     configuration :: Symbol = :coaxial
     type :: Symbol = :underground   # or aerial
+
+    P :: Array{Basic} = []
+    Z :: Array{Basic} = []
+
+    eliminate :: Bool = true
 end
 
 """
@@ -75,7 +80,7 @@ end
 """
 function cable(;args...)
     c = Cable()
-
+    transformation = false
     for (key, val) in kwargs_pairs(args)
         if key == :positions
             for v in val
@@ -87,6 +92,10 @@ function cable(;args...)
             c.conductors[key] = val
         elseif isa(val, Insulator)
             c.insulators[key] = val
+        elseif (key == :transformation)
+            transformation = val
+        else
+            throw(ArgumentError("Unknown cable property name."))
         end
     end
 
@@ -124,11 +133,6 @@ function cable(;args...)
         c.insulators[:I1].μᵣ = c.insulators[:I1].μᵣ * (1 + 2π^2 * N^2 * (c.insulators[:I1].rₒ^2 - c.insulators[:I1].rᵢ^2) / log(c.insulators[:I1].rₒ / c.insulators[:I1].rᵢ))
     end
 
-    n = length(c.positions)
-    elem = Element(input_pins = n, output_pins = n, element_value = c)
-end
-
-function eval_parameters(c :: Cable, s :: Complex)
     (μᵣᵍ, ϵᵣᵍ, ρᵍ) = c.earth_parameters
 
     μ₀ = 4π*1e-7
@@ -138,11 +142,12 @@ function eval_parameters(c :: Cable, s :: Complex)
     σᵍ = 1/ρᵍ
     γ = 0.5772156649
     g = 1e-11
+    s = symbols(:s)
 
     nₗ = length(c.conductors)       # number of cable layers
     n = length(c.positions)        # number of cables
-    Z = zeros(Complex,n*nₗ,n*nₗ)    # series impedance matrix
-    P = zeros(Complex,n*nₗ,n*nₗ)
+    Z = zeros(Basic,n*nₗ,n*nₗ)
+    P = zeros(Basic,n*nₗ,n*nₗ)
 
     # make series impedance
     i = 1
@@ -187,12 +192,10 @@ function eval_parameters(c :: Cable, s :: Complex)
         i += 1
     end
 
-
     for i in 1:n
         Z[(i-1)*nₗ+1:i*nₗ, (i-1)*nₗ+1:i*nₗ] = Z[1:nₗ,1:nₗ]
         P[(i-1)*nₗ+1:i*nₗ, (i-1)*nₗ+1:i*nₗ] = P[1:nₗ,1:nₗ]
-        for j in i+1:n
-            # adding earth return impedance
+        for j in i+1:n      # adding earth return impedance
             m = sqrt(s*μᵍ/ρᵍ)
             H = c.positions[i][2] + c.positions[j][2]
             dᵢⱼ = sqrt((c.positions[i][1] - c.positions[j][1])^2 + (c.positions[i][2] - c.positions[j][2])^2)
@@ -204,49 +207,50 @@ function eval_parameters(c :: Cable, s :: Complex)
     end
 
     # reduction for represention core, sheath and armor
-    for k in 1:n
-        for l in 1:n
-            for i in nₗ-1:-1:1
-                for j in 1:i
-                    Z[(l-1)nₗ+1:l*nₗ, (k-1)*nₗ + j] += Z[(l-1)nₗ+1:l*nₗ, (k-1)*nₗ + i+1]
-                end
-            end
-            for i in nₗ-1:-1:1
-                for j in 1:i
-                    Z[(k-1)*nₗ + j, (l-1)nₗ+1:l*nₗ] += Z[(k-1)*nₗ + i+1, (l-1)nₗ+1:l*nₗ]
-                end
-            end
+    for k in 1:n, l in 1:n
+        for i in nₗ-1:-1:1, j in 1:i
+            Z[(l-1)nₗ+1:l*nₗ, (k-1)*nₗ + j] += Z[(l-1)nₗ+1:l*nₗ, (k-1)*nₗ + i+1]
+        end
+        for i in nₗ-1:-1:1, j in 1:i
+            Z[(k-1)*nₗ + j, (l-1)nₗ+1:l*nₗ] += Z[(k-1)*nₗ + i+1, (l-1)nₗ+1:l*nₗ]
         end
     end
 
     if (c.type == :underground)
-        for i in 1:n
-            for j in 1:n
-                H = c.positions[i][2] + c.positions[j][2]
-                x = abs(c.positions[i][1] - c.positions[j][1])
-                y = abs(c.positions[i][2] - c.positions[j][2])
-                (i == j) ? D₁ = max(maximum([r.rₒ for r in values(c.conductors)]), maximum([r.rₒ for r in values(c.insulators)])) : D₁ = sqrt(x^2 + y^2)
-                (i == j) ? D₂ = H : D₂ = sqrt(x^2 + H^2)
-                Pᵢⱼ = log(D₂ / D₁) / (2π*ϵ₀)
+        for i in 1:n, j in 1:n
+            H = c.positions[i][2] + c.positions[j][2]
+            x = abs(c.positions[i][1] - c.positions[j][1])
+            y = abs(c.positions[i][2] - c.positions[j][2])
+            (i == j) ? (D₁ = max(maximum([r.rₒ for r in values(c.conductors)]), maximum([r.rₒ for r in values(c.insulators)])); D₂ = H) : (D₁ = sqrt(x^2 + y^2); D₂ = sqrt(x^2 + H^2))
+            Pᵢⱼ = log(D₂ / D₁) / (2π*ϵ₀)
 
-                P[(i-1)nₗ+1:i*nₗ , (j-1)nₗ+1:j*nₗ] += ones(nₗ, nₗ) * Pᵢⱼ
-            end
+            P[(i-1)nₗ+1:i*nₗ , (j-1)nₗ+1:j*nₗ] += ones(nₗ, nₗ) * Pᵢⱼ
         end
     end
 
-    #apply Kron elimination to additional layers
-    cond_noElim = [(i-1)*nₗ + 1 for i in 1:n]
-    cond_Elim = setdiff(1:n*nₗ, cond_noElim)
-    n_noElim = length(cond_noElim)
+    c.P = P
+    c.Z = Z
 
-    Z = Z[[cond_noElim; cond_Elim],:]
-    Z = Z[:,[cond_noElim; cond_Elim]]
-    P = P[[cond_noElim; cond_Elim],:]
-    P = P[:,[cond_noElim; cond_Elim]]
+    elem = Element(input_pins = n, output_pins = n, element_value = c,
+            transformation = transformation)
+end
 
-    Z = Z[1:n_noElim,1:n_noElim] - Z[1:n_noElim,1+n_noElim:end]*inv(Z[1+n_noElim:end,1+n_noElim:end])*Z[1+n_noElim:end,1:n_noElim]
-    P = P[1:n_noElim,1:n_noElim] - P[1:n_noElim,1+n_noElim:end]*inv(P[1+n_noElim:end,1+n_noElim:end])*P[1+n_noElim:end,1:n_noElim]
+function eval_parameters(c :: Cable, s :: Complex)
+    P = N.(subs.(c.P, symbols(:s), s))
+    P = convert(Array{Float64}, real(P)) + 1im*convert(Array{Float64}, imag(P))
+    P = convert(Array{Complex}, P)
 
+    Z = N.(subs.(c.Z, symbols(:s), s))
+    Z = convert(Array{Float64}, real(Z)) + 1im*convert(Array{Float64}, imag(Z))
+    Z = convert(Array{Complex}, Z)
+
+    if (c.eliminate)            #apply Kron elimination to additional layers
+        nₗ = length(c.conductors)
+        n = length(c.positions)
+        cond_noElim = [(i-1)*nₗ + 1 for i in 1:n]
+        Z = kron(Z, cond_noElim)
+        P = kron(P, cond_noElim)
+    end
     Y = s*inv(P)
 
     return (Z,Y)
@@ -254,10 +258,10 @@ end
 
 function eval_abcd(c :: Cable, s :: Complex)
     (Z, Y) = eval_parameters(c, s)
-    γ = sqrt(Z*Y)
+    γ = sqrt(convert(Array{Complex}, Z*Y))
     Yc = inv(Z) * γ
 
-    n = length(c.positions)
+    n = Int(size(Yc,1))
     abcd = zeros(Complex, 2n, 2n)
 
     abcd[1:n, 1:n] = cosh(γ*c.length)

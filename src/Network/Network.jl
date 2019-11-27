@@ -262,7 +262,7 @@ function power_flow(net :: Network)
         ((data["busdc"])[key])["Vdc"] = 1
         ((data["busdc"])[key])["Vdcmax"] = 1.1
         ((data["busdc"])[key])["Vdcmin"] = 0.9
-        ((data["busdc"])[key])["Pdc"] = 100
+        ((data["busdc"])[key])["Pdc"] = 0
         ((data["busdc"])[key])["basekVdc"] = global_dict["V"] / 1e3
     end
 
@@ -401,11 +401,27 @@ function power_flow(net :: Network)
 
     PowerModelsACDC.process_additional_data!(data)
     ipopt = JuMP.with_optimizer(Ipopt.Optimizer, tol=1e-6, print_level=0)
-    s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => true)
+    s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
 
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
 
-    return data, result
+    id_converter = 1
+    for (key, element) in net.elements
+        if is_converter(element)
+            conv_dict = result["solution"]["convdc"][string(id_converter)]
+            Pdc = conv_dict["pdc"] * global_dict["S"] / 1e6
+            Vm = result["solution"]["bus"][string(data["convdc"][string(id_converter)]["busac_i"])]["vm"] *
+                    global_dict["V"] / 1e3
+            θ = result["solution"]["bus"][string(data["convdc"][string(id_converter)]["busac_i"])]["va"]
+            Vdc = result["solution"]["busdc"][string(data["convdc"][string(id_converter)]["busdc_i"])]["vm"] *
+                    global_dict["V"] / 1e3
+            Pac = -conv_dict["pgrid"] * global_dict["S"] / 1e6
+            Qac = -conv_dict["qgrid"] * global_dict["S"] / 1e6
+            update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
+            id_converter += 1
+        end
+    end
+    return result
 end
 
 @doc doc"""

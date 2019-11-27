@@ -4,24 +4,19 @@ include("converter.jl")
 include("controller.jl")
 
 @with_kw mutable struct MMC <: Converter
-    f₀ :: Union{Int, Float64}  = 50             # nominal frequency
     ω₀ :: Union{Int, Float64} = 100*π
-
-    S_base :: Union{Int, Float64} = 1000e6      # power rating of the system
-    V_base :: Union{Int, Float64} = 333e3       # base voltage rating
-    I_base :: Union{Int, Float64} = 0           # base current rating
 
     P :: Union{Int, Float64} = -10              # active power [MW]
     Q :: Union{Int, Float64} = 3                # reactive power [MVA]
+    P_dc :: Union{Int, Float64} = 100           # DC power [kW]
     P_min :: Union{Float64, Int} = -100         # min active power output [MW]
     P_max :: Union{Float64, Int} = 100          # max active power output [MW]
     Q_min :: Union{Float64, Int} = -50          # min reactive power output [MVA]
     Q_max :: Union{Float64, Int} = 50           # max reactive power output [MVA]
-    Vₘ :: Union{Int, Float64} = 333             # AC voltage [kV]
 
+    θ :: Union{Int, Float64} = 0
+    Vₘ :: Union{Int, Float64} = 333             # AC voltage [kV]
     Vᵈᶜ :: Union{Int, Float64} = 640            # DC-bus voltage [kV]
-    Vᴳd :: Union{Int, Float64} = 0
-    Vᴳq :: Union{Int, Float64} = 0
 
     Lₐᵣₘ :: Union{Int, Float64}  = 50e-3        # arm inductance [H]
     Rₐᵣₘ :: Union{Int, Float64}  = 1.07         # equivalent arm resistance
@@ -92,7 +87,7 @@ function mmc(;args...)
     elem = Element(input_pins = 2, output_pins = 3, element_value = converter)
 end
 
-function update_mmc(converter :: MMC)
+function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Lₑ = converter.Lₐᵣₘ / 2 + converter.Lᵣ
     Rₑ = converter.Rₐᵣₘ / 2 + converter.Rᵣ
     N = converter.N
@@ -101,11 +96,20 @@ function update_mmc(converter :: MMC)
     Cₐᵣₘ = converter.Cₐᵣₘ
     ω₀ = converter.ω₀
 
-    if (converter.V_base != 0)
-        converter.Vᴳd = converter.V_base * sqrt(2/3)
-        converter.I_base = 2converter.S_base / 3 / converter.V_base / sqrt(2/3)
-    end
-    converter.Vᴳq = 0
+    converter.Vₘ = Vm
+    converter.Vᵈᶜ = Vdc
+    converter.P = Pac
+    converter.Q = Qac
+    converter.P_dc = Pdc
+
+    Vm *= 1e3
+    Vdc *= 1e3
+    Pac *= 1e6
+    Qac *= 1e6
+    Pdc *= 1e6
+    I = 2Pac / 3 / Vm
+    Vᴳd = Vm * sqrt(2/3) * cos(θ)
+    Vᴳq = -Vm * sqrt(2/3) * sin(θ)
 
     # setup control parameters and equations
     init_x = zeros(12, 1)
@@ -126,17 +130,17 @@ function update_mmc(converter :: MMC)
         # fix reference values
         if (key == :occ)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref = [-converter.I_base 0]
+                val.ref = [I 0]
             end
             init_x[1] = val.ref[1]
             init_x[2] = val.ref[2]
         elseif (key == :energy)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref[1] = 3 * (Cₐᵣₘ * converter.Vᵈᶜ^2)/ N
+                val.ref[1] = 3 * (Cₐᵣₘ * Vdc^2)/ N
             end
         elseif (key == :zcc)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref[1] = - 3*converter.Vᴳd*converter.I_base/6/converter.Vᵈᶜ
+                val.ref[1] = - 3*Vᴳd*abs(I)/6/Vdc
             end
             init_x[5] = val.ref[1]
         elseif (key == :ccc)
@@ -147,11 +151,11 @@ function update_mmc(converter :: MMC)
             init_x[4] = val.ref[2]
         elseif (key == :power)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref = [-converter.S_base 0]
+                val.ref = [Pac Qac]
             end
         end
     end
-    init_x[12] = converter.Vᵈᶜ
+    init_x[12] = Vdc
 
     exp = Expr(:block)
 
@@ -331,7 +335,7 @@ function update_mmc(converter :: MMC)
        return Base.invokelatest(f, F,x,inputs)
     end
 
-    vector_inputs = [converter.Vᴳd, converter.Vᴳq, converter.Vᵈᶜ]
+    vector_inputs = [Vᴳd, Vᴳq, Vdc]
     init_x = [init_x; zeros(index-12,1)]
     g!(F,x) = f!(exp, F, x, vector_inputs)
 
@@ -365,33 +369,4 @@ function eval_abcd(mmc :: MMC, complex_s :: Complex)
                 Y[1,3]  Y[1,1]  Y[1,2];
                 Y[2,3]  Y[2,1]  Y[2,2]]
     return Y_matrix
-end
-
-
-function save_data(mmc :: MMC, file_name :: String, omegas)
-    open(string(file_name, "_y.txt"), "w") do f
-        for omega in omegas
-            Y = eval_parameters(mmc, 1im*omega)
-            writedlm(f, [omega reshape(Y, 1, length(Y))], ",")
-        end
-    end
-end
-
-function plot_data(mmc :: MMC, omegas)
-    Y_ac = []
-    Y_dc = []
-    Y_acdc = []
-    for omega in omegas
-        Y = (eval_parameters(mmc, 1im*omega))
-        push!(Y_ac, Y[1:2,1:2])
-        push!(Y_dc, Y[3,3])
-        push!(Y_acdc, [Y[1:2,3] Y[3,1:2]])
-    end
-
-    bode(Y_ac, omega = omegas, titles = ["Y_{dd}" "Y_{dq}"; "Y_{qd}" "Y_{qq}"])
-    save_plot("files/ac_side")
-    bode(Y_dc, omega = omegas, titles = ["Y_{zz}"])
-    save_plot("files/dc_side")
-    bode(Y_acdc, omega = omegas, titles = ["Y_{dz}" "Y_{zd}"; "Y_{qz}" "Y_{zq}"])
-    save_plot("files/acdc_side")
 end

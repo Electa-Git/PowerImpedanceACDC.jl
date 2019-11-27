@@ -8,10 +8,9 @@ net = @network begin
                 ccc = PI_control(ζ = 0.7, bandwidth = 300),
                 zcc = PI_control(ζ = 0.7, bandwidth = 300),
                 power = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04)#,
-                #pll = PI_control(Kₚ = 2e-3, Kᵢ = 2)
                 )
-        dc = dc_source(voltage = 640e3)
-        ac = ac_source(amplitude = 320e3)
+        dc = dc_source(V = 640)
+        ac = ac_source(V = 320)
 
         dc[1.1] ⟷ c[1.1] ⟷ Node1
         dc[2.1] ⟷ gnd

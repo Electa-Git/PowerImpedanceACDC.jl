@@ -2,10 +2,10 @@ net = @network begin
     vs = ac_source(V = 230, P = 80, pins = 3)
     tl = overhead_line(length = 200e3,
                         conductors = Conductors(organization = :flat,
-                            nᵇ      = 3, nˢᵇ     = 1, Rᵈᶜ     = 0.063,
-                            rᶜ      = 0.015,  yᵇᶜ     = 30,  Δyᵇᶜ    = 0,
-                            Δxᵇᶜ    = 10,  Δ̃xᵇᶜ    = 0, dˢᵇ     = 0,  dˢᵃᵍ    = 10),
-                        groundwires = Groundwires(nᵍ    = 2, Rᵍᵈᶜ    = 0.92,
+                            nᵇ = 3, Rᵈᶜ = 0.063,
+                            rᶜ = 0.015,  yᵇᶜ = 30,
+                            Δxᵇᶜ = 10, dˢᵃᵍ    = 10),
+                        groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92,
                             rᵍ      = 0.0062, Δxᵍ     = 6.5, Δyᵍ     = 7.5, dᵍˢᵃᵍ   = 10),
                         earth_parameters = (1,1,100))
 

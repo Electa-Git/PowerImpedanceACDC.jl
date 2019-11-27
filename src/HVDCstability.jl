@@ -28,6 +28,6 @@ module HVDCstability
     include("Network/compat.jl")
     include("Network/Components/AbstractElement.jl")
     #include("GUI/Interactions.jl")
-    include("Network/Impedance_estimation/determine_impedance.jl")
-    include("Network/Impedance_estimation/stability.jl")
+    include("Network/Solvers/solvers.jl")
+
 end

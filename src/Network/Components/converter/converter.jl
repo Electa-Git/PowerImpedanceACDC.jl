@@ -21,7 +21,7 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
 
     # droop control - not implemented
     ((dict["convdc"])[string(key)])["droop"] = 0
-    ((dict["convdc"])[string(key)])["Pdcset"] = 1
+    ((dict["convdc"])[string(key)])["Pdcset"] = converter.P_dc
     ((dict["convdc"])[string(key)])["Vdcset"] = converter.Vᵈᶜ * 1e3 / global_dict["V"]
     ((dict["convdc"])[string(key)])["dVdcSet"] = 0
     # LCC converter
@@ -70,4 +70,32 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     ((dict["busdc"])[string(key_i)])["Vdc"] = converter.Vᵈᶜ * 1e3 / global_dict["V"]
     ((dict["busdc"])[string(key_i)])["Vdcmax"] = 1.1 * ((dict["busdc"])[string(key_i)])["Vdc"]
     ((dict["busdc"])[string(key_i)])["Vdcmin"] = 0.9 * ((dict["busdc"])[string(key_i)])["Vdc"]
+end
+
+function save_data(conv :: Converter, file_name :: String, omegas)
+    open(string(file_name, "_y.txt"), "w") do f
+        for omega in omegas
+            Y = eval_parameters(conv, 1im*omega)
+            writedlm(f, [omega reshape(Y, 1, length(Y))], ",")
+        end
+    end
+end
+
+function plot_data(conv :: Converter, omegas)
+    Y_ac = []
+    Y_dc = []
+    Y_acdc = []
+    for omega in omegas
+        Y = (eval_parameters(conv, 1im*omega))
+        push!(Y_ac, Y[1:2,1:2])
+        push!(Y_dc, Y[3,3])
+        push!(Y_acdc, [Y[1:2,3] Y[3,1:2]])
+    end
+
+    bode(Y_ac, omega = omegas, titles = ["Y_{dd}" "Y_{dq}"; "Y_{qd}" "Y_{qq}"])
+    save_plot("files/ac_side")
+    bode(Y_dc, omega = omegas, titles = ["Y_{zz}"])
+    save_plot("files/dc_side")
+    bode(Y_acdc, omega = omegas, titles = ["Y_{dz}" "Y_{zd}"; "Y_{qz}" "Y_{zq}"])
+    save_plot("files/acdc_side")
 end

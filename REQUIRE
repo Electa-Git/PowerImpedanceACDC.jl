@@ -12,7 +12,12 @@ DelimitedFiles
 
 Plots
 LaTeXStrings
-DSP
 Compat
+
+JuMP
+Ipopt
+PowerModels 
+PowerModelsACDC
+InfrastructureModels
 
 Memento

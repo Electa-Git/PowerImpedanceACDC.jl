@@ -13,13 +13,18 @@ overhead line/cable sections. Overhead line and cable definitions are as already
 function mixed_OHL_cable(;args...)
     m = Mixed_OHL_cable()
     pins = 0
+    transformation = false
     for (key, val) in kwargs_pairs(args)
-        m.parts[key] = val.element_value
-        pins = nip(val)
+        if (key == :transformation)
+            transformation = val
+        else
+            m.parts[key] = val.element_value
+            pins = nip(val)
+        end
     end
 
-    elem = Element(input_pins = pins,
-                    output_pins = pins, element_value = m)
+    elem = Element(input_pins = pins, output_pins = pins, element_value = m,
+            transformation = transformation)
 end
 
 function eval_abcd(m :: Mixed_OHL_cable, s :: Complex)
