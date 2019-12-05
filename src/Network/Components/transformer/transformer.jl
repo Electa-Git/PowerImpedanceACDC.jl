@@ -164,6 +164,10 @@ function eval_abcd(t :: Transformer, s :: Complex)
     return convert(Array{Complex}, value)
 end
 
+function eval_y(t :: Transformer, s :: Complex)
+    return abcd_to_y(eval_abcd(t, s))
+end
+
 function make_power_flow_ac!(t :: Transformer, dict :: Dict{String, Any},
             global_dict :: Dict{String, Any})
     key = string(length(dict["branch"]))

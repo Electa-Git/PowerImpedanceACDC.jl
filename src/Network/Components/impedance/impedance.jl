@@ -83,6 +83,10 @@ function eval_abcd(imp :: Impedance, s :: Complex)
     return abcd
 end
 
+function eval_y(imp :: Impedance, s :: Complex)
+    return abcd_to_y(eval_abcd(imp, s))
+end
+
 # POWER FLOW
 function make_power_flow_ac!(imp :: Impedance , dict :: Dict{String, Any},
             global_dict :: Dict{String, Any})

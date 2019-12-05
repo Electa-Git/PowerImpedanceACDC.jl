@@ -1,5 +1,9 @@
 abstract type Transmission_line end
 
+function eval_y(tl :: Transmission_line, s :: Complex)
+    return abcd_to_y(eval_abcd(tl, s))
+end
+
 function make_power_flow_ac!(tl :: Transmission_line , dict :: Dict{String, Any},
             global_dict :: Dict{String, Any})
     key = string(length(dict["branch"]))

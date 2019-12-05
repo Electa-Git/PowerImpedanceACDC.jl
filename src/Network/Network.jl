@@ -168,7 +168,7 @@ a `Symbol` as needed.
 ```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Network\(.*"s
 network = Network()
 add!(network, :r, impedance(z = 1e3, pins = 1))
-add!(network, :src, dc_source(voltage = 5))
+add!(network, :src, dc_source(V = 5))
 connect!(network, (:src, 2.1), (:r, 2.1), :gnd) # connect to gnd net
 network
 # output
@@ -346,6 +346,24 @@ function power_flow(net :: Network)
         make_power_flow!(element.element_value, data, global_dict)
     end
 
+    function make_shunt_ac(data :: Dict{String, Any}, element :: Element, dict_ac :: Array{Any}, new_i :: Array{Symbol}, new_o :: Array{Symbol})
+        # merge input and output pins in one bus
+        new_i = vcat(new_i, new_o)
+        !isempty(new_i) ? (push!(dict_ac, new_i); add_bus_ac(data); key_i = length(data["bus"])) :
+                            key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
+        key_e = length(data["shunt"])+1
+        (data["shunt"])[string(key_e)] = Dict{String, Any}()
+        ((data["shunt"])[string(key_e)])["source_id"] = Any["bus", key_i]
+        ((data["shunt"])[string(key_e)])["index"] = key_e
+        ((data["shunt"])[string(key_e)])["shunt_bus"]  = key_i
+        data["shunt"]["status"] = 1
+        
+        make_power_flow_ac!(element.element_value, data, global_dict)
+    end
+
+
+    !any(is_converter(element) for element in values(net.elements)) && return
+
     dict_ac = Any[]
     dict_dc = Any[]
 
@@ -387,12 +405,12 @@ function power_flow(net :: Network)
         end
 
         if is_passive(element)
-            if (np(element) == 6)
+            if is_three_phase(element)
                 make_branch_ac(data, element, dict_ac, new_i, new_o)
             else
                 make_branch_dc(data, element, dict_dc, new_i, new_o)
             end
-        elseif is_source(element) && (np(element) == 6)
+        elseif is_source(element) && is_three_phase(element)
             make_generator(data, element, dict_ac, new_i, new_o)
         elseif is_converter(element)
             make_converter(data, element, dict_dc, dict_ac, new_i, new_o)
@@ -409,6 +427,7 @@ function power_flow(net :: Network)
     for (key, element) in net.elements
         if is_converter(element)
             conv_dict = result["solution"]["convdc"][string(id_converter)]
+            I = conv_dict["iconv"] * global_dict["I"]
             Pdc = conv_dict["pdc"] * global_dict["S"] / 1e6
             Vm = result["solution"]["bus"][string(data["convdc"][string(id_converter)]["busac_i"])]["vm"] *
                     global_dict["V"] / 1e3
@@ -421,7 +440,7 @@ function power_flow(net :: Network)
             id_converter += 1
         end
     end
-    return result
+    # return result
 end
 
 @doc doc"""
@@ -435,7 +454,7 @@ To create a network with a voltage source connected to a resistor:
 
 ```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Network\(.*"s
 @network begin
-    src = dc_source(voltage = 5)
+    src = dc_source(V = 5)
     r = impedance(z = 1000, pins = 1)
     src[1.1] ⟷ r[1.1]
     src[2.1] ⟷ r[2.1]
@@ -449,7 +468,7 @@ defaulting to the current element.
 # Example
 ```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Network\(.*"s
 @network begin
-    src = dc_source(voltage = 5)
+    src = dc_source(V = 5)
     r = impedance(z = 1000, pins = 1), src[1.1] ⟷ [1.1], src[2.1] ⟷ [2.1]
 end
 # output
@@ -460,7 +479,7 @@ to a named net. (Such named nets are created as needed.)
 # Example
 ```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Network\(.*"s
 @network begin
-    src = dc_source(voltage = 5), [2.1] ⟷ gnd
+    src = dc_source(V = 5), [2.1] ⟷ gnd
     r = impedance(z = 1000, pins = 1), [1.1] ⟷ src[1.1], [2.1] ⟷ gnd
 end
 # output
@@ -555,7 +574,7 @@ macro network(cdef)
     # here you can add functions for network before the end of the code
     push!(ccode.args, :(check_lumped_elements(network)))
     push!(ccode.args, :(connect!(network)))
-    # push!(ccode.args, :(power_flow(network)))
+    push!(ccode.args, :(power_flow(network)))
     push!(ccode.args, :(network))
     return ccode
 end
@@ -574,7 +593,7 @@ net = @network begin
    r1 = impedance(z = 10e3, pins = 1)
    r2 = impedance(z = 10e3, pins = 1), [1.1] == r1[2.1]
    c = impedance(z = 10e3, pins = 1), [1.1] == r2[1.1], [2.1] == r2[2.1]
-   src = dc_source(voltage = 5), [1.1] == r1[1.1], [2.1] == r2[2.1]
+   src = dc_source(V = 5), [1.1] == r1[1.1], [2.1] == r2[2.1]
 end
 composite_element(net, Any[(:r2, Symbol(1.1)), (:r2, Symbol(2.1))])
 # output

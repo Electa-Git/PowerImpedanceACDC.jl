@@ -79,7 +79,7 @@ function get_abcd(element::Element, s::Complex)
     if (element.transformation)
         if np(element) == 2
             return transformation_dc(abcd)
-        else
+        elseif is_three_phase(element)
             ω₀ = 100*π
             abcd₁ = eval_abcd(element.element_value, s + 1im*ω₀)
             abcd₂ = eval_abcd(element.element_value, s - 1im*ω₀)
@@ -114,6 +114,11 @@ end
 
 function is_converter(element :: Element)
     isa(element.element_value, MMC)
+end
+
+function is_three_phase(element :: Element)
+    (np(element) == 6) || (np(element) == 4 && (element.transformation)) && return true
+    return false
 end
 
 ####################### Save/plot ##################################

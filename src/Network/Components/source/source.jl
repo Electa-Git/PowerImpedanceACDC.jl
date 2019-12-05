@@ -23,7 +23,13 @@ function eval_abcd(source :: Source, s :: Complex)
     abcd = N.(source.ABCD)
 end
 
-
+function eval_y(source :: Source, s :: Complex)
+    abcd = eval_abcd(source, s)
+    if source.Z == 0
+        abcd[source.pins+1:end, source.pins+1:end] = Diagonal([1e-6 for i in 1:source.pins])
+    end
+    return abcd_to_y(abcd)
+end
 
 function make_power_flow_dc!(source :: Source, dict :: Dict{String, Any},
         global_dict :: Dict{String, Any})

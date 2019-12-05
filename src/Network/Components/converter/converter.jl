@@ -1,5 +1,17 @@
 abstract type Converter end
 
+function eval_abcd(converter :: Converter, s :: Complex)
+    return eval_y(converter, s)
+end
+
+function eval_y(converter :: Converter, s :: Complex)
+    Y = eval_parameters(converter, s)
+    Y_matrix = [3Y[3,3]     3Y[3,1]     3Y[3,2];
+                Y[1,3]      Y[1,1]      Y[1,2];
+                Y[2,3]      Y[2,1]      Y[2,2]]
+    return Y_matrix
+end
+
 function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
             global_dict :: Dict{String, Any})
     key = string(length(dict["convdc"]))

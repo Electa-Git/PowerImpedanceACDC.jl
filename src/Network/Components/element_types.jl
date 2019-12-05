@@ -7,6 +7,10 @@ include("impedance/impedance.jl")
 include("transformer/transformer.jl")
 include("transformer/autotransformer.jl")
 
+# Shunt reactor
+include("shunt_reactor/shunt_reactor.jl")
+
+
 # Cables and transmission lines
 include("transmission_line/transmission_line.jl")
 include("transmission_line/cable.jl")

@@ -17,8 +17,15 @@ Implemented components are:
 - MMCs (using various controllers)
 
 Developed by:
-- Aleksandra Lekic, Jef Beerten - KU Leuven / EnergyVille
-- with the help of: Philippe De Rua, Hakan Ergun, Thomas Roose, Ozgur Can Sakinci, Willem Leterme and Alejandro Bajo Salas - KU Leuven / EnergyVille
+- Aleksandra Lekic, Philippe De Rua, Jef Beerten - KU Leuven / EnergyVille
+- with the help of:
+                    - Hakan Ergun and Jay Dave for the power flow implementation
+
+                    - Thomas Roose, Ozgur Can Sakinci for the MMC and MMC controls modeling
+
+                    - Willem Leterme for the overhead line and autotransformer model
+
+                    - Alejandro Bajo Salas, whose thesis presents the initial idea for this simulator
 
 ## Special Thanks To
 This work is part of the Neptune project, supported by the Energy Transition Fund, FOD Economy, Belgium.  

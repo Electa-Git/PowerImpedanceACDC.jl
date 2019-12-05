@@ -13,10 +13,11 @@ makedocs(
         "Library" => [
             "Network Formulations" => "formulations.md",
             "Components" => [
-                "Impedance" => "impedance.md",
-                "Transmission line" => "transmission_line.md",
                 "Source" => "source.md",
+                "Impedance" => "impedance.md",
                 "Transformer" => "transformer.md",
+                "Shunt reactor" => "shunt.md",
+                "Transmission line" => "transmission_line.md",
                 "MMC" => "MMC.md"
                 ]
         ]

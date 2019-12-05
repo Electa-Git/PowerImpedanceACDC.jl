@@ -1,21 +1,21 @@
 language: julia
 os:
   - linux
-  - osx
 julia:
-  - 1.0
   - 1.2
-  - nightly
+#  - nightly
 matrix:
   allow_failures:
-    - julia: nightly
+    # - julia: nightly
 codecov: true
 jobs:
   include:
     - stage: "Documentation"
-      julia: 1.1
+      julia: 1.2
       os: linux
       script:
-        - julia --project=docs/ -e 'using Pkg; Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'
+        - julia --project=docs/ -e 'using Pkg; Pkg.instantiate();
+                  Pkg.rm("PowerModelsACDC"); Pkg.clone("https://github.com/hakanergun/PowerModelsACDC.jl.git");
+                  Pkg.develop(PackageSpec(path=pwd()))'
         - julia --project=docs/ docs/make.jl
       after_success: skip

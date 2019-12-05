@@ -116,6 +116,5 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
         abcd[i+pᵢ,j] = sol[i + nᵥ, end-2nₒ+2(j-1)+1]
         abcd[i+pᵢ,j+pₒ] = sol[i + nᵥ, end-2nₒ+2j]
     end
-
     return abcd
 end
