@@ -226,6 +226,12 @@ function check_lumped_elements(net :: Network)
     end
 end
 
+"""
+function power_flow(net :: Network)
+    Forms the dictionary needed for solving the power flow problem using
+    package PowerModelsACDC. After successful power flow solving, it updates
+    the operating point of the power converter.
+"""
 function power_flow(net :: Network)
     global global_dict
     global ang_min, ang_max
@@ -350,14 +356,15 @@ function power_flow(net :: Network)
         # merge input and output pins in one bus
         new_i = vcat(new_i, new_o)
         !isempty(new_i) ? (push!(dict_ac, new_i); add_bus_ac(data); key_i = length(data["bus"])) :
-                            key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
+                            (key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac);
+                            dict_ac[key_i] = new_i)
         key_e = length(data["shunt"])+1
         (data["shunt"])[string(key_e)] = Dict{String, Any}()
         ((data["shunt"])[string(key_e)])["source_id"] = Any["bus", key_i]
         ((data["shunt"])[string(key_e)])["index"] = key_e
         ((data["shunt"])[string(key_e)])["shunt_bus"]  = key_i
-        data["shunt"]["status"] = 1
-        
+        data["shunt"][string(key_e)]["status"] = 1
+
         make_power_flow_ac!(element.element_value, data, global_dict)
     end
 
@@ -581,12 +588,9 @@ end
 
 
 @doc doc"""
-    composite_element(net, pinmap)
-Create a netuit element from the (sub-)network `net`. The `pinmap` defines
-the mapping from pin names of the element to be created to pins (or nets) in
-`net`. Optionally, `ports` can be used to explicitly specify (as a list `Pair`s
-of pins) the ports to use. By default, a port will be created between one
-arbitrarily chosen pin and every other pin.
+    function composite_element(subnet::Network, input_pins::Array{Any}, output_pins::Array{Any})
+Create a net element from the (sub-)network `net`. The `input_pins` and `output_pin`
+define input and output nodes of the element.
 # Example
 ```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Element\(.*"s
 net = @network begin
@@ -595,22 +599,47 @@ net = @network begin
    c = impedance(z = 10e3, pins = 1), [1.1] == r2[1.1], [2.1] == r2[2.1]
    src = dc_source(V = 5), [1.1] == r1[1.1], [2.1] == r2[2.1]
 end
-composite_element(net, Any[(:r2, Symbol(1.1)), (:r2, Symbol(2.1))])
+composite_element(net, Any[(:r2, Symbol(1.1))], Any[(:r2, Symbol(2.1))])
 # output
 
 Element(...)
-```
-Note that the pins still implicitly specifiy ports, so an even number must be
-given, but the same pin may be given multiple times to be part of multiple
-ports.
+``
 """
-function composite_element(subnet::Network, pinmap::Array{Any})
-    names = []
-    for key in pinmap
-        name = netname(subnet, key)
-        subnet.connections[name] = subnet.nets[name]
-        push!(names, name)
+function composite_element(subnet::Network, input_pins::Array{Any}, output_pins::Array{Any})
+    element = Element(input_pins = length(input_pins), output_pins = length(output_pins),
+            element_value = subnet)
+    for i in 1:length(input_pins)
+        name = netname(subnet, input_pins[i])
+        subnet.connections[Symbol("1.",i)] = subnet.nets[name]
+        element.pins[Symbol("1.",i)] = name
+    end
+    for i in 1:length(output_pins)
+        name = netname(subnet, output_pins[i])
+        subnet.connections[Symbol("2.",i)] = subnet.nets[name]
+        element.pins[Symbol("2.",i)] = name
     end
 
-    return Element(ports = values(names), element_value = subnet)
+    return element
+end
+
+
+function eval_abcd(subnet :: Network, s :: Complex)
+    start_pins = Symbol[]
+    end_pins = Symbol[]
+    dict = Dict{Symbol, Array{Union{Symbol,Int}}}(:node_list => Symbol[], :element_list => Symbol[],
+        :output_list => Symbol[])
+    dict[:element_list] = [elem_symbol for elem_symbol in keys(subnet.elements)]
+    for (key, val) in subnet.connections
+        if occursin("2.", string(key))
+            push!(dict[:output_list], netname(subnet, val))
+            push!(end_pins, netname(subnet, val))
+        else
+            push!(start_pins, netname(subnet, val))
+        end
+
+    end
+    dict[:node_list] = setdiff([node_symbol for node_symbol in keys(subnet.nets)], vcat(start_pins, end_pins))
+    dict[:node_list] = vcat(start_pins, dict[:node_list])
+
+    make_abcd(subnet, dict, start_pins, end_pins, s)
 end

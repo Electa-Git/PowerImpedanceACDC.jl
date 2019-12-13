@@ -6,10 +6,7 @@ end
 
 function eval_y(converter :: Converter, s :: Complex)
     Y = eval_parameters(converter, s)
-    Y_matrix = [3Y[3,3]     3Y[3,1]     3Y[3,2];
-                Y[1,3]      Y[1,1]      Y[1,2];
-                Y[2,3]      Y[2,1]      Y[2,2]]
-    return Y_matrix
+    return Y
 end
 
 function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
@@ -99,9 +96,9 @@ function plot_data(conv :: Converter, omegas)
     Y_acdc = []
     for omega in omegas
         Y = (eval_parameters(conv, 1im*omega))
-        push!(Y_ac, Y[1:2,1:2])
-        push!(Y_dc, Y[3,3])
-        push!(Y_acdc, [Y[1:2,3] Y[3,1:2]])
+        push!(Y_ac, Y[2:3,2:3])
+        push!(Y_dc, Y[1,1])
+        push!(Y_acdc, [Y[2:3,1] Y[1,2:3]])
     end
 
     bode(Y_ac, omega = omegas, titles = ["Y_{dd}" "Y_{dq}"; "Y_{qd}" "Y_{qq}"])

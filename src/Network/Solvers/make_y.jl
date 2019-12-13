@@ -15,11 +15,12 @@ function make_y(net :: Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
         end
     end
 
-    I_matrix = Diagonal([1 for i in 1:n])
+    I_matrix = zeros(n,n)
     indexes = []
     for node in [start_pins end_pins]
         i = findfirst(p -> p == node, dict[:node_list])
         push!(indexes, i)
+        I_matrix[i,i] = 1
     end
 
     sol = (inv(Y_matrix) * I_matrix)[indexes, :]

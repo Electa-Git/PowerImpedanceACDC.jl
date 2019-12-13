@@ -20,7 +20,7 @@ end
 
 @with_kw mutable struct Groundwires
     nᵍ :: Int = 0                        # number of groundwires (typically 0 or 2)
-    Δxᵍ :: Union{Int, Float64} = 0       # horizontal ofsset between groundwires [m]
+    Δxᵍ :: Union{Int, Float64} = 0       # horizontal offset between groundwires [m]
     Δyᵍ :: Union{Int, Float64} = 0       # vertical offset between the lowest conductor and groundwires  [m]
     rᵍ :: Union{Int, Float64} = 0        # ground wire radius  [m]
     dᵍˢᵃᵍ ::  Union{Int, Float64} = 0    # sag offset [m]

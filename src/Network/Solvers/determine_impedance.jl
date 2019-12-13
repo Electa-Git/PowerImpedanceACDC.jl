@@ -39,7 +39,7 @@ array with `gnd`. Impedance is estimated for the frequency in [rad/s] with the r
 The function returns complex impedance map and two arrays: first is the impedance
 array and the second one is frequency array.
 """
-function determine_impedance(network::Network; input_pins :: Array{Any},
+function determine_impedance(network :: Network; input_pins :: Array{Any},
     output_pins :: Array{Any}, elim_elements :: Array{Symbol},
     omega_range = (-3, 5, 100), parameters_type = :ABCD)
 
@@ -149,7 +149,7 @@ function determine_impedance(network::Network; input_pins :: Array{Any},
         delete!(dict, :output_list)
         for omega in omegas
             z = make_y(network, dict, input_pins, output_pins, omega*1im)
-            z = kron(z, [i for i in 1:length(input_pins)])
+            z = z[[i for i in 1:length(input_pins)], [i for i in 1:length(input_pins)]]
             push!(impedance, z)
         end
     end

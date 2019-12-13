@@ -1,4 +1,4 @@
-export shunt_reactor
+export shunt_reactor, eval_abcd
 
 @with_kw mutable struct Shunt_reactor
     ABCD :: Union{Array{Any}, Array{Basic}}  = []
@@ -22,6 +22,7 @@ R     :: Union{Int, Float64, Array{Any, Int or Float64}} = 1e-3,  # resistance [
 C_CO  :: Union{Int, Float64, Array{Any, Int or Float64}} = 10e-6, # cross-over capacitance [F]
 C_IL  :: Union{Int, Float64, Array{Any, Int or Float64}} = 10e-6, # inter-layer capacitance [F]
 C_1_E :: Union{Int, Float64}                             = 10e-6  # capacitance between layer 1 and the earthed screen [F]
+transformation :: Bool                                   = false  # set to true to transform from abc to dq components
 ```
 Notes:
 - The first layer is the innermost layer, the Nth layer is the outermost layer;
@@ -75,7 +76,8 @@ function shunt_reactor(;
     R     :: Union{Int, Float64, Array{Any}, Array{Int}, Array{Float64}} = 1e-3,
     C_CO  :: Union{Int, Float64, Array{Any}, Array{Int}, Array{Float64}} = 10e-6,
     C_IL  :: Union{Int, Float64, Array{Any}, Array{Int}, Array{Float64}} = [],
-    C_1_E :: Union{Int, Float64}             = 10e-6)
+    C_1_E :: Union{Int, Float64}             = 10e-6,
+    transformation :: Bool = false)
 
     # Checking the input parameters
     if pins != 1 && pins != 3
@@ -307,12 +309,17 @@ function shunt_reactor(;
     sh.C_CO  = C_CO;
     sh.C_IL  = C_IL;
     sh.C_1_E = C_1_E;
-    element  = Element(element_value = sh, input_pins = pins, output_pins = pins)
+    element  = Element(element_value = sh, input_pins = pins, output_pins = pins, transformation = transformation)
     return element
 end
 
 function eval_abcd(sh :: Shunt_reactor, s :: Complex)
+    display(size(sh.ABCD))
     return N.(subs.(sh.ABCD, symbols(:s), s))
+end
+
+function eval_y(sh :: Shunt_reactor, s :: Complex)
+    return abcd_to_y(eval_abcd(sh, s))
 end
 
 # POWER FLOW

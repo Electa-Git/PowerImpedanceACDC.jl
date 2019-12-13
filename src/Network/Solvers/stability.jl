@@ -2,8 +2,46 @@ export check_stability
 
 """
     function check_stability(net :: Network, mmc :: Element, direction :: Symbol = :dc)
+This function determines two impedances inside the network, from which it forms the feedback
+transfer function. It allows "cutting" the power
+network next to the converter on its dc or ac side (determined by `direction` parameter).
+Afterwards, it is chacked the impedance $Z_{conv}$ obtained by "looking" in the converter and the other
+one $Z_h$ from the converter to the remaining of the circuit.
+
+Using previous two impedances, the feedback transfer function is estimated as
+$Z_h  Y_{conv}$.
+
+The impedances are calculated for the angular frequencies whose range is defined by
+`omega_range`.
 """
-function check_stability(net :: Network, mmc :: Element, direction :: Symbol = :dc)
+function check_stability(net :: Network, mmc :: Element; direction :: Symbol = :dc,
+    omega_range = (0, 4, 1000))
+
+    function make_lists(net :: Network, dict :: Dict{Symbol, Array{Union{Symbol,Int}}},
+        elim_elements :: Array{Symbol}, start_pins :: Array{Symbol})
+
+        for node_name in start_pins
+            node = netfor!(net, node_name)
+
+            if occursin("gnd", string(node_name))
+                return node_name
+            else
+                # add nodes to the node list
+                !in(node_name, dict[:node_list]) && push!(dict[:node_list], node_name)
+            end
+
+            # find all elements inside the port connected to the node
+            elements_pins = filter(p ->  !in(p[1], elim_elements) && !in(p[1], dict[:element_list]), node)
+
+            for (element, pin) in elements_pins
+                push!(dict[:element_list], element) # add element's symbol to the list
+                other_nodes = get_nodes(net.elements[element], pin) # get the pins from the other side of element
+                gnd = make_lists(net, dict, elim_elements, other_nodes)
+                (gnd != nothing) && return gnd
+            end
+        end
+    end
+
     if !isa(mmc.element_value, MMC)
         throw(ArgumentError("Cannot determine stability of the passive element."))
     end
@@ -11,24 +49,46 @@ function check_stability(net :: Network, mmc :: Element, direction :: Symbol = :
     node_list = []
 
     if (direction == :dc)
-        mmc.ABCD.direction = 2
-        Z_mmc = closing_impedance(get_abcd(mmc), 0)
-        Y_mmc = 1/Z_mmc[1]
-        for (pin, node_name) in pairs(mmc.pins)
-            if (occursin("2.", string(pin)))
-                push!(node_list, node_name)
-            end
+
+        elim_elements = Symbol[]
+        for (elem_symbol, elem_pin) in net.nets[netname(net, (mmc.symbol, Symbol(1.1)))]
+            (elem_symbol != mmc.symbol) && push!(elim_elements, elem_symbol)
         end
-        imp = determine_impedance(net, input_pins = ((mmc.symbol, node_list[1]),),
-                                    output_pins = ((mmc.symbol, node_list[2]),))[]
-        return [Y_mmc, imp, imp * Y_mmc]
+        dict = Dict{Symbol, Array{Union{Symbol,Int}}}(:node_list => Symbol[], :element_list => Symbol[])
+        gnd = make_lists(net, dict, elim_elements, Symbol[netname(net, (mmc.symbol, Symbol(1.1)))])
+        imp_mmc, omega = determine_impedance(net, elim_elements = elim_elements,
+                input_pins = Any[(mmc.symbol, Symbol(1.1))], output_pins = Any[gnd], omega_range = omega_range)
+
+        dict = Dict{Symbol, Array{Union{Symbol,Int}}}(:node_list => Symbol[], :element_list => Symbol[])
+        gnd = make_lists(net, dict, Symbol[mmc.symbol], Symbol[netname(net, (mmc.symbol, Symbol(1.1)))])
+        imp_rest, omega = determine_impedance(net, elim_elements = [mmc.symbol],
+                input_pins = Any[(mmc.symbol, Symbol(1.1))], output_pins = Any[gnd], omega_range = omega_range)
+
+        imp = Any[]
+        for i in 1:length(omega)
+            push!(imp, [imp_mmc[i] imp_rest[i] imp_rest[i]/imp_mmc[i]])
+        end
+
+        return imp, omega
     else
-        for (pin, node_name) in pairs(mmc.pins)
-            if (occursin("1.", string(pin)))
-                push!(node_list, node_name)
-            end
+        elim_elements = Symbol[]
+        for (elem_symbol, elem_pin) in net.nets[netname(net, (mmc.symbol, Symbol(2.1)))]
+            (elem_symbol != mmc.symbol) && push!(elim_elements, elem_symbol)
         end
-        imp = (determine_impedance(net, input_pins = ((mmc.symbol, node_list[1]),),
-                                    output_pins = ((mmc.symbol, node_list[2]),)))
+        for (elem_symbol, elem_pin) in net.nets[netname(net, (mmc.symbol, Symbol(2.2)))]
+            (elem_symbol != mmc.symbol) && push!(elim_elements, elem_symbol)
+        end
+
+        imp_mmc, omega = determine_impedance(net, elim_elements = elim_elements,
+                input_pins = Any[(mmc.symbol, Symbol(2.1))], output_pins = Any[(mmc.symbol, Symbol(2.2))], omega_range = omega_range)
+        imp_rest, omega = determine_impedance(net, elim_elements = [mmc.symbol],
+                input_pins = Any[(mmc.symbol, Symbol(2.1))], output_pins = Any[(mmc.symbol, Symbol(2.2))], omega_range = omega_range)
+
+        imp = Any[]
+        for i in 1:length(omega)
+            push!(imp, [imp_mmc[i] imp_rest[i] imp_rest[i]/imp_mmc[i]])
+        end
+
+        return imp, omega
     end
 end

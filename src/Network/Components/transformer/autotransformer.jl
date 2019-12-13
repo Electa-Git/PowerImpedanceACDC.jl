@@ -9,6 +9,10 @@
     pins :: Int = 9
 end
 
+"""
+function autotransformer(;args...)
+    Implements autotransformer from the zero, positive and negative sequence.
+"""
 function autotransformer(;args...)
     t = Autotransformer()
     for (key, val) in kwargs_pairs(args)
