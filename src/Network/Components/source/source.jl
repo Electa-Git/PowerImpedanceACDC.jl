@@ -21,12 +21,14 @@ end
 
 function eval_abcd(source :: Source, s :: Complex)
     abcd = N.(source.ABCD)
+    abcd = convert(Array{Float64}, real(abcd)) + 1im*convert(Array{Float64}, imag(abcd))
+    abcd = convert(Array{Complex}, abcd)
 end
 
 function eval_y(source :: Source, s :: Complex)
     abcd = eval_abcd(source, s)
     if source.Z == 0
-        abcd[source.pins+1:end, source.pins+1:end] = Diagonal([1e-6 for i in 1:source.pins])
+        abcd[1:source.pins, source.pins+1:end] = 1e-6 * Diagonal([1 for i in 1:source.pins])
     end
     return abcd_to_y(abcd)
 end

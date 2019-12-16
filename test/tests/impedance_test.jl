@@ -11,6 +11,6 @@ net = @network begin
     vs[2.1] ⟷ z2[2.1] ⟷ z3[2.1] ⟷ gnd
 end
 imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1],
-                output_pins= Any[:gnd], omega_range = (0, 1, 1),
-                parameters_type = :Y)
+                output_pins= Any[:gnd], omega_range = (0, 3, 100),
+                parameters_type = :ABCD)
 # bode(imp, omega = omega)

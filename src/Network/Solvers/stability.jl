@@ -5,11 +5,10 @@ export check_stability
 This function determines two impedances inside the network, from which it forms the feedback
 transfer function. It allows "cutting" the power
 network next to the converter on its dc or ac side (determined by `direction` parameter).
-Afterwards, it is chacked the impedance $Z_{conv}$ obtained by "looking" in the converter and the other
-one $Z_h$ from the converter to the remaining of the circuit.
+Afterwards, it is chacked the impedance `Z_conv` obtained by "looking" in the converter and the other
+one `Z_h` from the converter to the remaining of the circuit.
 
-Using previous two impedances, the feedback transfer function is estimated as
-$Z_h  Y_{conv}$.
+Using previous two impedances, the feedback transfer function is estimated as `Z_h Y_conv`.
 
 The impedances are calculated for the angular frequencies whose range is defined by
 `omega_range`.

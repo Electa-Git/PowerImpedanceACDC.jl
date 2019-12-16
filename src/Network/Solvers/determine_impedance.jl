@@ -149,7 +149,7 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
         delete!(dict, :output_list)
         for omega in omegas
             z = make_y(network, dict, input_pins, output_pins, omega*1im)
-            z = z[[i for i in 1:length(input_pins)], [i for i in 1:length(input_pins)]]
+            z = kron(z, Int[i for i in 1:length(input_pins)])
             push!(impedance, z)
         end
     end

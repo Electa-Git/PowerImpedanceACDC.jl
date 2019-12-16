@@ -52,7 +52,7 @@ function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
                 ylabel1 = L"20\log_{10}|H(j\omega)| "
                 ylabel2 = L"\arg(H(j\omega)) \, [^\circ]"
                 phase = rad2deg.(phase)
-            elseif axis_type == :loglin
+            elseif in(axis_type, [:loglin, :linlin])
                 for imp in impedance
                     # add magnitude and phase
                     push!(mag, convert(Float64, abs(imp[i,j])))
