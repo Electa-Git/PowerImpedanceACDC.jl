@@ -119,10 +119,34 @@ function shunt_reactor(;
         C_IL = vec(C_IL);
     end
 
+    sh       = Shunt_reactor()
+    sh.organization = organization;
+    sh.pins  = pins;
+    sh.N     = N;
+    sh.L     = L;
+    sh.R     = R;
+    sh.C_CO  = C_CO;
+    sh.C_IL  = C_IL;
+    sh.C_1_E = C_1_E;
+    element  = Element(element_value = sh, input_pins = pins, output_pins = pins, transformation = transformation)
+    return element
+end
+
+function eval_abcd(sh :: Shunt_reactor, s :: Complex)
+
+    """ 0 -- Retrieving the data from the element """
+
+    organization = sh.organization;
+    pins  = sh.pins;
+    N     = sh.N;
+    L     = sh.L;
+    R     = sh.R;
+    C_CO  = sh.C_CO;
+    C_IL  = sh.C_IL;
+    C_1_E = sh.C_1_E;
 
     """ 1 -- build 2N-by-2N ABCD matrix, with all layers disconnected """
 
-    s = symbols(:s);
     Id = Matrix(1.0I, N, N); # identity matrix
     Ze = zeros(N,N); # zero matrix
 
@@ -297,25 +321,9 @@ function shunt_reactor(;
     ABCD_final = [Id    Ze;
                   Y_sub Id];
 
-    """ 9 -- Building the new element """
+    """ 9 -- Returning the ABCD matrix """
 
-    sh      = Shunt_reactor()
-    sh.ABCD = ABCD_final;
-    sh.organization = organization;
-    sh.pins  = pins;
-    sh.N     = N;
-    sh.L     = L;
-    sh.R     = R;
-    sh.C_CO  = C_CO;
-    sh.C_IL  = C_IL;
-    sh.C_1_E = C_1_E;
-    element  = Element(element_value = sh, input_pins = pins, output_pins = pins, transformation = transformation)
-    return element
-end
-
-function eval_abcd(sh :: Shunt_reactor, s :: Complex)
-    display(size(sh.ABCD))
-    return N.(subs.(sh.ABCD, symbols(:s), s))
+    return ABCD_final
 end
 
 function eval_y(sh :: Shunt_reactor, s :: Complex)
