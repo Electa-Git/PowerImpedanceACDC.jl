@@ -16,8 +16,9 @@ Compat
 
 JuMP
 Ipopt
-PowerModels 
+PowerModels
 PowerModelsACDC
 InfrastructureModels
 
 Memento
+Documenter

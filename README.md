@@ -1,9 +1,10 @@
 # HVDCstability
 
 Dev:
-[![Build Status](https://api.travis-ci.com/Aleksandra-Lekic/HVDCstability.jl.svg?token=8MGGs8A1RyNuFsSbtpur&branch=master)](https://travis-ci.com/Aleksandra-Lekic/HVDCstability.jl)
+[![Build Status](https://api.travis-ci.com/Electa-Git/HVDCstability.jl.svg?token=8MGGs8A1RyNuFsSbtpur&branch=master)](https://travis-ci.com/Electa-Git/HVDCstability.jl)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://electa-git.github.io/HVDCstability.jl/latest/)
 
-Tutorial about simulator construction and usage can be found on [link](https://github.com/Aleksandra-Lekic/HVDCstability.jl/blob/master/HVDCstability.pdf).
+Tutorial about simulator construction and usage can be found on [link](https://github.com/Electa-Git/HVDCstability.jl/blob/master/HVDCstability.pdf).
 
 ## Download and install
 To download the package, clone it using git. Afterwards just extract it and open the project inside julia.
