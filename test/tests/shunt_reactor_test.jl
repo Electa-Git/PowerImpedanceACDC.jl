@@ -14,7 +14,6 @@ C_1_E = 8.6;   # capacitance between layer 1 and the earthed screen [F]
 Ro    = 50;    # [Ω], output measurement resistance
 
 """ first possibility: use determine_impedance and invert each impedance value to obtain the admittance """
-""" to check, does not seem to work """
 
 # net = @network begin
 #     shunt = shunt_reactor(pins=pins, N=N, L=L, R=R, C_CO=C_CO, C_IL=C_IL, C_1_E=C_1_E)
@@ -34,19 +33,30 @@ Ro    = 50;    # [Ω], output measurement resistance
 
 shunt = shunt_reactor(pins=pins, N=N, L=L, R=R, C_CO=C_CO, C_IL=C_IL, C_1_E=C_1_E)
 
-omega_range = (1, 6, 10)
+omega_range = (-0.5, 6, 2000)
 (min_ω, max_ω, n_ω) = omega_range
 n = (max_ω - min_ω) / n_ω
 omegas = [exp10(min_ω)*10^(i*n) for i in 1:Int(n_ω)]
 
-Y = []
 nb_omegas = length(omegas)
+Y = Any[]
+Ro_vec = Ro * ones(1,1)
 for k in 1:nb_omegas
-    print("$k/$nb_omegas\n")
+    #print("$k/$nb_omegas\n")
     abcd = eval_abcd(shunt.element_value, 1im*omegas[k])
     # ABCD = [ 1 0]
     #        [-Y 1]
-    push!(Y, -1*abcd[pins+1:2pins,1:pins])
+    #push!(Y, Ro_vec * ((-1*abcd[pins+1:2pins,1:pins])^(-1) + Ro_vec)^(-1) )
+    push!(Y, Ro_vec * (-1*abcd[pins+1:2pins,1:pins]))
 end
 
-bode(Ro.*Y, omega = omegas)
+#
+# Ro_vec = (Ro+0im)*ones(nb_omegas,1)
+#
+#
+#
+# H = Ro ./(Ro .+ Y.^(-1))
+#
+# # Y = convert(Array{Any}, Y)
+
+bode(Y, omega = omegas)
