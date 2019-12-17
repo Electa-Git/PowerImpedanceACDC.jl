@@ -334,7 +334,7 @@ function make_power_flow_ac!(shunt :: Shunt_reactor, dict :: Dict{String, Any},
     dict["shunt"][string(key)]["bs"] = imag(Y)
 end
 
-function make_power_flow_dc!(imp :: Impedance, dict :: Dict{String, Any},
+function make_power_flow_dc!(shunt :: Shunt_reactor, dict :: Dict{String, Any},
                          global_dict :: Dict{String, Any})
     nothing
 end

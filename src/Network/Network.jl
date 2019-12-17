@@ -603,7 +603,7 @@ composite_element(net, Any[(:r2, Symbol(1.1))], Any[(:r2, Symbol(2.1))])
 # output
 
 Element(...)
-``
+```
 """
 function composite_element(subnet::Network, input_pins::Array{Any}, output_pins::Array{Any})
     element = Element(input_pins = length(input_pins), output_pins = length(output_pins),
