@@ -31,13 +31,17 @@ net = @network begin
             P_max = 250, P_min = 100, P = -100, Q = 0, Q_max = 500, Q_min = -500, P_dc = 100,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
-            dc = PI_control(Kₚ = 0.01, Kᵢ = 2)
+            dc = PI_control(Kₚ = 0.01, Kᵢ = 2),
+            energy = PI_control(Kₚ = 120, Kᵢ = 400),
+            zcc = PI_control(ζ = 0.7, bandwidth = 300)
             )
     c2 = mmc(Vᵈᶜ = 320, Vₘ = 320,
             P_max = 150, P_min = -150, P = 100, Q = 0, Q_max = 300, Q_min = -300, P_dc = -100,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
-            power = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04)
+            power = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04),
+            energy = PI_control(Kₚ = 120, Kᵢ = 400),
+            zcc = PI_control(ζ = 0.7, bandwidth = 300)
             )
 
     # connections
@@ -70,5 +74,5 @@ bode(imp_ac, omega = omega_ac)
 imp, omega = check_stability(net, net.elements[:c1])
 bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
 
-imp, omega = check_stability(net, net.elements[:c1], direction = :ac)
+imp, omega = check_stability(net, net.elements[:c2], direction = :ac)
 bode(imp, omega = omega, titles = ["Y_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])

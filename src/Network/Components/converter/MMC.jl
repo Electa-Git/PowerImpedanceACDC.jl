@@ -144,7 +144,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             end
         elseif (key == :zcc)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref[1] = 3*Vᴳd*I/6/Vdc
+                val.ref[1] = 3*Vᴳd*Id/6/Vdc
             end
         elseif (key == :ccc)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
