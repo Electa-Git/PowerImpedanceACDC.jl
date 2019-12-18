@@ -19,8 +19,7 @@ net = @network begin
 end
 imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1, :Node2],
                 output_pins = Any[:gnd, :gnd1], omega_range = (-1, 6, 500))
-omega = omega/2/pi
-bode(imp, omega = omega)
+bode(imp, omega = omega, titles = ["Z_{dd}" "Z_{dq}"; "Z_{qd}" "Z_{qq}"])
 
 # 3 phase cable case
 net = @network begin
@@ -31,7 +30,7 @@ net = @network begin
               I1 = Insulator(rᵢ = 31.75e-3, a = 33.75e-3, b = 56.25e-3, rₒ = 57.55e-3, ϵᵣ = 2.3),
               I2 = Insulator(rᵢ = 60.65e-3, rₒ = 65.95e-3, ϵᵣ = 2.3),
               transformation = true)
-    ac[1.1] ⟷ c[1.1] ⟷ Node1 
+    ac[1.1] ⟷ c[1.1] ⟷ Node1
     ac[1.2] ⟷ c[1.2] ⟷ Node2
     ac[2.1] ⟷ ac[2.2] ⟷ gnd
     c[2.1] ⟷ gnd1
@@ -54,4 +53,4 @@ net = @network begin
 end
 imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1, :Node2],
                 output_pins = Any[:gnd, :gnd1], omega_range = (-1, 6, 500))
-bode(imp, omega = omega)
+bode(imp, omega = omega, titles = ["Z_{dd}" "Z_{dq}"; "Z_{qd}" "Z_{qq}"])

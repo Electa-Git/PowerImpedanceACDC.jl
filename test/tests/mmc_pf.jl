@@ -2,9 +2,9 @@ include("../../src/HVDCstability.jl")
 using .HVDCstability
 
 net = @network begin
-    gen1 = ac_source(pins = 3, P_max = 250, P_min = 100, P = 100, Q = 0, Q_max = 500, Q_min = -500,
+    gen1 = ac_source(pins = 3, P_min = 500, P = 1000, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
                     V = 320, transformation = true)
-    gen2 = ac_source(pins = 3, P_max = 150, P_min = -100, P = -100, Q = 0, Q_max = 300, Q_min = -300,
+    gen2 = ac_source(pins = 3, P_min = -1500, P = -1000, P_max = -500, Q = 0, Q_max = 500, Q_min = -500,
                     V = 320, transformation = true)
 
     tl1 = overhead_line(length = 200e3,
@@ -27,16 +27,16 @@ net = @network begin
           I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
           I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)
 
-    c1 = mmc(Vᵈᶜ = 320, Vₘ = 320,
-            P_max = 250, P_min = 100, P = -100, Q = 0, Q_max = 500, Q_min = -500, P_dc = 100,
+    c1 = mmc(Vᵈᶜ = 640, Vₘ = 320,
+            P_max = 500, P_min = -1500, P = -1000, Q = 0, Q_max = 500, Q_min = -500, P_dc = 1000,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
             dc = PI_control(Kₚ = 0.01, Kᵢ = 2),
             energy = PI_control(Kₚ = 120, Kᵢ = 400),
             zcc = PI_control(ζ = 0.7, bandwidth = 300)
             )
-    c2 = mmc(Vᵈᶜ = 320, Vₘ = 320,
-            P_max = 150, P_min = -150, P = 100, Q = 0, Q_max = 300, Q_min = -300, P_dc = -100,
+    c2 = mmc(Vᵈᶜ = 640, Vₘ = 320,
+            P_max = 1500, P_min = 500, P = 1000, Q = 0, Q_max = 300, Q_min = -300, P_dc = -1000,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
             power = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04),
@@ -53,10 +53,7 @@ net = @network begin
     tl1[2.2] ⟷ c1[2.2]
 
     c1[1.1] ⟷ dc_line[1.1]
-    # c1[1.2] ⟷ dc_line[1.2]
-
     c2[1.1] ⟷ dc_line[2.1]
-    # c2[1.2] ⟷ dc_line[2.2]
 
     c2[2.1] ⟷ tl2[1.1]
     c2[2.2] ⟷ tl2[1.2]
@@ -74,5 +71,5 @@ bode(imp_ac, omega = omega_ac)
 imp, omega = check_stability(net, net.elements[:c1])
 bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
 
-imp, omega = check_stability(net, net.elements[:c2], direction = :ac)
-bode(imp, omega = omega, titles = ["Y_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
+imp, omega = check_stability(net, net.elements[:c2], direction = :dc)
+bode(imp, omega = omega, titles = ["Z_{MMC2}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
