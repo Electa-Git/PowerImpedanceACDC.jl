@@ -28,7 +28,7 @@ net = @network begin
           I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)
 
     c1 = mmc(Vᵈᶜ = 640, Vₘ = 320,
-            P_max = 500, P_min = -1500, P = -1000, Q = 0, Q_max = 500, Q_min = -500, P_dc = 1000,
+            P_max = -500, P_min = -1500, P = -1000, Q = 0, Q_max = 500, Q_min = -500, P_dc = 1000,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
             dc = PI_control(Kₚ = 0.01, Kᵢ = 2),
