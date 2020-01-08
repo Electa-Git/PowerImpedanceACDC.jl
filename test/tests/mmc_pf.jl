@@ -1,10 +1,10 @@
 include("../../src/HVDCstability.jl")
 using .HVDCstability
 
-net = @network begin
-    gen1 = ac_source(pins = 3, P_min = 500, P = 1000, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
+@time net = @network begin
+    gen1 = ac_source(pins = 3, P_min = 50, P = 100, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
                     V = 320, transformation = true)
-    gen2 = ac_source(pins = 3, P_min = -1500, P = -1000, P_max = -500, Q = 0, Q_max = 500, Q_min = -500,
+    gen2 = ac_source(pins = 3, P_min = -1500, P = -100, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
                     V = 320, transformation = true)
 
     tl1 = overhead_line(length = 200e3,
@@ -18,8 +18,7 @@ net = @network begin
         groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
         earth_parameters = (1,1,100), transformation = true)
 
-    dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)], earth_parameters = (1,1,1),
-          type = :aerial,
+    dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
           C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
           C2 = Conductor(rᵢ = 41.75e-3, rₒ = 46.25e-3, ρ = 22e-8),
           C3 = Conductor(rᵢ = 49.75e-3, rₒ = 60.55e-3, ρ = 18e-8, μᵣ = 10),
@@ -68,8 +67,8 @@ imp_ac, omega_ac = determine_impedance(net, elim_elements = [:c1],
         output_pins = Any[(:c1, Symbol(2.2))], omega_range = (0, 4, 1000))
 bode(imp_ac, omega = omega_ac)
 
-imp, omega = check_stability(net, net.elements[:c1])
+@time imp, omega = check_stability(net, net.elements[:c1], direction = :dc)
 bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
 
 imp, omega = check_stability(net, net.elements[:c2], direction = :dc)
-bode(imp, omega = omega, titles = ["Z_{MMC2}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
+bode(imp, omega = omega, titles = ["Z_{MMC2}" "Z_{eq}" "Y_{MMC2} Z_{eq}"])

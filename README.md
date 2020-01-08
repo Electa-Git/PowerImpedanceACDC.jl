@@ -4,7 +4,7 @@ Dev:
 [![Build Status](https://api.travis-ci.com/Electa-Git/HVDCstability.jl.svg?token=8MGGs8A1RyNuFsSbtpur&branch=master)](https://travis-ci.com/Electa-Git/HVDCstability.jl)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://electa-git.github.io/HVDCstability.jl/latest/)
 
-Tutorial about simulator construction and usage can be found on [link](https://github.com/Electa-Git/HVDCstability.jl/blob/master/HVDCstability.pdf).
+Tutorial about simulator construction and usage can be found on [link](https://github.com/Electa-Git/HVDCstability.jl/blob/master/Simulator_tutorial.pdf).
 
 ## Download and install
 To download the package, clone it using git. Afterwards just extract it and open the project inside julia.
@@ -14,7 +14,7 @@ using Pkg
 Pkg.add(PackageSpec(path = pwd()))
 ```
 In order to run the package it is necessary to install supporting packages: `Parameters`, `DataStructures`
-`FileIO`, `DelimitedFiles`, `Plots`, `LaTeXStrings`, `DSP`, `Compat`, `SymEngine`, `LinearAlgebra`, `NLsolve`, `ForwardDiff`. Each of them can be added by calling:
+`FileIO`, `DelimitedFiles`, `Plots`, `LaTeXStrings`, `DSP`, `Compat`, `SymEngine`, `LinearAlgebra`, `NLsolve`, `ForwardDiff`, `PowerModels`, `PowerModelsACDC`, `Ipopt` and `JuMP`. Each of them can be added by calling:
 ```
 using Pkg
 Pkg.add("package_name")

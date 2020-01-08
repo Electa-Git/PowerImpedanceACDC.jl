@@ -16,6 +16,14 @@ The impedances are calculated for the angular frequencies whose range is defined
 function check_stability(net :: Network, mmc :: Element; direction :: Symbol = :dc,
     omega_range = (0, 4, 1000))
 
+    function phase_margin(tf, omega)
+        for i in 2:length(tf)
+            if (20*log10(abs(tf[i-1][3])) > 0) && (20*log10(abs(tf[i][3])) < 0)
+                println("PM = ", rad2deg(angle(tf[i][3])) + 180, " at the angular frequency ", omega[i])
+            end
+        end
+    end
+
     function make_lists(net :: Network, dict :: Dict{Symbol, Array{Union{Symbol,Int}}},
         elim_elements :: Array{Symbol}, start_pins :: Array{Symbol})
 
@@ -67,8 +75,6 @@ function check_stability(net :: Network, mmc :: Element; direction :: Symbol = :
         for i in 1:length(omega)
             push!(imp, [imp_mmc[i] imp_rest[i] imp_rest[i]/imp_mmc[i]])
         end
-
-        return imp, omega
     else
         elim_elements = Symbol[]
         for (elem_symbol, elem_pin) in net.nets[netname(net, (mmc.symbol, Symbol(2.1)))]
@@ -87,7 +93,8 @@ function check_stability(net :: Network, mmc :: Element; direction :: Symbol = :
         for i in 1:length(omega)
             push!(imp, [imp_mmc[i] imp_rest[i] imp_rest[i]/imp_mmc[i]])
         end
-
-        return imp, omega
     end
+
+    phase_margin(imp, omega)
+    return imp, omega
 end
