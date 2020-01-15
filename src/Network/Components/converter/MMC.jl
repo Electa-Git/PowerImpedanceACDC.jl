@@ -21,7 +21,7 @@ include("controller.jl")
     Lₐᵣₘ :: Union{Int, Float64}  = 50e-3        # arm inductance [H]
     Rₐᵣₘ :: Union{Int, Float64}  = 1.07         # equivalent arm resistance
     Cₐᵣₘ :: Union{Int, Float64}  = 10e-3        # capacitance per submodule [F]
-    N :: Int = 401                              # number of submodules per arm
+    N :: Int = 400                              # number of submodules per arm
 
     Lᵣ :: Union{Int, Float64}  = 60e-3          # inductance of the phase reactor [H]
     Rᵣ :: Union{Int, Float64}  = 0.535          # resistance of the phase reactor [Ω]
