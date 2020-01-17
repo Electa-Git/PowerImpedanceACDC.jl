@@ -11,11 +11,27 @@ using .HVDCstability
     gen4 = ac_source(pins = 3, P_min = -1500, P = -400, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
                     V = 380, transformation = true)
 
-    tl1 = overhead_line(length = 200e3,
+    tl1 = overhead_line(length = 20e3,
         conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
         Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
         groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
         earth_parameters = (1,1,100), transformation = true)
+    tl2 = overhead_line(length = 200e3,
+        conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+        Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+        groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+        earth_parameters = (1,1,100), transformation = true)
+    tl3 = overhead_line(length = 200e3,
+        conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+        Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+        groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+        earth_parameters = (1,1,100), transformation = true)
+    tl4 = overhead_line(length = 200e3,
+        conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+        Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+        groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+        earth_parameters = (1,1,100), transformation = true)
+
 
     dc_line1 = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
           C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
@@ -94,20 +110,25 @@ using .HVDCstability
     gen1[2.1] ⟷ gen1[2.2] ⟷ gnd1
     gen1[1.1] ⟷ tl1[1.1]
     gen1[1.2] ⟷ tl1[1.2]
-
     tl1[2.1] ⟷ c1[2.1]
     tl1[2.2] ⟷ c1[2.2]
 
-    gen2[1.1] ⟷ c2[2.1]
-    gen2[1.2] ⟷ c2[2.2]
+    gen2[1.1] ⟷ tl2[1.1]
+    gen2[1.2] ⟷ tl2[1.2]
+    tl2[2.1] ⟷ c2[2.1]
+    tl2[2.2] ⟷ c2[2.2]
     gen2[2.1] ⟷ gen2[2.2] ⟷ gnd2
 
-    gen3[1.1] ⟷ c3[2.1]
-    gen3[1.2] ⟷ c3[2.2]
+    gen3[1.1] ⟷ tl3[1.1]
+    gen3[1.2] ⟷ tl3[1.2]
+    tl3[2.1] ⟷ c3[2.1]
+    tl3[2.2] ⟷ c3[2.2]
     gen3[2.1] ⟷ gen3[2.2] ⟷ gnd3
 
-    gen4[1.1] ⟷ c4[2.1]
-    gen4[1.2] ⟷ c4[2.2]
+    gen4[1.1] ⟷ tl4[1.1]
+    gen4[1.2] ⟷ tl4[1.2]
+    tl4[2.1] ⟷ c4[2.1]
+    tl4[2.2] ⟷ c4[2.2]
     gen4[2.1] ⟷ gen4[2.2] ⟷ gnd4
 
     c1[1.1] ⟷ dc_line1[1.1]
