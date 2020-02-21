@@ -429,7 +429,7 @@ function power_flow(net :: Network)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
 
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
-
+    display(result)
     id_converter = 1
     for (key, element) in net.elements
         if is_converter(element)
@@ -447,7 +447,7 @@ function power_flow(net :: Network)
             id_converter += 1
         end
     end
-    # return result
+    return result
 end
 
 @doc doc"""

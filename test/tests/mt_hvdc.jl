@@ -2,16 +2,16 @@ include("../../src/HVDCstability.jl")
 using .HVDCstability
 
 @time net = @network begin
-    gen1 = ac_source(pins = 3, P_min = 50, P = 1200, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
+    gen1 = ac_source(pins = 3, P_min = 50, P = 120, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
                     V = 380, transformation = true)
-    gen2 = ac_source(pins = 3, P_min = -1500, P = -600, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
+    gen2 = ac_source(pins = 3, P_min = -1500, P = -60, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
                     V = 380, transformation = true)
-    gen3 = ac_source(pins = 3, P_min = -1500, P = -200, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
+    gen3 = ac_source(pins = 3, P_min = -1500, P = -20, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
                     V = 380, transformation = true)
-    gen4 = ac_source(pins = 3, P_min = -1500, P = -400, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
+    gen4 = ac_source(pins = 3, P_min = -1500, P = -40, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
                     V = 380, transformation = true)
 
-    tl1 = overhead_line(length = 20e3,
+    tl1 = overhead_line(length = 200e3,
         conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
         Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
         groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
@@ -69,8 +69,8 @@ using .HVDCstability
           I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
           I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)
 
-    c1 = mmc(Vᵈᶜ = 640, Vₘ = 320,
-            P_max = -500, P_min = -1500, P = -1200, Q = 0, Q_max = 500, Q_min = -500, P_dc = 1000,
+    c1 = mmc(Vᵈᶜ = 640, Vₘ = 380,
+            P_max = -50, P_min = -1500, P = -120, Q = 0, Q_max = 500, Q_min = -500, P_dc = 120,
             Rᵣ = 0.3429, Lᵣ = 62.9e-3, Rₐᵣₘ = 0.6017, Lₐᵣₘ = 30.6e-3, N = 200, Cₐᵣₘ = 4.23e-3,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
@@ -78,8 +78,8 @@ using .HVDCstability
             energy = PI_control(Kₚ = 120, Kᵢ = 400),
             zcc = PI_control(ζ = 0.7, bandwidth = 300)
             )
-    c2 = mmc(Vᵈᶜ = 640, Vₘ = 320,
-            P_max = 1500, P_min = 300, P = 600, Q = 0, Q_max = 300, Q_min = -300, P_dc = -1000,
+    c2 = mmc(Vᵈᶜ = 640, Vₘ = 380,
+            P_max = 1500, P_min = 50, P = 60, Q = 0, Q_max = 300, Q_min = -300, P_dc = -60,
             Rᵣ = 0.3429, Lᵣ = 62.9e-3, Rₐᵣₘ = 0.6017, Lₐᵣₘ = 30.6e-3, N = 200, Cₐᵣₘ = 4.23e-3,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
@@ -87,8 +87,8 @@ using .HVDCstability
             energy = PI_control(Kₚ = 120, Kᵢ = 400),
             zcc = PI_control(ζ = 0.7, bandwidth = 300)
             )
-    c3 = mmc(Vᵈᶜ = 640, Vₘ = 320,
-            P_max = 1500, P_min = 300, P = 200, Q = 0, Q_max = 300, Q_min = -300, P_dc = -1000,
+    c3 = mmc(Vᵈᶜ = 640, Vₘ = 380,
+            P_max = 1500, P_min = 50, P = 20, Q = 0, Q_max = 300, Q_min = -300, P_dc = -20,
             Rᵣ = 0.3429, Lᵣ = 62.9e-3, Rₐᵣₘ = 0.6017, Lₐᵣₘ = 30.6e-3, N = 200, Cₐᵣₘ = 4.23e-3,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
@@ -96,8 +96,8 @@ using .HVDCstability
             energy = PI_control(Kₚ = 120, Kᵢ = 400),
             zcc = PI_control(ζ = 0.7, bandwidth = 300)
             )
-    c4 = mmc(Vᵈᶜ = 640, Vₘ = 320,
-            P_max = 1500, P_min = 300, P = 400, Q = 0, Q_max = 300, Q_min = -300, P_dc = -1000,
+    c4 = mmc(Vᵈᶜ = 640, Vₘ = 380,
+            P_max = 1500, P_min = 50, P = 40, Q = 0, Q_max = 300, Q_min = -300, P_dc = -40,
             Rᵣ = 0.3429, Lᵣ = 62.9e-3, Rₐᵣₘ = 0.6017, Lₐᵣₘ = 30.6e-3, N = 200, Cₐᵣₘ = 4.23e-3,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),

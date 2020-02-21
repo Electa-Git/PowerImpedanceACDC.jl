@@ -21,7 +21,7 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     ((dict["convdc"])[string(key)])["type_ac"] = 1 # default, PQ ac bus
     if in(:power, keys(converter.controls))
         ((dict["convdc"])[string(key)])["type_dc"] = 1  # constant AC active power
-        ((dict["convdc"])[string(key)])["type_ac"] = 2  # PV ac bus
+        ((dict["convdc"])[string(key)])["type_ac"] = 1  # PV ac bus
     elseif in(:dc, keys(converter.controls))
         ((dict["convdc"])[string(key)])["type_dc"] = 2  # constant DC voltage
     else
