@@ -1,5 +1,5 @@
-include("../../src/HVDCstability.jl")
-using .HVDCstability
+# include("../../src/HVDCstability.jl")
+# using .HVDCstability
 
 # 3 phase OHL case
 net = @network begin

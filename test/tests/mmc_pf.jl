@@ -1,5 +1,5 @@
-include("../../src/HVDCstability.jl")
-using .HVDCstability
+# include("../../src/HVDCstability.jl")
+# using .HVDCstability
 
 @time net = @network begin
     gen1 = ac_source(pins = 3, P_min = 50, P = 100, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,

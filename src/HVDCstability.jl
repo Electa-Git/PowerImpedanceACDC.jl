@@ -10,7 +10,7 @@ module HVDCstability
 
     # plotting
     using Plots, LaTeXStrings
-    using Compat, Compat.Dates  # compatibility across Julia
+    using Compat, Dates # compatibility across Julia
 
     # symbolic and numerical calculations
     using SymEngine

@@ -1,5 +1,5 @@
-include("../../src/HVDCstability.jl")
-using .HVDCstability
+# include("../../src/HVDCstability.jl")
+# using .HVDCstability
 
 using SymEngine
 
