@@ -49,9 +49,9 @@ mutable struct Element
 end
 
 for (n,m) in Dict(:nip => :input_pins, :nop => :output_pins)
-  @eval ($n)(e::Element) = e.$m
+  @eval ($n)(e::Element) = e.$m # creation of functions nip() and nop(), fetching the input_pins and output_pins parameters within the element structure
 end
-np(e::Element) = nip(e) + nop(e) # number pins
+np(e::Element) = nip(e) + nop(e) # total number of pins
 
 function add!(elem::Element, sym::Symbol, value::Any)
   if (sym in propertynames(elem))
