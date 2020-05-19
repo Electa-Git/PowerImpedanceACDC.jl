@@ -9,10 +9,10 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
 """
 function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                     start_pins::Array{Symbol}, end_pins::Array{Symbol}, s :: Complex)
-    nᵥ = length(dict[:node_list])       # number of unknown node voltages
-    nₒ = length(dict[:output_list])     # number of output nodes = grounds and end pin nodes
-    nₙ = nᵥ + nₒ                        # number of nodes
-    nᵢ = length(start_pins)             # number of input pins
+    nᵥ = length(unique(dict[:node_list]))       # number of unknown node voltages
+    nₒ = length(unique(dict[:output_list]))     # number of output nodes = grounds and end pin nodes
+    nₙ = nᵥ + nₒ                                # number of nodes
+    nᵢ = length(unique(start_pins))             # number of input pins
     mₚ = sum(nip_abcd(net.elements[element]) for element in dict[:element_list])
     mₛ = sum(np_abcd(net.elements[element]) for element in dict[:element_list])
 
@@ -23,7 +23,8 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
 
     # fix input and output currents
     for j in 1:length(start_pins)
-        matrix[j, nᵥ+j] = -1
+        k = findfirst(p -> p == start_pins[j], dict[:node_list])
+        matrix[k, nᵥ+k] = -1
     end
 
     # indices for matrix elements
@@ -107,14 +108,16 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
 
     sol = pinv(matrix) * output
 
-    pᵢ = length(start_pins)
-    pₒ = length(end_pins)
+    pᵢ = length(unique(start_pins))
+    pₒ = length(unique(end_pins))
     abcd = zeros(Complex, 2pᵢ, 2pₒ)
     for i in 1:pᵢ, j in 1:pₒ
-        abcd[i,j] = sol[i, end-2nₒ+2(j-1)+1]
-        abcd[i,j+pₒ] = sol[i, end-2nₒ+2j]
-        abcd[i+pᵢ,j] = sol[i + nᵥ, end-2nₒ+2(j-1)+1]
-        abcd[i+pᵢ,j+pₒ] = sol[i + nᵥ, end-2nₒ+2j]
+        k = findfirst(p -> p == start_pins[i], dict[:node_list])
+        l = findfirst(p -> p == end_pins[j], dict[:output_list])
+        abcd[i,j] = sol[k, end-2nₒ+2(l-1)+1]
+        abcd[i,j+pₒ] = sol[k, end-2nₒ+2l]
+        abcd[i+pᵢ,j] = sol[k + nᵥ, end-2nₒ+2(l-1)+1]
+        abcd[i+pᵢ,j+pₒ] = sol[k + nᵥ, end-2nₒ+2l]
     end
     return abcd
 end

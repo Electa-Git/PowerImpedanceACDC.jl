@@ -41,10 +41,11 @@ end
 
 function closing_impedance(ABCD :: Array{Complex}, Zₜ :: Union{Array{Complex}, Int, Float64, Complex}, direction = :output)
     n = Int(size(ABCD, 1)/2)
-    (a, b, c, d) = (ABCD[1:n,1:n], ABCD[1:n,n+1:end], ABCD[n+1:end,1:n], ABCD[n+1:end, n+1:end])
+    m = Int(size(ABCD, 2)/2)
+    (a, b, c, d) = (ABCD[1:n,1:m], ABCD[1:n,m+1:end], ABCD[n+1:end,1:m], ABCD[n+1:end, m+1:end])
 
     Zₑ = 0
-    if (n == 1)
+    if (length(Zₜ) == 1)
         if (direction == :output)
             Zₑ = (a .* Zₜ + b) ./ (c .* Zₜ + d)
         else

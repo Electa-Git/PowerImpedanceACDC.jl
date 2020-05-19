@@ -100,28 +100,27 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
 
     dict = Dict{Symbol, Array{Union{Symbol,Int}}}(:node_list => Symbol[], :element_list => Symbol[],
         :output_list => Symbol[])
-    make_lists(network, dict, elim_elements, input_pins, output_pins)
+    make_lists(network, dict, elim_elements, unique(input_pins), unique(output_pins))
 
     # if end pin is not in dictionary
     if any(!in(end_pin, dict[:output_list]) for end_pin in output_pins)
         dict_o = Dict{Symbol, Array{Union{Symbol,Int}}}(:node_list => Symbol[], :element_list => Symbol[],
             :output_list => Symbol[])
-        make_lists(network, dict_o, elim_elements, output_pins, input_pins)
+        make_lists(network, dict_o, elim_elements, unique(output_pins), unique(input_pins))
         append!(dict[:output_list], setdiff(setdiff(dict_o[:node_list], dict[:output_list]), dict[:node_list]))
         if !isempty(setdiff(dict_o[:element_list], dict[:element_list]))
             append!(dict[:element_list], setdiff(dict_o[:element_list], dict[:element_list]))
         end
     end
-
     # reorder dictionary
     input_order = []
     output_order = []
-    for input in input_pins
+    for input in unique(input_pins)
         i = findfirst(p -> p == input, dict[:node_list])
         push!(input_order, i)
     end
     dict[:node_list] = dict[:node_list][[input_order; setdiff(1:length(dict[:node_list]), input_order)]]
-    for output in output_pins
+    for output in unique(output_pins)
         i = findfirst(p -> p == output, dict[:output_list])
         push!(output_order, i)
     end
@@ -133,7 +132,7 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
     omegas = [exp10(min_ω)*10^(i*n) for i in 1:Int(n_ω)]
 
     # make closing impedance
-    p = length(output_pins)
+    p = length(unique(output_pins))
     Zₜ = zeros(Complex, p, p)
 
     impedance = []
