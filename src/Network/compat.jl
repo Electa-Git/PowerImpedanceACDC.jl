@@ -1,14 +1,8 @@
 import Compat
 using Compat: @warn, argmax, argmin, copyto!, findall, undef
-using Compat.Markdown: @doc_str
+using Markdown: @doc_str
 
-if isdefined(Base, :NamedTuple) # 0.7.0-DEV.2738 to 0.7.0-DEV.3226
+if isdefined(Base, :NamedTuple)
     kwargs_pairs(kwargs::NamedTuple) = pairs(kwargs)
 end
 kwargs_pairs(kwargs) = kwargs
-
-# @static if !isdefined(Compat.SparseArrays, :blockdiag) # prior to 0.7.0-DEV.4498
-#     const blockdiag = Compat.SparseArrays.blkdiag
-# else
-#     using Compat.SparseArrays: blockdiag
-# end

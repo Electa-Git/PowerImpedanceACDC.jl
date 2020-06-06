@@ -67,7 +67,7 @@ function impedance(;z :: Union{Int, Float64, Basic, Array{Basic}} = 0, pins :: I
             m2[pins + i, pins + i] = -1
           end
         end
-        imp.ABCD = m1\m2
+        imp.ABCD = inv(m1)*m2
 
         element = Element(element_value = imp, input_pins = pins, output_pins = pins,
             transformation = transformation)

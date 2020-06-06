@@ -82,14 +82,15 @@ function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
             end;
 
             (length(titles[1,1]) == 0) ? p_title = string("Z_{", i, "," , j, "}") : p_title = titles[i, j]
+            a = latexstring(string(p_title))
             plot!(p1, omegas, mag, xaxis=xaxis,
                 xtickfont = font(6, "Courier"), ytickfont = font(6, "Courier"),
-                xlabel=L"\omega \, [\mbox{rad}/\mbox{s}]", ylabel=ylabel1, leg = false,
-                label = latexstring(p_title))
+                xlabel=L"\omega \, [\mathrm{rad}/\mathrm{s}]", ylabel=ylabel1, leg = false,
+                label = a)
             plot!(p2, omegas, phase, xaxis=xaxis,
                 xtickfont = font(6, "Courier"), ytickfont = font(6, "Courier"),
-                xlabel=L"\omega \, [\mbox{rad}/\mbox{s}]", ylabel=ylabel2,
-                label = latexstring(p_title))
+                xlabel=L"\omega \, [\mathrm{rad}/\mathrm{s}]", ylabel=ylabel2,
+                label=a)
         end
     end
     p = plot(p1, p2, layout = l, legend = :left)

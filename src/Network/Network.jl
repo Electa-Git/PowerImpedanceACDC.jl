@@ -425,7 +425,7 @@ function power_flow(net :: Network)
     end
 
     PowerModelsACDC.process_additional_data!(data)
-    ipopt = JuMP.with_optimizer(Ipopt.Optimizer, tol=1e-6, print_level=0)
+    ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
 
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)

@@ -20,4 +20,4 @@ end
 
 imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node11, :Node12, :Node13],
                             output_pins = Any[:gnd1, :gnd2, :gnd3], omega_range = (0, 5, 1000))
-bode(imp, omega_range = (0, 5, 1000))
+bode(imp, omega = omega)
