@@ -73,10 +73,10 @@ function plot_data(tl :: Transmission_line, omegas)
     end
     n = Int(sqrt(length(Z_series[1, :])))
 
-    bode(Z_series, omega = omegas, titles = reshape([string("Z_{", i, "," , j, "}")
+    p = bode(Z_series, omega = omegas, titles = reshape([string("Z_{", i, "," , j, "}")
                     for j in 1:n for i in 1:n],n,n))
-    save_plot("files/z_series_bode")
-    bode(Y_shunt, omega = omegas, titles = reshape([string("Y_{", i, "," , j, "}")
+    save_plot(p, "files/z_series_bode")
+    p = bode(Y_shunt, omega = omegas, titles = reshape([string("Y_{", i, "," , j, "}")
                     for j in 1:n for i in 1:n],n,n))
-    save_plot("files/y_shunt_bode")
+    save_plot(p, "files/y_shunt_bode")
 end
