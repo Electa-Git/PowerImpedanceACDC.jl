@@ -9,7 +9,7 @@ module HVDCstability
     using FileIO, DelimitedFiles
 
     # plotting
-    using Plots, LaTeXStrings
+    using PGFPlotsX
     using Compat, Dates # compatibility across Julia
 
     # symbolic and numerical calculations

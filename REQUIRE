@@ -10,10 +10,10 @@ DataStructures
 FileIO
 DelimitedFiles
 
-Plots
-LaTeXStrings
+PGFPlotsX
 Compat
 Dates
+Markdown
 
 JuMP
 Ipopt

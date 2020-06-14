@@ -68,7 +68,7 @@ end
 # bode(imp_ac, omega = omega_ac)
 
 @time imp, omega = check_stability(net, net.elements[:c1], direction = :dc)
-bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
+p = bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
 
 # imp, omega = check_stability(net, net.elements[:c2], direction = :dc)
 # bode(imp, omega = omega, titles = ["Z_{MMC2}" "Z_{eq}" "Y_{MMC2} Z_{eq}"])

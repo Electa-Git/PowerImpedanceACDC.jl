@@ -21,13 +21,41 @@ function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
     titles :: Array{String} = [""], omega = [], axis_type = :loglog,
     save_data = false)
     (min_ω, max_ω, n_ω) = omega_range
-    gr()
-    p1 = plot(reuse = true)
-    p2 = plot(reuse = true)
-    p = plot(reuse = true)
-    ylabel1 = 0
-    ylabel2 = 0
-    xaxis = 0
+
+    # set the type of plot
+    if axis_type == :loglin
+        p1 = @pgf SemiLogXAxis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$|H(j \\omega)|\$ ", grid = "major",})
+        p2 = @pgf SemiLogXAxis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$\\arg(H(j\\omega)) \\, [^\\circ]\$", grid = "major",})
+    elseif axis_type == :loglog
+        p1 = @pgf SemiLogXAxis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$20 \\log_{10}|H(j \\omega)|\$ ", grid = "major",})
+        p2 = @pgf SemiLogXAxis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$\\arg(H(j\\omega)) \\, [^\\circ]\$", grid = "major",})
+    elseif axis_type == :linlog
+        p1 = @pgf SemiLogXAxis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$|H(j \\omega)|\$ ", grid = "major",})
+        p2 = @pgf Axis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$\\arg(H(j\\omega)) \\, [^\\circ]\$", grid = "major",})
+    elseif axis_type == :linlin
+        p1 = @pgf Axis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$|H(j \\omega)|\$ ", grid = "major",})
+        p2 = @pgf Axis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$\\arg(H(j\\omega)) \\, [^\\circ]\$", grid = "major",})
+    elseif axis_type == :logrealimag
+        p1 = @pgf SemiLogXAxis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$\\Re \\{H(j \\omega)\\} \$", grid = "major",})
+        p2 = @pgf SemiLogXAxis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$\\Im \\{H(j \\omega)\\} \$", grid = "major",})
+    elseif axis_type == :linrealimag
+        p1 = @pgf Axis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$\\Re \\{H(j \\omega)\\} \$", grid = "major",})
+        p2 = @pgf Axis({xlabel = "\$\\omega \\, [\\mathrm{rad}/\\mathrm{s}]\$",
+                ylabel = "\$\\Im \\{H(j \\omega)\\} \$", grid = "major",})
+    else
+        throw(ArgumentError("There is no axis_type $(axis_type)."))
+    end
 
     if isempty(omega)
         n = (max_ω - min_ω) / n_ω
@@ -36,9 +64,11 @@ function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
         omegas = omega
     end
 
-    l = @layout [a;b]
     for i in 1:size(impedance[1],1)
         for j in 1:size(impedance[1],2)
+            (length(titles[1,1]) == 0) ? p_title = LegendEntry(string("\$Z_{", i, "," , j, "}\$")) :
+                                         p_title = LegendEntry(string("\$", titles[i, j], "\$"))
+
             # check every frequency
             mag = []
             phase = []
@@ -49,8 +79,6 @@ function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
                     push!(mag, convert(Float64, 20log10(abs(imp[i,j]))))
                     push!(phase, angle(imp[i,j]))
                 end
-                ylabel1 = L"20\log_{10}|H(j\omega)| "
-                ylabel2 = L"\arg(H(j\omega)) \, [^\circ]"
                 phase = rad2deg.(phase)
             elseif in(axis_type, [:loglin, :linlin])
                 for imp in impedance
@@ -58,8 +86,6 @@ function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
                     push!(mag, convert(Float64, abs(imp[i,j])))
                     push!(phase, angle(imp[i,j]))
                 end
-                ylabel1 = L"|H(j\omega)| "
-                ylabel2 = L"\arg(H(j\omega)) \, [^\circ]"
                 phase = rad2deg.(phase)
             else
                 for imp in impedance
@@ -67,36 +93,26 @@ function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
                     push!(mag, convert(Float64, real(imp[i,j])))
                     push!(phase, convert(Float64, imag(imp[i,j])))
                 end
-                ylabel1 = L"\Re\{H(j\omega)\} "
-                ylabel2 = L"\Im\{H(j\omega)\}"
             end
-
-            if in(axis_type, [:linlog, :linlin, :linrealimag])
-                xaxis = :lin
-            else
-                xaxis = :log
-            end
+            push!(p1, PlotInc(Table(omegas, mag)), p_title)
+            push!(p2, PlotInc(Table(omegas, phase)), p_title)
 
             save_data && open(string("files/", Dates.Date(Dates.now()), "_", Dates.format(now(), "HH_MM"), "_z", i, j, ".txt"), "w") do io
                 writedlm(io, [omegas mag phase], ',')
             end;
-
-            (length(titles[1,1]) == 0) ? p_title = string("Z_{", i, "," , j, "}") : p_title = titles[i, j]
-            a = latexstring(string(p_title))
-            plot!(p1, omegas, mag, xaxis=xaxis,
-                xtickfont = font(6, "Courier"), ytickfont = font(6, "Courier"),
-                xlabel=L"\omega \, [\mathrm{rad}/\mathrm{s}]", ylabel=ylabel1, leg = false,
-                label = a)
-            plot!(p2, omegas, phase, xaxis=xaxis,
-                xtickfont = font(6, "Courier"), ytickfont = font(6, "Courier"),
-                xlabel=L"\omega \, [\mathrm{rad}/\mathrm{s}]", ylabel=ylabel2,
-                label=a)
         end
     end
-    p = plot(p1, p2, layout = l, legend = :left)
-    display(p)
+
+    p = @pgf GroupPlot(
+        { group_style = { group_size="1 by 2"},
+          no_markers,
+          legend_pos="north west",
+          height = "8cm",
+          width = "12cm"
+        },
+        p1, p2)
 end
 
-function save_plot(file_name = string("files/", Dates.Date(Dates.now()), "_", Dates.format(now(), "HH_MM")))
-    savefig(string(file_name, ".pdf"))
+function save_plot(figure, file_name = string("files/", Dates.Date(Dates.now()), "_", Dates.format(now(), "HH_MM")))
+    pgfsave(string(file_name, ".pdf"), figure)
 end
