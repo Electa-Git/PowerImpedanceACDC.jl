@@ -1,8 +1,3 @@
-include("../../src/HVDCstability.jl")
-using .HVDCstability
-
-using SymEngine
-
 s = symbols("s")
 net = @network begin
     vs = dc_source(V = 5)
