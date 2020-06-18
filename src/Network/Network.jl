@@ -30,16 +30,16 @@ end
 """
     add!(n::Network, elem::Element)
 Adds the element `elem` to the network `n`, creating and returning a new, unique
-reference designator, leaving its pins unconnected.
+reference designator, leaving its pins unconnected. #FP: It will be connected with the pin connection at the end of the code (usually at the end)
 """
 function add!(n::Network, elem::Element)
-    for (k, v) in n.elements
+    for (k, v) in n.elements #n.elements =
         if v == elem
             return k
         end
     end
-    designator = gensym()
-    add!(n, designator, elem)
+    designator = gensym() #gensym-> generates a symbol that will not conflict with the other variable names
+    add!(n, designator, elem) #add the element elem to the network n, with the reference designator: designator
     return designator
 end
 
@@ -52,10 +52,10 @@ Adds the element `elem` to the network `n` with the reference designator
 an element named `designator`, it is removed first.
 """
 function add!(n::Network, designator::Symbol, elem::Element)
-    if haskey(n.elements, designator)
-        delete!(n, designator)
+    if haskey(n.elements, designator) #haskey -> determine whether a collection (n.elements) has a mapping for a given key (designator)
+        delete!(n, designator) #delete the element named designator from the network n (disconnecting all its pins)
     end
-    for pin in keys(elem.pins)
+    for pin in keys(elem.pins) #keys elem.pins returns an array of keys. Return an iterator over all keys in a dictionary
         add!(n, (designator, pin))
     end
     add!(elem, :symbol, designator)

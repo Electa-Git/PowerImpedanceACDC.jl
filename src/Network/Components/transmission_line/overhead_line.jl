@@ -117,8 +117,14 @@ function overhead_line(;args...)
     end
 
     function estimate_vertical(c :: Conductors)
-        return ([0 for i in 1:nᵇ], [c.yᵇᶜ+i*c.Δyᵇᶜ for i in 1:nᵇ])
-    end
+            if (c.nᵇ == 3)
+                return ([c.Δxᵇᶜ/2 for i in 1:c.nᵇ], [c.yᵇᶜ+i*c.Δyᵇᶜ for i in 1:c.nᵇ])
+            elseif (c.nᵇ == 6)
+                return ([c.Δxᵇᶜ/2 c.Δxᵇᶜ/2 c.Δxᵇᶜ/2 -c.Δxᵇᶜ/2 -c.Δxᵇᶜ/2 -c.Δxᵇᶜ/2],[c.yᵇᶜ c.yᵇᶜ+c.Δyᵇᶜ c.yᵇᶜ+2*c.Δyᵇᶜ c.yᵇᶜ c.yᵇᶜ+c.Δyᵇᶜ c.yᵇᶜ+2*c.Δyᵇᶜ])
+            else
+                throw(ArgumentError("Invalid definition of vertical conductor organization."))
+            end
+        end
 
     function estimate_delta(c :: Conductors)
         if (c.nᵇ % 3 == 0)
