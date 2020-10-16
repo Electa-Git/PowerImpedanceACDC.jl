@@ -134,15 +134,15 @@ linear (`:lin`).
 """
 function save_data(element :: Element, file_name :: String; omega_range = (-3, 5, 1000),
     scale = :log)
-    (min_ω, max_ω, n_ω) = omega_range
-    n = (max_ω - min_ω) / n_ω
-    if (scale == :log)
-        omegas = [exp10(min_ω)*10^(i*n) for i in 1:Int(n_ω)]
-    else
-        omegas = [min_ω+i*n for i in 1:Int(n_ω)]
+    (min_ω, max_ω, n_ω) = omega_range #creation of the omega_range -> for Francesco's implementation -> min_ω and max_ω are frequencies in Hz
+    n = (max_ω - min_ω) / n_ω #number of points inside the omega range -> used only with implementation from Aleksandra, now commented
+    if (scale == :log) #logarithmic scale
+        omegas = 2*pi* 10 .^range(min_ω, max_ω, length= n_ω) #[exp10(min_ω)*10^(i*n) for i in 1:Int(n_ω)]
+    else #linear scale (from the definition here below)
+        omegas = 2*pi* range(min_ω, max_ω, length= n_ω) #omegas = [min_ω+i*n for i in 1:Int(n_ω)]
     end
 
-    file_name = string("./files/",  file_name)
+    file_name = string("./",  file_name) #e.g. if filename= "hello" ->file_name= "./hello"
     save_data(element.element_value, file_name, omegas)
 end
 

@@ -49,9 +49,9 @@ function save_data(tl :: Transmission_line, file_name :: String, omegas)
     end
 
     open(string(file_name, "_y.txt"), "w") do f
-        for omega in omegas
-            (Z,Y) = eval_parameters(tl, 1im*omega)
-            writedlm(f, [omega reshape(Y, 1, length(Y))], ",")
+        for omega in omegas #omegas= 2*pi* 10 .^range(min_ω, max_ω, length= n_ω)
+            (Z,Y) = eval_parameters(tl, 1im*omega) #receives in input the transmission line mutable struct (could be also cable or OHL) and S and computes the Y and Z pul matrices
+            writedlm(f, [omega reshape(Y, 1, length(Y))], ",") #reshape changes the order of the elements e.g. assuming Y [3x3]= [1 2 3; 4 5 6; 7 8 9]-> reshape(Y,1,length(Y)) -> Y= [1 4 7; 2 5 8; 3 6 9] 
         end
     end
 

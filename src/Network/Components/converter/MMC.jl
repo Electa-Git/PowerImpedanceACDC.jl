@@ -365,7 +365,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     # dvCΣz_dt =(N*(iΔd*mΔd + iΔq*mΔq + 2*iΣd*mΣd + 2*iΣq*mΣq + 4*iΣz*mΣz))/(8*Cₐᵣₘ)
     F[12] = ($N*(x[1]*mΔd + x[2]*mΔq + 2*x[3]*mΣd + 2*x[4]*mΣq + 4*x[5]*mΣz))/(8*$Cₐᵣₘ)))
 
-    function f!(expr, F, x, inputs)
+    function f!(expr, F, x, inputs) # F derivative of state variable x state variable vector, inputs input vqlue expr equation of mmc
        f = eval(:((F,x,inputs) -> $expr))
        return Base.invokelatest(f, F,x,inputs)
     end
