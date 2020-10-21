@@ -32,7 +32,7 @@ end
     P :: Array{Basic} = [] #initialization (still no value inside) of the array P with datatype Basic
     Z :: Array{Basic} = [] #same as row above
 
-    eliminate :: Bool = false #eliminate-> variable with Bool datatype and value TRUE (Bool variable can be true or false)-> predifined with true value. If not specified elsewhere in the code, eliminate=true
+    eliminate :: Bool = true #eliminate-> variable with Bool datatype and value TRUE (Bool variable can be true or false)-> predifined with true value. If not specified elsewhere in the code, eliminate=true
 end
 
 """

@@ -149,3 +149,5 @@ end
 
 @time imp, omega = check_stability(net, net.elements[:c1], direction = :dc)
 bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
+
+n = nyquist(imp, title = "Y_{MMC1} Z_{eq}")

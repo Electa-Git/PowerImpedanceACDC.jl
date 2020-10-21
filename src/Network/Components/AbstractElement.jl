@@ -89,8 +89,21 @@ function get_abcd(element::Element, s::Complex)
     return abcd
 end
 
-nip_abcd(e::Element) = size(get_abcd(e, 1im),1)
-nop_abcd(e::Element) = size(get_abcd(e, 1im),2)
+function nip_abcd(e::Element)
+    if isa(e.element_value, MMC)
+        return 3
+    else
+        return 2nip(e)
+    end
+end
+
+function nop_abcd(e::Element)
+    if isa(e.element_value, MMC)
+        return 3
+    else
+        return 2nop(e)
+    end
+end
 np_abcd(e::Element) = Int((nip_abcd(e) + nop_abcd(e))/2) # number pins
 
 ########################## Y functions #############################
