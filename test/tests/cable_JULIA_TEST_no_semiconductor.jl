@@ -25,7 +25,7 @@ end
 
 imp, omega = determine_impedance(net, elim_elements = [:ac], input_pins = Any[:Node1,:Node2,:Node3],
                             output_pins = Any[:gnd1,:gnd2,:gnd3], omega_range = (0.1,5,500))
-bode(imp, omega = omega, axis_type = :loglin)
+bode(imp, omega = omega, axis_type = :loglog)
 # writedlm( "impauto.csv", imp,',')
 # writedlm( "omega.csv", omega, ',')
 #save_data( net.elements[:c], "cable_no_semi", omega_range= (0.1, 5, 500), scale= :log)

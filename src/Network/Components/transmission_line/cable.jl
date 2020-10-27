@@ -266,6 +266,5 @@ function eval_abcd(c :: Cable, s :: Complex)
     abcd[1:n,n+1:end] = inv(Yc) * sinh(γ*c.length) #Eq 33 pag 19 simulator_tutorial. Matrix B[n*n]=Yc^-1sinh(Γl)
     abcd[n+1:end,1:n] = Yc * sinh(γ*c.length) #Eq 33 pag 19 simulator_tutorial. Matrix C[n*n]=Ycsinh(Γl)
     abcd[n+1:end, n+1:end] = cosh(γ*c.length) #Eq 33 pag 19 simulator_tutorial. Matrix D[n*n]=cosh(Γl)
-
     return abcd
 end

@@ -19,7 +19,7 @@ function kron_abcd(matrix :: Array{Complex}, no_eliminate :: Array{Int})
     (c11, c12, c21, c22) = (c[no_eliminate,no_eliminate], c[no_eliminate, eliminate], c[eliminate, no_eliminate], c[eliminate, eliminate])
     (d11, d12, d21, d22) = (d[no_eliminate,no_eliminate], d[no_eliminate, eliminate], d[eliminate, no_eliminate], d[eliminate, eliminate])
 
-    e = inv(b22 + d22)
+    e = inv(b22)
     a = a11 - b12*e*a21
     b = b11 - b12*e*b21
     c = c11 - d12*e*a21
