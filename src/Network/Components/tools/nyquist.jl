@@ -2,8 +2,8 @@ export nyquist
 
 function nyquist(st; title :: String = "")
     p_title = string("\$ H(j \\omega) = ", title, "\$")
-    p = @pgf Axis({xlabel = "\$\\Im \\{H(j \\omega)\\} \$",
-            ylabel = "\$\\Re \\{H(j \\omega)\\} \$", grid = "major",
+    p = @pgf Axis({xlabel = "\$\\Re \\{H(j \\omega)\\} \$",
+            ylabel = "\$\\Im \\{H(j \\omega)\\} \$", grid = "major",
             title = p_title, only_marks, })
 
     tf = []
