@@ -2,7 +2,7 @@ using SymEngine
 s = symbols("s")
 net = @network begin
     vs = ac_source(V = 380, pins = 3)
-    cb = crossbonded_cable(C1 = cable(length = 866.7, positions = [(0,1.9), (0.5,1.9), (1,1.9)],
+    cb = crossbonded_cable(section = cable(length = 866.7, positions = [(0,1.9), (0.5,1.9), (1,1.9)],
              C1 = Conductor(rₒ = 31.75e-3, ρ = 2.18e-8, μᵣ = 1),
              C2 = Conductor(rᵢ = 60.85e-3, rₒ = 61.05e-3, ρ = 1.72e-8, μᵣ = 1),
              I1 = Insulator(rᵢ = 31.75e-3, a = 33.75e-3, b = 59.55e-3, rₒ = 60.85e-3, ϵᵣ = 2.26),

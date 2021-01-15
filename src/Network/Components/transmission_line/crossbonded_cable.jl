@@ -69,18 +69,14 @@ function eval_abcd(m :: Crossbonded_cable, s :: Complex)
         t_order[(i-1)n+1:i*n] = (t_order[(i-1)n+1:i*n])[[3;1;2]]
     end
 
-    abcd = 0
-    for dummy in 1:m.nₛ # iterate through minor sections
-        abcd_new = eval_abcd(m.section, s)
-        abcd_new = abcd_new[order, :]
-        abcd_new = abcd_new[:, order]
-        if (abcd == 0)
-            abcd = abcd_new
-        else
-            abcd_new = abcd_new[t_order, :]
-            abcd_new = abcd_new[:, t_order]
-            abcd = abcd * Mᶜᵇ * abcd_new
-        end
+    abcd_new = eval_abcd(m.section, s)
+    abcd_new = abcd_new[order, :]
+    abcd_new = abcd_new[:, order]
+    abcd = abcd_new
+    for dummy in 2:m.nₛ # iterate through minor sections
+        abcd_new = abcd_new[t_order, :]
+        abcd_new = abcd_new[:, t_order]
+        abcd = abcd * Mᶜᵇ * abcd_new
     end
     abcd = convert(Array{Complex}, abcd)
 

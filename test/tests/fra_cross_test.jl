@@ -22,5 +22,5 @@ net = @network begin
 end
 
 imp, omega = determine_impedance(net, elim_elements = [:ac], input_pins = Any[:Node1,:Node2,:Node3],
-                            output_pins = Any[:gnd1,:gnd2,:gnd3], omega_range = (0.1,5,2))
+                            output_pins = Any[:gnd1,:gnd2,:gnd3], omega_range = (0.1,5,500))
 bode(imp, omega = omega, axis_type = :loglog)

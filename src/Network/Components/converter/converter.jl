@@ -101,10 +101,10 @@ function plot_data(conv :: Converter, omegas)
         push!(Y_acdc, [Y[2:3,1] Y[1,2:3]])
     end
 
-    p = bode(Y_ac, omega = omegas, titles = ["Y_{dd}" "Y_{dq}"; "Y_{qd}" "Y_{qq}"])
+    p = bode(Y_ac, omega = omegas, titles = ["Y_{d,d}" "Y_{d,q}"; "Y_{q,d}" "Y_{q,q}"])
     save_plot(p, "files/ac_side")
-    p = bode(Y_dc, omega = omegas, titles = ["Y_{zz}"])
+    p = bode(Y_dc, omega = omegas, titles = ["Y_{dc}"])
     save_plot(p, "files/dc_side")
-    p = bode(Y_acdc, omega = omegas, titles = ["Y_{dz}" "Y_{zd}"; "Y_{qz}" "Y_{zq}"])
+    p = bode(Y_acdc, omega = omegas, titles = ["Y_{d,dc}" "Y_{dc,d}"; "Y_{q, dc}" "Y_{dc,q}"])
     save_plot(p, "files/acdc_side")
 end

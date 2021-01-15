@@ -4,12 +4,12 @@ function nyquist(st; title :: String = "")
     p_title = string("\$ H(j \\omega) = ", title, "\$")
     p = @pgf Axis({xlabel = "\$\\Im \\{H(j \\omega)\\} \$",
             ylabel = "\$\\Re \\{H(j \\omega)\\} \$", grid = "major",
-            title = p_title, no_markers,})
+            title = p_title, only_marks, })
 
     tf = []
     for i in 1:size(st,1)
-        if (real(st[i][3]) < 1.5) && (real(st[i][3]) > -1.5) &&
-            (imag(st[i][3]) < 1.5) && (imag(st[i][3]) > -1.5)
+        if (real(st[i][3]) < 3.5) && (real(st[i][3]) > -3.5) &&
+            (imag(st[i][3]) < 3.5) && (imag(st[i][3]) > -3.5)
             push!(tf, st[i][3])
         end
     end
