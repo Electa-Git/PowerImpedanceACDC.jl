@@ -32,6 +32,10 @@ include("controller.jl")
     B :: Array{Complex} = [0]
     C :: Array{Complex} = [0]
     D :: Array{Complex} = [0]
+
+    timeDelay :: Float64 = 0
+    padeOrderNum :: Int = 0
+    padeOrderDen :: Int = 0
 end
 
 """
@@ -321,6 +325,74 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
         push!(exp.args, :(vMΣz_ref = Vdc/2))
     end
 
+    # add time delays here, if there are controllers implemented
+    if (converter.timeDelay != 0.0) && (in(:occ, keys(converter.controls)) || in(:ccc, keys(converter.controls)) || in(:zcc, keys(converter.controls)))
+        push!(exp.args,
+            :(
+            T_ab_dq=0.5*[1 im;-im 1];# from alpha-beta to dq
+            T_dq_ab=0.5*[1 -im;im 1];#from dq to alpha-beta
+            ))
+        if in(:occ, keys(converter.controls))
+            push!(exp.args,
+            :(
+                timeDelayIn = [vMΔd_ref;vMΔq_ref];
+                statesDelay = x[$index + 1 : $index + 2*$converter.padeOrderDen]; 
+                timeDelayOut = timeDelayPadeMatrices($converter.padeOrderNum,$converter.padeOrderDen,$converter.timeDelay,length(timeDelayIn));
+                
+                A_delay = timeDelayOut[1];
+                B_delay = timeDelayOut[2];
+                C_delay = timeDelayOut[3];
+                D_delay = timeDelayOut[4];
+                F[$index + 1 : $index + 2*$converter.padeOrderDen] = A_delay*statesDelay + B_delay*timeDelayIn;
+                # timeDelayOut = C_delay*statesDelay + D_delay*timeDelayIn;
+                # Implement phase shifts by transforming the dq voltage references to alpha-beta
+                vMΔ_ab_ref = (cos($converter.ω₀*$converter.timeDelay)-sin($converter.ω₀*$converter.timeDelay)*im)*(T_dq_ab*(C_delay*statesDelay + D_delay*timeDelayIn));
+                vMΔ_dq_ref = real(T_ab_dq * conj(vMΔ_ab_ref) + conj(T_ab_dq) * vMΔ_ab_ref);
+                vMΔd_ref = vMΔ_dq_ref[1];
+                vMΔq_ref = vMΔ_dq_ref[2];
+            ))
+            index += 2*converter.padeOrderDen
+        end
+        if in(:ccc, keys(converter.controls))
+            push!(exp.args,
+            :(
+                timeDelayIn = [vMΣd_ref;vMΣq_ref];
+                statesDelay = x[$index + 1 : $index + 2*$converter.padeOrderDen]; 
+                timeDelayOut = timeDelayPadeMatrices($converter.padeOrderNum,$converter.padeOrderDen,$converter.timeDelay,length(timeDelayIn));
+                
+                A_delay = timeDelayOut[1];
+                B_delay = timeDelayOut[2];
+                C_delay = timeDelayOut[3];
+                D_delay = timeDelayOut[4];
+                F[$index + 1 : $index + 2*$converter.padeOrderDen] = A_delay*statesDelay + B_delay*timeDelayIn;
+                # timeDelayOut = C_delay*statesDelay + D_delay*timeDelayIn;
+                # Phase shifts
+                vMΣ_ab_ref = (cos(-2*$converter.ω₀*$converter.timeDelay)-sin(-2*$converter.ω₀*$converter.timeDelay)*im)*(T_dq_ab*(C_delay*statesDelay + D_delay*timeDelayIn));
+                vMΣ_dq_ref = real(T_ab_dq * conj(vMΣ_ab_ref) + conj(T_ab_dq) * vMΣ_ab_ref);
+                vMΣd_ref = vMΣ_dq_ref[1];
+                vMΣq_ref = vMΣ_dq_ref[2];
+            ))
+            index += 2*converter.padeOrderDen
+        end
+        if in(:zcc, keys(converter.controls))
+            push!(exp.args,
+            :(
+                timeDelayIn = vMΣz_ref;
+                statesDelay = x[$index + 1 : $index + $converter.padeOrderDen]; 
+                timeDelayOut = timeDelayPadeMatrices($converter.padeOrderNum,$converter.padeOrderDen,$converter.timeDelay,1);
+                
+                A_delay = timeDelayOut[1];
+                B_delay = timeDelayOut[2];
+                C_delay = timeDelayOut[3];
+                D_delay = timeDelayOut[4];
+
+                F[$index + 1 : $index + $converter.padeOrderDen] = A_delay*statesDelay + B_delay*timeDelayIn;
+                timeDelayOut = dot(C_delay,statesDelay) + D_delay*timeDelayIn; # Get rid of 1-element array.
+                vMΣz_ref = timeDelayOut;
+            ))
+            index += converter.padeOrderDen
+        end
+    end
     # add state variables
     # x = [iΔd, iΔq, iΣd, iΣq, iΣz, vCΔd, vCΔq, vCΔZd, vCΔZq, vCΣd, vCΣq, vCΣz] = [x[1], x[2], ...]
     # add corresponding differential equations [diΔd_dt, diΔq_dt, ...] = [F[1], F[2], ...]
@@ -409,4 +481,88 @@ function eval_parameters(converter :: MMC, s :: Complex)
     end
 
     return Y
+end
+
+function timeDelayPadeMatrices(padeOrderNum,padeOrderDen,t_delay,numberVars)
+
+    size_A=padeOrderDen;
+    a_k=factorial(padeOrderNum);
+    b_l=((factorial(padeOrderDen)*(-1)^padeOrderNum)*(t_delay^(padeOrderNum-padeOrderDen)))/a_k;
+    Ad=zeros(size_A,size_A);
+    Bd=zeros(size_A,1);
+    Bd[end]=1;
+    Cd=zeros(1,size_A);
+    Dd=b_l;
+    Ad[1:end-1,2:end] = Matrix(1.0I, padeOrderDen-1, padeOrderDen-1);
+    for i=0:padeOrderDen-1
+        a_i=(t_delay^(i-padeOrderDen)*(factorial(padeOrderNum+padeOrderDen-i)*factorial(padeOrderDen)/(factorial(i)*factorial(padeOrderDen-i))))/a_k;
+        b_i=(t_delay^(i-padeOrderDen)*((-1)^i)*(factorial(padeOrderNum+padeOrderDen-i)*factorial(padeOrderNum)/(factorial(i)*factorial(padeOrderNum-i))))/a_k;
+        Ad[end,i+1] =-a_i;
+        Cd[i+1] = (b_i-(a_i*b_l));
+    end
+    # Convert from controllable canonical form to diagonal form - This does not work as such a state-space representation is complex-valued
+    d_not_sorted=eigvals(Ad);
+    v_not_sorted=eigvecs(Ad);
+    d=zeros(ComplexF64,padeOrderDen,1);
+    v=zeros(ComplexF64,padeOrderDen,padeOrderDen);
+    matrix_ind=1;
+    # Sort the eigenvalues and eigenvectors
+    for i=1:padeOrderDen
+        if sign(imag(d_not_sorted[i])==0) #Real eigenvalue, copy as is
+            d[matrix_ind]=d_not_sorted[i];
+            v[:,matrix_ind]=v_not_sorted[:,i];
+            matrix_ind+=1;
+        else # Complex eigenvalue
+            if matrix_ind < padeOrderDen
+                if sign(imag(d_not_sorted[i]))==-1
+                    d[matrix_ind]    = real(d_not_sorted[i])     -imag(d_not_sorted[i])*im;
+                    d[matrix_ind+1]  = real(d_not_sorted[i])     +imag(d_not_sorted[i])*im;
+                    v[:,matrix_ind]  = real(v_not_sorted[:,i])   - imag(v_not_sorted[:,i])*im;
+                    v[:,matrix_ind+1]= real(v_not_sorted[:,i])   + imag(v_not_sorted[:,i])*im;
+                else
+                    d[matrix_ind]    = real(d_not_sorted[i])     +imag(d_not_sorted[i])*im;
+                    d[matrix_ind+1]  = real(d_not_sorted[i])     -imag(d_not_sorted[i])*im;
+                    v[:,matrix_ind]  = real(v_not_sorted[:,i])   + imag(v_not_sorted[:,i])*im;
+                    v[:,matrix_ind+1]= real(v_not_sorted[:,i])   - imag(v_not_sorted[:,i])*im;
+                end
+                matrix_ind+=2;
+            end
+        end
+    end
+    matrix_ind=1;
+    T_inv=zeros(padeOrderDen,padeOrderDen);
+    for i=1:padeOrderDen
+        if imag(d[i])==0 #Real eigenvalue
+            T_inv[:,matrix_ind]=v[:,i];
+            matrix_ind+=1;
+        else # Complex eigenvalue
+            if matrix_ind < padeOrderDen
+                T_inv[:,matrix_ind]  =real(v[:,i]);
+                T_inv[:,matrix_ind+1]=imag(v[:,i]);
+                matrix_ind+=2;
+            end
+        end
+    end
+    T=inv(T_inv);
+    Ad=T*Ad*T_inv;
+    Bd=T*Bd;
+    Cd=Cd*T_inv;
+    # Concatenate the Pade matrices: nDelta_d, nDelta_q, nSigma_d, nSigma_q, nSigma_z
+    # A_Pade=cat(Ad,Ad,Ad,Ad,Ad;dims=[1,2]);
+    # B_Pade=cat(Bd,Bd,Bd,Bd,Bd;dims=[1,2]);
+    # C_Pade=cat(Cd,Cd,Cd,Cd,Cd;dims=[1,2]);
+    # D_Pade=cat(Dd,Dd,Dd,Dd,Dd;dims=[1,2]);
+    if numberVars == 1
+        A_Pade=Ad;
+        B_Pade=Bd;
+        C_Pade=Cd;
+        D_Pade=Dd;
+    elseif numberVars == 2
+        A_Pade=cat(Ad,Ad;dims=[1,2]);
+        B_Pade=cat(Bd,Bd;dims=[1,2]);
+        C_Pade=cat(Cd,Cd;dims=[1,2]);
+        D_Pade=cat(Dd,Dd;dims=[1,2]);
+    end
+
+    return A_Pade,B_Pade,C_Pade,D_Pade
 end
