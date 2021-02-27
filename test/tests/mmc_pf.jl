@@ -5,9 +5,9 @@
 # using HVDCstability
 
 @time net = @network begin
-    gen1 = ac_source(pins = 3, P_min = 50, P = 1000, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
+    gen1 = ac_source(pins = 3, P_min = 50, P = 100, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
                     V = 320, transformation = true)
-    gen2 = ac_source(pins = 3, P_min = -1500, P = -1000, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
+    gen2 = ac_source(pins = 3, P_min = -1500, P = -100, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
                     V = 320, transformation = true)
 
     tl1 = overhead_line(length = 200e3,
@@ -29,22 +29,6 @@
           I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
           I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)
 
-    # c1 = mmc(Vᵈᶜ = 640, Vₘ = 230,
-    #         P_max = -50, P_min = -1500, P = -1000, Q = 0, Q_max = 500, Q_min = -500, P_dc = 100,
-    #         occ = PI_control(ζ = 0.7, bandwidth = 1000),
-    #         ccc = PI_control(ζ = 0.7, bandwidth = 300),
-    #         dc = PI_control(Kₚ = 0.01, Kᵢ = 2),
-    #         energy = PI_control(Kₚ = 120, Kᵢ = 400),
-    #         zcc = PI_control(ζ = 0.7, bandwidth = 300)
-    #         )
-    # c2 = mmc(Vᵈᶜ = 640, Vₘ = 230,
-    #         P_max = 1500, P_min = 50, P = 1000, Q = 0, Q_max = 300, Q_min = -300, P_dc = -100,
-    #         occ = PI_control(ζ = 0.7, bandwidth = 1000),
-    #         ccc = PI_control(ζ = 0.7, bandwidth = 300),
-    #         power = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04),
-    #         energy = PI_control(Kₚ = 120, Kᵢ = 400),
-    #         zcc = PI_control(ζ = 0.7, bandwidth = 300)
-    #         )
     c1 = mmc(Vᵈᶜ = 640, Vₘ = 271.8934,
             P_max = -50, P_min = -1500, P = -1000, Q = 0, Q_max = 500, Q_min = -500, P_dc = 100,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
@@ -54,6 +38,7 @@
             zcc = PI_control(ζ = 0.7, bandwidth = 300),
             timeDelay=400e-6, padeOrderNum=3, padeOrderDen=3
             )
+
     c2 = mmc(Vᵈᶜ = 640, Vₘ = 271.8934,
             P_max = 1500, P_min = 50, P = 1000, Q = 0, Q_max = 300, Q_min = -300, P_dc = -100,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
