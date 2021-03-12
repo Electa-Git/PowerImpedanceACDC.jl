@@ -118,7 +118,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Id = 2/3*(Vᴳd * Pac + Vᴳq * Qac) / (Vᴳd^2 + Vᴳq^2)
     Iq = 2/3*(Vᴳq * Pac - Vᴳd * Qac) / (Vᴳd^2 + Vᴳq^2)
 
-
+    println(Pac)
+    println(Qac) 
     # setup control parameters and equations
     init_x = zeros(12, 1)
 

@@ -3,12 +3,14 @@
 # using Pkg
 # Pkg.activate(".")
 # using HVDCstability
-
+powerTransfer = 1000 # Reference value for MMC2, positive value means power transfer from DC to AC
+voltageMagnitude = 271.89 # Line-to-neutral voltage peak value. Corresponds to a L-L RMS value of 333 kV, which was used in the INELFE project with a DC link voltage of 640 kV
 @time net = @network begin
-    gen1 = ac_source(pins = 3, P_min = 50, P = 100, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
-                    V = 320, transformation = true)
-    gen2 = ac_source(pins = 3, P_min = -1500, P = -100, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
-                    V = 320, transformation = true)
+    
+    gen1 = ac_source(pins = 3, P_min = 50, P = powerTransfer, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
+                    V = voltageMagnitude, transformation = true)
+    gen2 = ac_source(pins = 3, P_min = -1500, P = -powerTransfer, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
+                    V = voltageMagnitude, transformation = true)
 
     tl1 = overhead_line(length = 200e3,
         conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
@@ -29,18 +31,28 @@
           I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
           I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)
 
+<<<<<<< Updated upstream
     c1 = mmc(Vᵈᶜ = 640, Vₘ = 271.8934,
             P_max = -50, P_min = -1500, P = -1000, Q = 0, Q_max = 500, Q_min = -500, P_dc = 100,
+=======
+    c1 = mmc(Vᵈᶜ = 640, Vₘ = voltageMagnitude,
+            P_max = -50, P_min = -1500, P = -powerTransfer, Q = 0, Q_max = 500, Q_min = -500, P_dc = powerTransfer,
+>>>>>>> Stashed changes
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
             dc = PI_control(Kₚ = 0.01, Kᵢ = 2),
-            energy = PI_control(Kₚ = 120, Kᵢ = 400),
+            energy = PI_control(Kₚ = 120, Kᵢ = 400, ref=[1*3072e4]),
             zcc = PI_control(ζ = 0.7, bandwidth = 300),
             timeDelay=400e-6, padeOrderNum=3, padeOrderDen=3
             )
+<<<<<<< Updated upstream
 
     c2 = mmc(Vᵈᶜ = 640, Vₘ = 271.8934,
             P_max = 1500, P_min = 50, P = 1000, Q = 0, Q_max = 300, Q_min = -300, P_dc = -100,
+=======
+    c2 = mmc(Vᵈᶜ = 640, Vₘ = voltageMagnitude,
+            P_max = 1500, P_min = 50, P = powerTransfer, Q = 0, Q_max = 300, Q_min = -300, P_dc = -powerTransfer,
+>>>>>>> Stashed changes
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
             power = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04),
@@ -72,8 +84,14 @@ end
 #         output_pins = Any[(:c1, Symbol(2.2))], omega_range = (0, 4, 1000))
 # bode(imp_ac, omega = omega_ac)
 
+<<<<<<< Updated upstream
 @time imp, omega = check_stability(net, net.elements[:c1], direction = :dc, omega_range = (0,4,1000))
 p = bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
+=======
+# @time imp, omega = check_stability(net, net.elements[:c1], direction = :dc, omega_range = (0,4,1000))
+# p = bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
+# n = nyquist(imp, title = "Y_{MMC1} Z_{eq}")
+>>>>>>> Stashed changes
 
 # n = nyquist(imp, title = "Y_{MMC1} Z_{eq}")
 # imp, omega = check_stability(net, net.elements[:c2], direction = :dc)
@@ -82,4 +100,22 @@ p = bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
 @time imp, omega = check_stability(net, net.elements[:c1], direction = :ac, omega_range = (0,4,1000))
 p = bode(imp, omega = omega, titles = ["Z_{MMC1, AC}" "Z_{eq, AC}" "Y_{MMC1, AC} Z_{eq, AC}"])
 
+<<<<<<< Updated upstream
 # n = nyquist(imp, title = "Y_{MMC1, AC} Z_{eq, AC}")
+=======
+# n = nyquist(imp, title = "Y_{MMC1, AC} Z_{eq, AC}")
+
+println("C1, DC Side")
+@time imp, omega = check_stability(net, net.elements[:c1], direction = :dc, omega_range = (0,4,1000))
+# p = bode(imp, omega = omega, titles = ["Z_{MMC1}" "Z_{eq}" "Y_{MMC1} Z_{eq}"])
+# n = nyquist(imp, title = "Y_{MMC1} Z_{eq}")
+println("C2, DC Side")
+@time imp, omega = check_stability(net, net.elements[:c2], direction = :dc, omega_range = (0,4,1000))
+p = bode(imp, omega = omega, titles = ["Z_{MMC2}" "Z_{eq}" "Y_{MMC2} Z_{eq}"])
+n = nyquist(imp, title = "Y_{MMC2} Z_{eq}")
+println("C1, AC Side")
+@time imp, omega = check_stability(net, net.elements[:c1], direction = :ac, omega_range = (0,4,1000))
+println("C2, AC Side")
+@time imp, omega = check_stability(net, net.elements[:c2], direction = :ac, omega_range = (0,4,1000))
+
+>>>>>>> Stashed changes
