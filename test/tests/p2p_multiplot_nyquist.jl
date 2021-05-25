@@ -1,5 +1,5 @@
 function generate_nyquist(Kp)
-    @time net = @network begin
+    net = @network begin
         gen1 = ac_source(pins = 3, P_min = 50, P = 100, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
                         V = 320, transformation = true)
         gen2 = ac_source(pins = 3, P_min = -1500, P = -100, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
@@ -24,7 +24,7 @@ function generate_nyquist(Kp)
               I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
               I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)
 
-        c1 = mmc(Vᵈᶜ = 1500, Vₘ = 320,
+        c1 = mmc(Vᵈᶜ = 640, Vₘ = 320,
                 P_max = -50, P_min = -1500, P = -100, Q = 0, Q_max = 500, Q_min = -500, P_dc = 100,
                 occ = PI_control(ζ = 0.7, bandwidth = 1000),
                 ccc = PI_control(ζ = 0.7, bandwidth = 300),
@@ -34,7 +34,7 @@ function generate_nyquist(Kp)
                 timeDelay=150e-6, padeOrderNum=3, padeOrderDen=3
                 )
 
-        c2 = mmc(Vᵈᶜ = 1500, Vₘ = 320,
+        c2 = mmc(Vᵈᶜ = 640, Vₘ = 320,
                 P_max = 1500, P_min = 50, P = 100, Q = 0, Q_max = 300, Q_min = -300, P_dc = -100,
                 occ = PI_control(ζ = 0.7, bandwidth = 1000),
                 ccc = PI_control(ζ = 0.7, bandwidth = 300),
@@ -64,14 +64,17 @@ function generate_nyquist(Kp)
 
     imp, omega = check_stability(net, net.elements[:c1], direction = :dc, omega_range = (0,4,1000))
 
-    return imp, "{Y_{MMC1} Z_{eq}}_1"
-
-    return net
+    return imp, string("{Y_{MMC1} Z_{eq}}_{K_p^{v_dc} = ", Kp, " }")
 end
 
 imp1, title1 = generate_nyquist(0.01)
+imp2, title2 = generate_nyquist(0.02)
 
 func = Vector{Any}()
+push!(func, imp2)
 push!(func, imp1)
 titles = Vector{String}()
+push!(titles, title2)
 push!(titles, title1)
+
+nyquist_multiplot(func, titles = titles)

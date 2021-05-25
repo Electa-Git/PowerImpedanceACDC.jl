@@ -4,7 +4,7 @@ function nyquist(st; title :: String = "")
     p_title = string("\$ H(j \\omega) = ", title, "\$")
     p = @pgf Axis({xlabel = "\$\\Re \\{H(j \\omega)\\} \$",
             ylabel = "\$\\Im \\{H(j \\omega)\\} \$", grid = "major",
-            only_marks, })
+            title = p_title, only_marks, })
 
     tf = []
     for i in 1:size(st,1)
@@ -22,15 +22,14 @@ end
 function nyquist_multiplot(func; titles = [""])
     p = @pgf Axis({xlabel = "\$\\Re \\{H(j \\omega)\\} \$",
             ylabel = "\$\\Im \\{H(j \\omega)\\} \$", grid = "major",
-            title = p_title, only_marks, })
+            only_marks, })
 
-    tf = []
+
     for j in 1:size(func,1)
         st = func[j]
-        title = titles[j]
         (length(titles[1]) == 0) ? p_title = LegendEntry(string("\$H_{", j, "}\$")) :
                                      p_title = LegendEntry(string("\$", titles[j], "\$"))
-
+        tf = []
         for i in 1:size(st,1)
             if (real(st[i][3]) < 3.5) && (real(st[i][3]) > -3.5) &&
                 (imag(st[i][3]) < 3.5) && (imag(st[i][3]) > -3.5)
@@ -42,12 +41,12 @@ function nyquist_multiplot(func; titles = [""])
 
     θ = 0:0.01:2*π
     push!(p, PlotInc(Table(cos.(θ), sin.(θ))))
-    p = @pgf GroupPlot(
-        { group_style = { group_size="1 by 1"},
-          no_markers,
-          legend_pos="north west",
-          height = "8cm",
-          width = "12cm"
-        },
-        p)
+    # p1 = @pgf GroupPlot(
+    #     { group_style = { group_size="1 by 1"},
+    #       no_markers,
+    #       legend_pos="north west",
+    #       height = "8cm",
+    #       width = "12cm"
+    #     },
+    #     p)
 end
