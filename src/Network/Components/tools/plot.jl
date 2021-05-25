@@ -66,7 +66,7 @@ function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
 
     for i in 1:size(impedance[1],1)
         for j in 1:size(impedance[1],2)
-            (length(titles[1,1]) == 0) ? p_title = LegendEntry(string("\$Z_{", i, "," , j, "}\$")) :
+            (length(titles[1,1]) == 0) ? p_title = LegendEntry(string("\$H_{", i, "," , j, "}\$")) :
                                          p_title = LegendEntry(string("\$", titles[i, j], "\$"))
 
             # check every frequency
