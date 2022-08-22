@@ -116,7 +116,7 @@ function transformer(;args...)
     #Z_stray matrix
     (t.Cₛ != 0) ? Z_stray = [1 1/s/t.Cₛ; 0 1] : nothing #if Cₛ is defined add it to Yiron matrix otherwise do nothing and go next
     #[A B; C D]=Y_turn*Z*Y_turn
-    Z = Zᵖ_winding * Y_iron * N_tr * Zˢ_winding # equation(27) pag 18 in the parenthesis
+    Z = Y_turn*(Zᵖ_winding * Y_iron * N_tr * Zˢ_winding)*Y_turn # equation(27) pag 18 in the parenthesis
 
     Z = connect_parallel!(Z, Z_stray) #parallel connection in the parenthesis of equation(27)
 
@@ -158,7 +158,7 @@ function transformer(;args...)
                 Z = Z_inner
             end
 
-            t.ABCD = Z
+            t.ABCD = Y_turn * Z * Y_turn
         end
     end
 

@@ -1,3 +1,4 @@
+using HVDCstability
 function generate_nyquist(param_change)
     powerTransfer = 1000 # Reference value for MMC2, positive value means power transfer from DC to AC
     voltageMagnitude = 333*sqrt(2/3) # Line-to-neutral voltage peak value. Corresponds to a L-L RMS value of 333 kV, which was used in the INELFE project with a DC link voltage of 640 kV
