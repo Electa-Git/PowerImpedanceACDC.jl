@@ -80,7 +80,7 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
             elements_pins = filter(p ->  !in(p[1], elim_elements) && !in(p[1], dict[:element_list]), node)
 
             for (element, pin) in elements_pins
-                push!(dict[:element_list], element) # add element's symbol to the list
+                !in(element, dict[:element_list]) && push!(dict[:element_list], element) # add element's symbol to the list, only if the element has not been added before
                 other_nodes = get_nodes(net.elements[element], pin) # get the pins from the other side of element
                 make_lists(net, dict, elim_elements, other_nodes, end_pins)
             end

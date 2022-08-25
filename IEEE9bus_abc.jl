@@ -118,9 +118,12 @@ s = symbols("s")
 
 end
 
-
-@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g2], input_pins=Any[:Bus2a,:Bus2b,:Bus2c], 
-output_pins=Any[:gnda,:gndb,:gndc], omega_range = (0,4,2000))
+# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus1a,:Bus1b,:Bus1c], 
+# output_pins=Any[:gnda,:gndb,:gndc], omega_range = (0,4,2000)) # impedance seen from Bus2
+# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g2], input_pins=Any[:Bus2a,:Bus2b,:Bus2c], 
+# output_pins=Any[:gnda,:gndb,:gndc], omega_range = (0,4,2000)) # impedance seen from Bus2
+@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3a,:Bus3b,:Bus3c], 
+output_pins=Any[:gnda,:gndb,:gndc], omega_range = (0,4,2000)) # impedance seen from Bus3
 
 p = bode(imp_ac, omega = omega_ac)
 

@@ -118,7 +118,7 @@ function transformer(;args...)
     #[A B; C D]=Y_turn*Z*Y_turn
     Z = Y_turn*(Zᵖ_winding * Y_iron * N_tr * Zˢ_winding)*Y_turn # equation(27) pag 18 in the parenthesis
 
-    Z = connect_parallel!(Z, Z_stray) #parallel connection in the parenthesis of equation(27)
+    (t.Cₛ != 0) ? Z = connect_parallel!(Z, Z_stray) : nothing #if Cₛ is defined make the parallel connection, otherwise do nothing
 
     if (t.pins == 1) #monophase transformer In this case ABCD representation of a transformer has [2x2] dimension
         t.ABCD = Z #if 1-phase transformer I already have the Z matrix from the calculations done at the rows before
