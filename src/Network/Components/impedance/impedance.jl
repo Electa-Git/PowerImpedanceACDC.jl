@@ -74,7 +74,6 @@ function impedance(;z :: Union{Int, Float64, Basic, Array{Basic}} = 0, pins :: I
         end
         imp.ABCD = inv(m1)*m2
 
-
         element = Element(element_value = imp, input_pins = pins, output_pins = pins,
             transformation = transformation)
     end

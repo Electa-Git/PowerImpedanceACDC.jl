@@ -3,7 +3,8 @@ export crossbonded_cable #export the crossbonded_cable function (first letter lo
 @with_kw mutable struct Crossbonded_cable <: Transmission_line #generate the mutable structure Crossbonded_cable ()
     nₛ :: Int = 1            # number of the minor sections
     mₛ :: Int = 1            # number of the major sections
-    Zᶜᵇ :: Union{Int, Float64, Basic} = 0 # cross-bonding impedance
+    Zₛ :: Union{Int, Float64, Basic, Complex} = 0 # sheet grounding impedance
+    Zᶜᵇ :: Union{Int, Float64, Basic, Complex} = 0 # cross-bonding impedance
     section :: Cable = Cable()
 end
 
@@ -38,6 +39,7 @@ function crossbonded_cable(;args...) #variable arguments function -> "varargs" f
             if isa(val, Element) #determine if val.element_value is of the type Cable. If yes-> enter
                 val = val.element_value
                 val.eliminate = false #from cable mutable struct in cable.jl
+                # stops Kron's reduction, by default Kron reduction is applied
             end
             setfield!(cable, key, val) #Assign val to key of the composite type cable
         elseif (key == :transformation)
@@ -55,36 +57,38 @@ function eval_abcd(m :: Crossbonded_cable, s :: Complex)
     n = length(m.section.positions)       # number of cables, it should be 3
     nₗ = length(m.section.conductors)      # number of conducting layers, normally 2
 
-    order = [i for i in 1:2n*nₗ] #in case of n=3 and nₗ=2 -> order= vector of 12 elements from 1 to 12
-    for i in 1:nₗ
-        order[1+(i-1)n:i*n] = [i + (j-1)nₗ for j in 1:n] #if n=3 and nₗ=2 -> order = [1 3 5 2 4 6 7 8 9 10 11 12] (first all core voltages then all sheats voltages, currents still not sorted)
-    end
-    order[1+n*nₗ:2n*nₗ] = order[1:n*nₗ] + n*nₗ*ones(Int, n*nₗ, 1) # if n=3 and nₗ=12 -> order = [1 3 5 2 4 6 7 9 11 8 10 12] (fist all core voltages then all sheats voltages, core currents then sheats currents)
+    R1 = [1 0 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 1 0; 0 1 0 0 0 0; 0 0 0 1 0 0; 0 0 0 0 0 1] # rotate matrix between core and sheet currents/voltages
+    R = [R1 zeros(6,6); zeros(6,6) R1] # zeros(6,6)
+    R1_inv = inv(R1)
+    R_inv = [R1_inv zeros(6,6); zeros(6,6) R1_inv]
+    T1 = [1 0 0 0 0 0; 0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 0 1; 0 0 0 1 0 0; 0 0 0 0 1 0]
+    T1_inv = inv(T1)
+    T = [T1 zeros(6,6); zeros(6,6) T1]
+    T_inv = [T1_inv zeros(6,6); zeros(6,6) T1_inv]
     Mᶜᵇ = convert(Array{Complex}, Diagonal([1 for i in 1:(2n*nₗ)])) #for n=3 nₗ=2 Mᶜᵇ= [12x12] matrix
     isa(m.Zᶜᵇ, Basic) ? Z = N(subs(m.Zᶜᵇ, symbols(:s), s)) : Z = m.Zᶜᵇ
+    isa(m.Zₛ, Basic) ? Zₛ = N(subs(m.Zₛ, symbols(:s), s)) : Zₛ = m.Zₛ
     Mᶜᵇ[n+1:2n, n*nₗ+n+1:n*nₗ+2n] = Diagonal([2Z for i in 1:n])
 
-    t_order = [i for i in 1:2n*nₗ]
-    for i in 2:2:4
-        t_order[(i-1)n+1:i*n] = (t_order[(i-1)n+1:i*n])[[3;1;2]]
-    end
-
-    abcd_new = eval_abcd(m.section, s)
-    abcd_new = abcd_new[order, :]
-    abcd_new = abcd_new[:, order]
-    abcd = abcd_new
+    M = eval_abcd(m.section, s)
+    M = R * M * R_inv
+    abcd = M
     for dummy in 2:m.nₛ # iterate through minor sections
-        abcd_new = abcd_new[t_order, :]
-        abcd_new = abcd_new[:, t_order]
+        if iseven(dummy)
+            abcd_new = T * M * T_inv
+        else
+            abcd_new = T_inv * M * T
+        end
         abcd = abcd * Mᶜᵇ * abcd_new
     end
+
     abcd = convert(Array{Complex}, abcd)
 
     no_eliminate = [i for i in 1:n]
-    abcd = kron_abcd(abcd, no_eliminate)#Reduction of the ABCD matrix explained in section 2.6??
+    abcd = kron_abcd(abcd, Zₛ, no_eliminate)#Reduction of the ABCD matrix explained in section 2.6??
     total_abcd = convert(Array{Complex}, Diagonal([1 for dummy in 1:2n]))
     for i in 1:m.mₛ #i that goes from 1 to mₛ. Where mₛ is the number of major sections
-        total_abcd = total_abcd * abcd #Computation of the equivalent cable ABCD parameters -> bottom part pag 25 simulator_tutorial
+        total_abcd = total_abcd * abcd #Computation of the equivalent cable ABCD parameters -> bottom part page 25 simulator_tutorial
     end
 
     return total_abcd

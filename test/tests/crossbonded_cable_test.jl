@@ -8,21 +8,25 @@ net = @network begin
              I1 = Insulator(rᵢ = 31.75e-3, a = 33.75e-3, b = 59.55e-3, rₒ = 60.85e-3, ϵᵣ = 2.26),
              I2 = Insulator(rᵢ = 61.05e-3, rₒ = 65.95e-3, ϵᵣ = 2.26)),
              nₛ = 3, #minor sections
-             mₛ = 10) #major sections
-    #z = impedance(pins = 3, z = 25e-3*s)
+             mₛ = 1, 
+             Zᶜᵇ = 1e-9 + 1e-9*s) #major sections
+    r = impedance(pins = 3, z = 1e-3 + 1e-9*s)
 
     vs[1.1] ⟷ cb[1.1] ⟷ Node1
     vs[1.2] ⟷ cb[1.2] ⟷ Node2
     vs[1.3] ⟷ cb[1.3] ⟷ Node3
-    #t[2.1] ⟷ z[1.1]
-    #t[2.2] ⟷ z[1.2]
-    #t[2.3] ⟷ z[1.3]
-    vs[2.1] ⟷ vs[2.2] ⟷ vs[2.3] ⟷ gndvs
-    cb[2.1] ⟷ cb[2.2] ⟷ cb[2.3] ⟷ gnd
+    cb[2.1] ⟷ r[1.1]
+    cb[2.2] ⟷ r[1.2]
+    cb[2.3] ⟷ r[1.3]
+    vs[2.1] ⟷ vs[2.2] ⟷ vs[2.3] ⟷ gnd
+    #cb[2.1] ⟷ cb[2.2] ⟷ cb[2.3] ⟷ gnd
+    r[2.1] ⟷ gnd1
+    r[2.2] ⟷ gnd2
+    r[2.3] ⟷ gnd3
 end
 
-imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1,:Node2],
-                                        output_pins= Any[:gnd,:gnd], omega_range = (0, 4.196119877, 2500))
- bode(imp, omega = omega)
+imp, omega = determine_impedance(net, elim_elements = [:as], input_pins = Any[:Node1,:Node2, :Node3],
+                                        output_pins= Any[:gnd1,:gnd2, :gnd3], omega_range = (0.1, 5, 1000))
+bode(imp, omega = omega, axis_type = :loglog)
 #import as did last time in matlab
 #see on the simulator tutorial if it is possible to report other axis data format

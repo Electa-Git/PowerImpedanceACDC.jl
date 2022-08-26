@@ -3,6 +3,7 @@ isdefined(Base, :__precompile__) && __precompile__()
 module HVDCstability
 
     # default struct values
+    using ForwardDiff: isodd
     using Parameters, DataStructures
 
     # files manipulation

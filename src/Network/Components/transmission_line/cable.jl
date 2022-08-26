@@ -21,7 +21,7 @@ end
 end
 
 @with_kw mutable struct Cable <: Transmission_line #indicates that the mutable struct Cable is a subtype (<:) of abstract type Transmission_line
-    length :: Union{Int, Float64} = 0                    # line length [km]. Union -> it could be both Int or Float64
+    length :: Union{Int, Float64} = 0                    # line length [m]. Union -> it could be both Int or Float64
     conductors :: OrderedDict{Symbol, Conductor} = OrderedDict{Symbol, Conductor}() #OrderedDict -> dictionary with a particular order. Key: Symbol-> C1, C2, C3 and C4. Value: Conductor-> Mutable Struct Conductor, defined above
     insulators :: OrderedDict{Symbol, Insulator} = OrderedDict{Symbol, Insulator}() #OrderedDict -> dictionary with a particular order. Key: Symbol-> I1, I2, I3 and I4. Value: Insulator-> Mutable Struct Insulator, defined above
     positions :: Vector{Tuple{Real,Real}} = [] #Real -> indicates all variables are real number, vector composed by tuple of real numbers. e.g. positions=[(0,0),(1,1)]. Cables positions 1st:x=0, y=0. 2nd: x=1, y=1.

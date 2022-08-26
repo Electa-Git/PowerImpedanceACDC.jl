@@ -9,9 +9,11 @@ function kron(matrix :: Array{Complex}, no_eliminate :: Array{Int})
             inv(matrix[1+n_noElim:end,1+n_noElim:end])*matrix[1+n_noElim:end,1:n_noElim]
 end
 
-function kron_abcd(matrix :: Array{Complex}, no_eliminate :: Array{Int})
+function kron_abcd(matrix :: Array{Complex}, Zₛ :: Union{Int, Float64, Basic, Complex},
+     no_eliminate :: Array{Int})
     n = Int(size(matrix, 1)/2)
     eliminate = setdiff(1:n, no_eliminate)
+    Z = Diagonal([Zₛ for i in 1:length(eliminate)])
 
     (a,b,c,d) = (matrix[1:n,1:n], matrix[1:n,n+1:end], matrix[n+1:end,1:n], matrix[n+1:end, n+1:end])
     (a11, a12, a21, a22) = (a[no_eliminate,no_eliminate], a[no_eliminate, eliminate], a[eliminate, no_eliminate], a[eliminate, eliminate])
@@ -19,11 +21,11 @@ function kron_abcd(matrix :: Array{Complex}, no_eliminate :: Array{Int})
     (c11, c12, c21, c22) = (c[no_eliminate,no_eliminate], c[no_eliminate, eliminate], c[eliminate, no_eliminate], c[eliminate, eliminate])
     (d11, d12, d21, d22) = (d[no_eliminate,no_eliminate], d[no_eliminate, eliminate], d[eliminate, no_eliminate], d[eliminate, eliminate])
 
-    e = inv(b22)
-    a = a11 - b12*e*a21
-    b = b11 - b12*e*b21
-    c = c11 - d12*e*a21
-    d = d11 - d12*e*b21
+    e = inv((a22*Z + b22) + Z*(c22*Z + d22))
+    a = a11 - (a12*Z + b12)*e*(Z*c21 + a21)
+    b = b11 - (a12*Z + b12)*e*(Z*d21 + b21)
+    c = c11 - (c12*Z + d12)*e*(Z*c21 + a21)
+    d = d11 - (c12*Z + d12)*e*(Z*d21 + b21)
 
     return [a b; c d]
 end
