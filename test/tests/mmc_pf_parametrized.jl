@@ -1,5 +1,5 @@
-#include("../../src/HVDCstability.jl")
-#using .HVDCstability
+# include("../../src/HVDCstability.jl")
+# using .HVDCstability
 # using Pkg
 # Pkg.activate(".")
 # using HVDCstability
@@ -44,7 +44,8 @@ voltageMagnitude = 333*sqrt(2/3) # Line-to-neutral voltage peak value. Correspon
             P_max = 1500, P_min = 50, P = powerTransfer, Q = 0, Q_max = 300, Q_min = -300, P_dc = -powerTransfer,
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
-            power = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04),
+            p = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04),
+            q = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04),
             energy = PI_control(Kₚ = 120, Kᵢ = 400),
             zcc = PI_control(ζ = 0.7, bandwidth = 300),
             timeDelay=150e-6, padeOrderNum=3, padeOrderDen=3
@@ -98,5 +99,5 @@ println("C1, AC Side")
 # p = bode(imp_ac, omega = omega_ac, titles = ["Z_{MMC2}" "Z_{eq}" "Y_{MMC2} Z_{eq}"])
 # n = nyquist(imp, title = "Y_{MMC2} Z_{eq}")
 println("C2, AC Side")
-@time imp, omega = check_stability(net, net.elements[:c2], direction = :ac, omega_range = (0,4,1000))
+@time imp, omega = check_stability(net, net.elements[:c2], direction = :ac, omega_range = (0,4,1000));
 

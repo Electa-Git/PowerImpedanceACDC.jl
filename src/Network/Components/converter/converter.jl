@@ -21,7 +21,7 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     ((dict["convdc"])[string(key)])["type_ac"] = 1 # default, PQ ac bus
     if in(:power, keys(converter.controls))
         ((dict["convdc"])[string(key)])["type_dc"] = 1  # constant AC active power
-        ((dict["convdc"])[string(key)])["type_ac"] = 1  # PV ac bus
+        ((dict["convdc"])[string(key)])["type_ac"] = 1  # PQ ac bus
     elseif in(:dc, keys(converter.controls))
         ((dict["convdc"])[string(key)])["type_dc"] = 2  # constant DC voltage
     else
@@ -46,8 +46,8 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     ((dict["convdc"])[string(key)])["bf"] = 0
     # with reactor
     ((dict["convdc"])[string(key)])["reactor"] = 1
-    ((dict["convdc"])[string(key)])["rc"] = converter.Rᵣ / global_dict["Z"]
-    ((dict["convdc"])[string(key)])["xc"] = converter.Lᵣ * global_dict["omega"] / global_dict["Z"]
+    ((dict["convdc"])[string(key)])["rc"] = (converter.Rᵣ + converter.Rₐᵣₘ / 2) / global_dict["Z"]
+    ((dict["convdc"])[string(key)])["xc"] = (converter.Lᵣ + converter.Lₐᵣₘ / 2) * global_dict["omega"] / global_dict["Z"]
     converter.ω₀ = global_dict["omega"]
 
     # default values

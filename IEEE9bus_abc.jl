@@ -42,10 +42,6 @@ s = symbols("s")
             groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
             earth_parameters = (1,1,100), transformation = false)
             
-    # Lₘ =, Rₘ =
-
-    # Including capacitances
-            
     t1 = transformer(n = 16.5/230 , Lₚ = 4.9916e-4/2, Rₚ = 0, Rₛ = 0, Lₛ = 0.097/2,  Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = false)
     t2 = transformer(n = 18/230 ,   Lₚ = 6.4458e-4/2, Rₚ = 0, Rₛ = 0, Lₛ = 0.1052/2, Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = false)
     t3 = transformer(n = 13.8/230 , Lₚ = 3.5523e-4/2, Rₚ = 0, Rₛ = 0, Lₛ = 0.0987/2, Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = false)
@@ -118,18 +114,28 @@ s = symbols("s")
 
 end
 
-# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus1a,:Bus1b,:Bus1c], 
-# output_pins=Any[:gnda,:gndb,:gndc], omega_range = (0,4,2000)) # impedance seen from Bus2
-# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g2], input_pins=Any[:Bus2a,:Bus2b,:Bus2c], 
-# output_pins=Any[:gnda,:gndb,:gndc], omega_range = (0,4,2000)) # impedance seen from Bus2
-@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3a,:Bus3b,:Bus3c], 
+@time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus1a,:Bus1b,:Bus1c], 
+output_pins=Any[:gnda,:gndb,:gndc], omega_range = (0,4,2000)) # impedance seen from Bus1
+@time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:g2], input_pins=Any[:Bus2a,:Bus2b,:Bus2c], 
+output_pins=Any[:gnda,:gndb,:gndc], omega_range = (0,4,2000)) # impedance seen from Bus2
+@time imp_ac3, omega_ac3 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3a,:Bus3b,:Bus3c], 
 output_pins=Any[:gnda,:gndb,:gndc], omega_range = (0,4,2000)) # impedance seen from Bus3
 
-p = bode(imp_ac, omega = omega_ac)
+p = bode(imp_ac1, omega = omega_ac1)
 
-writedlm("imp_abc.csv",  imp_ac, ',')
-writedlm("w.csv",  omega_ac, ',')
 
+
+
+
+
+
+
+
+
+
+
+# writedlm("imp_abc.csv",  imp_ac, ',')
+# writedlm("w.csv",  omega_ac, ',')
 
 # save_plot(p,string("files/", "from_Bus2_to_gnd_G3_withConverter", ".pdf"))
 # save_plot(p)

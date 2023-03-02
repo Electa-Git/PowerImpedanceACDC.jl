@@ -2,61 +2,57 @@ using HVDCstability,SymEngine
 s = symbols("s")
 @time net = @network begin
     
-    g1 = ac_source(V = 230 * sqrt(2/3), pins = 3, transformation = true)
-    g2 = ac_source(V = 230 * sqrt(2/3), pins = 3, transformation = true)
-    g3 = ac_source(V = 230 * sqrt(2/3), pins = 3, transformation = true)
-
-    tl78 = overhead_line(length = 76e3,
-            conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-                            Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-            groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-            earth_parameters = (1,1,100), transformation = true)
-
-    tl89 = overhead_line(length = 106e3,
-            conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-                            Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-            groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-            earth_parameters = (1,1,100), transformation = true)  
-
-    tl75 = overhead_line(length = 170e3,
-            conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-                            Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-            groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-            earth_parameters = (1,1,100), transformation = true)
-
-    tl96 = overhead_line(length = 179e3,
-            conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-                            Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-            groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-            earth_parameters = (1,1,100), transformation = true) 
-
-    tl54 = overhead_line(length = 89e3,
-            conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-                            Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-            groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-            earth_parameters = (1,1,100), transformation = true)
-
-    tl64 = overhead_line(length = 97e3,
-            conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-                            Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-            groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-            earth_parameters = (1,1,100), transformation = true)
-            
-    # Lₘ =, Rₘ =
-            
-    t1 = transformer(n = 16.5/230 , Lₚ = 0.025, Rₚ = 0, Rₛ = 0, Lₛ = 4.8495, Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = true)
-
-    t2 = transformer(n = 18/230 ,  Lₚ = 0.0322, Rₚ = 0, Rₛ = 0, Lₛ = 5.2621, Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = true)
-
-    t3 = transformer(n = 13.8/230 , Lₚ =0.0178, Rₚ = 0, Rₛ = 0, Lₛ = 4.9337, Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = true)
-
-#     l5 = impedance(z = 423.2 + 3.36s, pins = 3, transformation = true) # Nominal P 125 MW, nominal Q 50 MVar
-#     l6 = impedance(z = 587.78 + 5.61s, pins = 3, transformation = true) # Nominal P 125 MW, nominal Q 50 MVar
-#     l8 = impedance(z = 529 + 4.81s, pins = 3, transformation = true) # Nominal P 125 MW, nominal Q 50 MVar
-
-    l5 = impedance(z = 1269.6 + 10.1s, pins = 3, transformation = true) # Nominal P 41.6667 MW, nominal Q 16.66667 MVar
-    l6 = impedance(z = 1763.3 + 16.84s, pins = 3, transformation = true) # Nominal P 30 MW, nominal Q 10 MVar
-    l8 = impedance(z = 1587.16 + 14.43s, pins = 3, transformation = true) # Nominal P 33.33 MW, nominal Q 11.6667 MVar
+        g1 = ac_source(V = 16.5 * sqrt(2/3), pins = 3, transformation = true)
+        g2 = ac_source(V = 18 * sqrt(2/3), pins = 3, transformation = true)
+        g3 = ac_source(V = 13.8 * sqrt(2/3), pins = 3, transformation = true)
+    
+        tl78 = overhead_line(length = 76e3,
+                conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+                                Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+                groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+                earth_parameters = (1,1,100), transformation = true)
+    
+        tl89 = overhead_line(length = 106e3,
+                conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+                                Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+                groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+                earth_parameters = (1,1,100), transformation = true)  
+    
+        tl75 = overhead_line(length = 170e3,
+                conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+                                Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+                groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+                earth_parameters = (1,1,100), transformation = true)
+    
+        tl96 = overhead_line(length = 179e3,
+                conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+                                Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+                groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+                earth_parameters = (1,1,100), transformation = true) 
+    
+        tl54 = overhead_line(length = 89e3,
+                conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+                                Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+                groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+                earth_parameters = (1,1,100), transformation = true)
+    
+        tl64 = overhead_line(length = 97e3,
+                conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+                                Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+                groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+                earth_parameters = (1,1,100), transformation = true)
+                
+        # Lₘ =, Rₘ =
+    
+        # Including capacitances
+                
+        t1 = transformer(n = 16.5/230 , Lₚ = 4.9916e-4/2, Rₚ = 0, Rₛ = 0, Lₛ = 0.097/2,  Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = true)
+        t2 = transformer(n = 18/230 ,   Lₚ = 6.4458e-4/2, Rₚ = 0, Rₛ = 0, Lₛ = 0.1052/2, Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = true)
+        t3 = transformer(n = 13.8/230 , Lₚ = 3.5523e-4/2, Rₚ = 0, Rₛ = 0, Lₛ = 0.0987/2, Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = true)
+    
+        l5 = impedance(z = 1269.6 + 10.1s, pins = 3, transformation = true) # Nominal P 41.6667 MW, nominal Q 16.66667 MVar
+        l6 = impedance(z = 1763.3 + 16.84s, pins = 3, transformation = true) # Nominal P 30 MW, nominal Q 10 MVar
+        l8 = impedance(z = 1587.16 + 14.43s, pins = 3, transformation = true) # Nominal P 33.33 MW, nominal Q 11.6667 MVar
 
     g1[1.1] == gndd
     g1[1.2] == gndq

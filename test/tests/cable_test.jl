@@ -11,6 +11,6 @@ net = @network begin
     vs[1.1] ⟷ c[1.1] ⟷ Node1
     vs[2.1] ⟷ c[2.1] ⟷  gnd
 end
-# imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1], output_pins = Any[:gnd],
-#         omega_range = (-1,6,10000))
-# bode(imp, omega = omega)
+imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1], output_pins = Any[:gnd],
+        omega_range = (-1,6,10000))
+bode(imp, omega = omega)

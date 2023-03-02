@@ -19,7 +19,9 @@ function check_stability(net :: Network, mmc :: Element; direction :: Symbol = :
     function phase_margin(tf, omega)
         for i in 2:length(tf)
             if (20*log10(abs(tf[i-1][3])) > 0) && (20*log10(abs(tf[i][3])) < 0)
-                println("PM = ", rad2deg(angle(tf[i][3])) + 180, " at the angular frequency ", omega[i])
+                wrappedAngle = angle(tf[i][3]) + 2*pi*floor(angle(tf[i][3])/(-2*pi))
+                println("Phase Margin = ", round(rad2deg(wrappedAngle) + 180, digits = 3), "° at ", round(omega[i]/2/pi, digits = 3), " Hz.")
+                # println("Phase Margin = ", round(rad2deg(angle(tf[i][3])) + 180, digits = 3), "° at ", round(omega[i]/2/pi, digits = 3), " Hz.") # Original
             end
         end
     end
@@ -49,7 +51,7 @@ function check_stability(net :: Network, mmc :: Element; direction :: Symbol = :
         end
     end
 
-    if !isa(mmc.element_value, MMC)
+    if !(isa(mmc.element_value, MMC) || isa(mmc.element_value, SynchronousMachine)) #TODO: Generalize
         throw(ArgumentError("Cannot determine stability of the passive element."))
     end
 

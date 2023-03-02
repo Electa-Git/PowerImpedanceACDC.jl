@@ -19,10 +19,10 @@ function make_power_flow_ac!(tl :: Transmission_line , dict :: Dict{String, Any}
 
     ((dict["branch"])[string(key)])["br_r"] = real(Z)
     ((dict["branch"])[string(key)])["br_x"] = imag(Z)
-    ((dict["branch"])[string(key)])["g_fr"] = real(Y)
-    ((dict["branch"])[string(key)])["b_fr"] = imag(Y)
-    ((dict["branch"])[string(key)])["g_to"] = real(Y)
-    ((dict["branch"])[string(key)])["b_to"] = imag(Y)
+    ((dict["branch"])[string(key)])["g_fr"] = real(Y)/2
+    ((dict["branch"])[string(key)])["b_fr"] = imag(Y)/2
+    ((dict["branch"])[string(key)])["g_to"] = real(Y)/2
+    ((dict["branch"])[string(key)])["b_to"] = imag(Y)/2
 
 end
 

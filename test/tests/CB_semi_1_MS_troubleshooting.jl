@@ -1,5 +1,5 @@
 # include("../../src/HVDCstability.jl")
-# using .HVDCstability
+# using HVDCstability
 using DelimitedFiles
 using SymEngine
 ## cross-bonding cable test
@@ -20,7 +20,10 @@ net = @network begin
     ac[1.1] ⟷ cb[1.1] ⟷ Node1
     ac[1.2] ⟷ cb[1.2] ⟷ Node2
     ac[1.3] ⟷ cb[1.3] ⟷ Node3
-    ac[2.1] ⟷ ac[2.2] ⟷ ac[2.3] ⟷ gnd
+    ac[2.1] ⟷ gnd1
+    ac[2.2] ⟷ gnd2
+    ac[2.3] ⟷ gnd3
+    # ac[2.1] ⟷ ac[2.2] ⟷ ac[2.3] ⟷ gnd
     #cb[2.1] ⟷ r[1.1]
     #cb[2.2] ⟷ r[1.2]
     #cb[2.3] ⟷ r[1.3]
@@ -32,5 +35,5 @@ imp, omega = determine_impedance(net, elim_elements = [:ac], input_pins = Any[:N
                             output_pins = Any[:gnd1, :gnd2, :gnd3], omega_range = (1,5,1000))
 #save_data(net.elements[:Cable],"cb_trial", omega_range = (5, 5, 1), scale=:loglin)
 bode(imp, omega = omega, axis_type = :loglin)
-writedlm( "imp_cable_CB_semi_1_MS_3_ns.csv", imp,',')
-writedlm( "omega_cable_CB_semi_1_MS_3_ns.csv", omega, ',')
+# writedlm( "imp_cable_CB_semi_1_MS_3_ns.csv", imp,',')
+# writedlm( "omega_cable_CB_semi_1_MS_3_ns.csv", omega, ',')

@@ -104,7 +104,7 @@ function make_power_flow_ac!(imp :: Impedance , dict :: Dict{String, Any},
     abcd = eval_abcd(imp, global_dict["omega"] * 1im)
     n = 3
     Z = (abcd[1:n,n+1:end])[1,1] / global_dict["Z"]
-
+    # TODO: Generalize this to include capacitors as well?
     ((dict["branch"])[string(key)])["br_r"] = real(Z)
     ((dict["branch"])[string(key)])["br_x"] = imag(Z)
     ((dict["branch"])[string(key)])["g_fr"] = 0

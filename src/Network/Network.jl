@@ -6,7 +6,6 @@ export power_flow  # for testing
 
 import Base: delete!
 
-
 const Net = Vector{Tuple{Symbol,Symbol}} # pairs of element designator and pin name
 
 """
@@ -322,7 +321,7 @@ function power_flow(net :: Network)
         key = length(data["gen"])+1
         (data["gen"])[string(key)] = Dict{String, Any}()
         ((data["gen"])[string(key)])["mBase"] = global_dict["S"] / 1e6
-        ((data["gen"])[string(key)])["gen_bus"] = key_b
+        ((data["gen"])[string(key)])["gen_bus"] = key_b     
 
         make_power_flow_ac!(element.element_value, data, global_dict)
 
@@ -332,6 +331,70 @@ function power_flow(net :: Network)
             ((data["bus"])[string(key_b)])["bus_type"] = 2
         end
         ((data["bus"])[string(key_b)])["bus_type"] = 3
+        ((data["bus"])[string(key_b)])["vm"] = ((data["gen"])[string(key)])["vg"]
+        ((data["bus"])[string(key_b)])["vmin"] =  0.9*((data["gen"])[string(key)])["vg"]
+        ((data["bus"])[string(key_b)])["vmax"] =  1.1*((data["gen"])[string(key)])["vg"]
+    end
+
+    function make_syngen(data :: Dict{String, Any}, element :: Element, dict_dc :: Array{Any}, new_i :: Array{Symbol}, new_o :: Array{Symbol})
+        # println("Inside")
+        # println(element)
+        !isempty(new_i) ? (!any(occursin("gnd", string(x)) for x in new_i) && (push!(dict_ac, new_i); add_bus_ac(data))) : nothing
+        key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
+        !isempty(new_o) ? (!any(occursin("gnd", string(x)) for x in new_o) && (push!(dict_ac, new_o); add_bus_ac(data))) : nothing
+        key_o = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
+
+        (key_i == nothing) ? key_b = key_o : key_b = key_i
+
+        # !isempty(new_i) ? (push!(dict_ac, new_i); add_bus_ac(data); key_i = length(data["bus"])) :
+        #                     key_i_br = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
+        # !isempty(new_o) ? (push!(dict_ac, new_o); add_bus_ac(data); key_o = length(data["bus"])) :
+        #                     key_o_br = findfirst(p -> in(element.pins[Symbol(2.1)], p), dict_ac)
+        # Add a new branch to get power flow from the SG to the infinite bus
+
+        add_bus_ac(data)
+        key_i = length(data["bus"])
+        push!(dict_ac, key_i)
+
+        key_e = length(data["branch"])+1
+        (data["branch"])[string(key_e)] = Dict{String, Any}()
+        ((data["branch"])[string(key_e)])["f_bus"] = key_i
+        ((data["branch"])[string(key_e)])["t_bus"] = key_o
+        ((data["branch"])[string(key_e)])["source_id"] = Any["branch", key_e]
+        ((data["branch"])[string(key_e)])["index"] = key_e
+        ((data["branch"])[string(key_e)])["rate_a"] = 1
+        ((data["branch"])[string(key_e)])["rate_b"] = 1
+        ((data["branch"])[string(key_e)])["rate_c"] = 1
+        ((data["branch"])[string(key_e)])["br_status"] = 1
+        ((data["branch"])[string(key_e)])["angmin"] = ang_min
+        ((data["branch"])[string(key_e)])["angmax"] = ang_max
+        ((data["branch"])[string(key_e)])["transformer"] = false
+        ((data["branch"])[string(key_e)])["tap"] = 1
+        ((data["branch"])[string(key_e)])["shift"] = 0
+        ((data["branch"])[string(key_e)])["c_rating_a"] = 1
+
+        # TODO: To be fixed! This branch seems to be added twice..
+        ((data["branch"])[string(key_e)])["br_r"] = 2 * (element.element_value.Ra + element.element_value.rt) * (element.element_value.Vᵃᶜ_base^2 / element.element_value.S_base) / global_dict["Z"]
+        ((data["branch"])[string(key_e)])["br_x"] = 2 * (element.element_value.Ll + element.element_value.lt) * (element.element_value.Vᵃᶜ_base^2 / element.element_value.S_base) / global_dict["Z"]
+        ((data["branch"])[string(key_e)])["g_fr"] = 0
+        ((data["branch"])[string(key_e)])["b_fr"] = 0
+        ((data["branch"])[string(key_e)])["g_to"] = 0
+        ((data["branch"])[string(key_e)])["b_to"] = 0       
+
+        key_b = key_i
+        key = length(data["gen"])+1
+        (data["gen"])[string(key)] = Dict{String, Any}()
+        ((data["gen"])[string(key)])["mBase"] = global_dict["S"] / 1e6
+        ((data["gen"])[string(key)])["gen_bus"] = key_b
+
+        make_power_flow_ac!(element.element_value, data, global_dict)
+
+        if isapprox(element.element_value.P_max, element.element_value.P)
+            ((data["bus"])[string(key_b)])["bus_type"] = 1
+        else
+            ((data["bus"])[string(key_b)])["bus_type"] = 2
+        end
+        # ((data["bus"])[string(key_b)])["bus_type"] = 3
         ((data["bus"])[string(key_b)])["vm"] = ((data["gen"])[string(key)])["vg"]
         ((data["bus"])[string(key_b)])["vmin"] =  0.9*((data["gen"])[string(key)])["vg"]
         ((data["bus"])[string(key_b)])["vmax"] =  1.1*((data["gen"])[string(key)])["vg"]
@@ -368,8 +431,8 @@ function power_flow(net :: Network)
         make_power_flow_ac!(element.element_value, data, global_dict)
     end
 
-
-    !any(is_converter(element) for element in values(net.elements)) && return
+    # println(values(net.elements))
+    !any((is_converter(element) || is_generator(element)) for element in values(net.elements)) && return
 
     dict_ac = Any[]
     dict_dc = Any[]
@@ -410,7 +473,7 @@ function power_flow(net :: Network)
                 (parse(Int, string(key)[1]) == 1) ? push!(new_i, val) : push!(new_o, val)
             end
         end
-
+        # TODO: DC sources are not modeled in the power flow. Check with Hakan!
         if is_passive(element)
             if is_three_phase(element)
                 make_branch_ac(data, element, dict_ac, new_i, new_o)
@@ -419,6 +482,8 @@ function power_flow(net :: Network)
             end
         elseif is_source(element) && is_three_phase(element)
             make_generator(data, element, dict_ac, new_i, new_o)
+        elseif is_generator(element)
+            make_syngen(data, element, dict_ac, new_i, new_o)
         elseif is_converter(element)
             make_converter(data, element, dict_dc, dict_ac, new_i, new_o)
         end
@@ -427,9 +492,11 @@ function power_flow(net :: Network)
     PowerModelsACDC.process_additional_data!(data)
     ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
-
+    # println(data)
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
-    println(result["solution"]["bus"])
+    println(result["termination_status"])
+    # println(result["solution"]["bus"])
+    println("Power flow solution:")
     println(result["solution"])
     id_converter = 1
     for (key, element) in net.elements
@@ -443,11 +510,55 @@ function power_flow(net :: Network)
             Vdc = result["solution"]["busdc"][string(data["convdc"][string(id_converter)]["busdc_i"])]["vm"] *
                     global_dict["V"] / 1e3
             Pac = -conv_dict["pgrid"] * global_dict["S"] / 1e6
-            Qac = -conv_dict["qgrid"] * global_dict["S"] / 1e6
+            Qac = conv_dict["qgrid"] * global_dict["S"] / 1e6 # Think about this!
+            print("MMC #" * string(id_converter) * " Active Power [MW]: ")
+            println(Pac)
+            print("MMC #" * string(id_converter) * " Reactive Power [MVar]: ")
+            println(Qac)
+            print("MMC #" * string(id_converter) * " DC Voltage [kV]: ")
+            println(Vdc)
             update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
             id_converter += 1
         end
     end
+    id_gen = 1
+    for (key, element) in net.elements
+        # Instead of taking the voltage and power from the generator bus, we need to check the bus of the branch.
+        # Here there is a mismatch between id_gen and the id of the SG. We need to find another way to get to the network element that is a SG
+        if is_generator(element) || is_source(element)
+            if isa(element.element_value, SynchronousMachine)
+                gen_dict = result["solution"]["gen"][string(id_gen)]
+                # Search based on the active power gives problems for a meshed network 
+                # (branch_dict[key]["pf"] == gen_dict["pg"]).
+                # Trying now a seach based on the reactive power.
+                branch_dict = result["solution"]["branch"]
+                gen_branch_id = 0
+                for (key,value) in branch_dict
+                    if isapprox(branch_dict[key]["qf"],gen_dict["qg"],atol=1e-3)
+                        gen_branch_id = key
+                    end
+                end
+                # gen_branch_dict = data["branch"][string(key)]
+                # We need to access the other end of the branch
+                # gen_bus = data["branch"][string(gen_branch_id)]["t_bus"]
+                Pgen = gen_dict["pg"] * global_dict["S"] / 1e6 #MW
+                Qgen = gen_dict["qg"] * global_dict["S"] / 1e6 #MVAr
+                Vm = result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["vm"] *
+                        global_dict["V"] / 1e3
+                θ = result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["va"]
+                print("SG #" * string(id_converter) * " Active Power [MW]: ")
+                println(Pgen)
+                print("SG #" * string(id_converter) * " Reactive Power [MVar]: ")
+                println(Qgen)
+                print("SG #" * string(id_converter) * " AC Voltage Magnitude [kV]: ")
+                println(Vm)
+                print("SG #" * string(id_converter) * " AC Voltage Angle [rad]: ")
+                println(θ)
+                update_gen(element.element_value, Pgen, Qgen, Vm, θ)
+            end
+            id_gen += 1
+        end
+    end    
     return result
 end
 

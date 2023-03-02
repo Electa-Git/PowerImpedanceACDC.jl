@@ -4,7 +4,6 @@ s = symbols("s")
     
     g2 = ac_source(V = 18 * sqrt(2/3), pins = 3, transformation = false)
 
-
     tl78 = overhead_line(length = 76e3,
             conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
                             Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),

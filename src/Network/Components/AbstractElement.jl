@@ -92,6 +92,8 @@ end
 function nip_abcd(e::Element)
     if isa(e.element_value, MMC)
         return 3
+    # elseif isa(e.element_value, SynchronousMachine)
+    #     return 2
     else
         return 2nip(e)
     end
@@ -100,6 +102,8 @@ end
 function nop_abcd(e::Element)
     if isa(e.element_value, MMC)
         return 3
+    # elseif isa(e.element_value, SynchronousMachine)
+    #     return 2
     else
         return 2nop(e)
     end
@@ -117,7 +121,7 @@ end
 
 ######################### Element type #############################
 function is_passive(element :: Element)
-    (isa(element.element_value, MMC) || isa(element.element_value, Source)) && return false
+    (isa(element.element_value, MMC) || isa(element.element_value, Source) || isa(element.element_value, SynchronousMachine)) && return false
     true
 end
 
@@ -127,6 +131,10 @@ end
 
 function is_converter(element :: Element)
     isa(element.element_value, MMC)
+end
+
+function is_generator(element :: Element)
+    isa(element.element_value, SynchronousMachine)
 end
 
 function is_three_phase(element :: Element)

@@ -25,3 +25,6 @@ include("source/ac_source.jl")
 
 # Converter
 include("converter/MMC.jl")
+
+# Machines
+include("machine/SynchronousMachine.jl")

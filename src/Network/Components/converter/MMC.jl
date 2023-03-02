@@ -8,7 +8,7 @@ include("controller.jl")
 
     P :: Union{Int, Float64} = -10              # active power [MW]
     Q :: Union{Int, Float64} = 3                # reactive power [MVA]
-    P_dc :: Union{Int, Float64} = 100           # DC power [kW]
+    P_dc :: Union{Int, Float64} = 100           # DC power [MW]
     P_min :: Union{Float64, Int} = -100         # min active power output [MW]
     P_max :: Union{Float64, Int} = 100          # max active power output [MW]
     Q_min :: Union{Float64, Int} = -50          # min reactive power output [MVA]
@@ -118,8 +118,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Id = 2/3*(Vᴳd * Pac + Vᴳq * Qac) / (Vᴳd^2 + Vᴳq^2)
     Iq = 2/3*(Vᴳq * Pac - Vᴳd * Qac) / (Vᴳd^2 + Vᴳq^2)
 
-    println(Pac)
-    println(Qac) 
+    # println(Pac)
+    # println(Qac) 
     # setup control parameters and equations
     init_x = zeros(12, 1)
 
@@ -157,9 +157,13 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             end
             init_x[3] = val.ref[1]
             init_x[4] = val.ref[2]
-        elseif (key == :power)
+        elseif (key == :p)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref = [Pac Qac]
+                val.ref = [Pac]
+            end
+        elseif (key == :q)
+            if (length(val.ref) == 1) && (val.ref[1] == 0)
+                val.ref = [Qac]
             end
         elseif (key == :dc)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
@@ -207,42 +211,45 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                     F[$index+2] = $(converter.controls[:dc].ref[1]) - Vdc;
 
                     iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - Vdc) +
-                                $(converter.controls[:dc].Kᵢ) * x[$index+2]);
-                    iΔq_ref = $Iq;
-
-                    # OCC
-                    F[$index+3] = iΔd_ref - iΔd;
-                    F[$index+4] = iΔq_ref - iΔq;
-                    # vMΔd_ref = Ki_Δ * xiΔd + Kp_Δ * (iΔd_ref -  iΔd) + w*L_eqac*iΔq + Vᴳd
-                    vMΔd_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+3] +
-                                $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + ω * $Lₑ * iΔq + Vᴳd);
-                    # vMΔq_ref = Ki_Δ * xiΔq + Kp_Δ * (iΔq_ref -  iΔq) - w*Leqac*iΔd + Vᴳq
-                    vMΔq_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+4] +
-                                $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - ω * $Lₑ * iΔd + Vᴳq);
-                    (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c]))
+                                $(converter.controls[:dc].Kᵢ) * x[$index+2])))
         vdc_position = index + 1
-        index += 4
+        index += 2
     else
         push!(exp.args, :(Vdc = inputs[1]))
     end
 
+    if in(:p, keys(converter.controls))
+        # active power control
+        push!(exp.args, :(
+            # Pac = (3/2)*(Vgd*iΔd + Vgq*iΔq)
+            P_ac = 1.5 * (Vᴳd * iΔd + Vᴳq * iΔq);
+            # iΔd_ref = (Kp_Pac * (Pac_ref - Pac) + Ki_Pac * xiPac);
+            iΔd_ref = ($(converter.controls[:p].Kₚ) * ($(converter.controls[:p].ref[1]) - P_ac) +
+                        $(converter.controls[:p].Kᵢ) * x[$index+1]);
+            F[$index+1] = $(converter.controls[:p].ref[1]) - P_ac))
+        index += 1
+    elseif !in(:dc, keys(converter.controls))
+        push!(exp.args, :(
+            iΔd_ref = $(converter.controls[:occ].ref[1])))
+    end
+    if in(:q, keys(converter.controls))
+        # reactive power control
+        push!(exp.args, :(
+
+            # Q_ac = (3/2)*(Vgq*iΔd - Vgd*iΔq)
+            Q_ac = 1.5 * (Vᴳq * iΔd - Vᴳd * iΔq);
+            # iΔq_ref = -(Kp_Qac * (Qac_ref - Qac) + Ki_Qac * xiQac);
+            iΔq_ref = -($(converter.controls[:q].Kₚ) * ($(converter.controls[:q].ref[1]) - Q_ac) +
+                        $(converter.controls[:q].Kᵢ) * x[$index+1]);
+            F[$index+1] = $(converter.controls[:q].ref[1]) - Q_ac))
+        index += 1
+    else
+        push!(exp.args, :(
+            iΔq_ref = $(converter.controls[:occ].ref[2])))
+    end
     # add control equations
     for (key, val) in (converter.controls)
-        if (key == :occ) && !in(:power, keys(converter.controls)) && !in(:dc, keys(converter.controls))
-            # output current control
-            push!(exp.args, :(
-                        (iΔd_ref, iΔq_ref) = T_θ * [$(converter.controls[:occ].ref[1]); $(converter.controls[:occ].ref[2])];
-                        F[$index+1] = iΔd_ref - iΔd;
-                        F[$index+2] = iΔq_ref - iΔq;
-                        # vMΔd_ref = Ki_Δ * xiΔd + Kp_Δ * (iΔd_ref -  iΔd) + w*L_eqac*iΔq + Vᴳd
-                        vMΔd_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+1] +
-                            $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + ω * $Lₑ * iΔq + Vᴳd);
-                        # vMΔq_ref = Ki_Δ * xiΔq + Kp_Δ * (iΔq_ref -  iΔq) - w*Leqac*iΔd + Vᴳq
-                        vMΔq_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+2] +
-                            $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - ω * $Lₑ * iΔd + Vᴳq);
-                        (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c]))
-            index += 2
-        elseif (key == :ccc)
+        if (key == :ccc)
             # circulating current control
             push!(exp.args, :(
                         (iΣd_ref, iΣq_ref) = T_θ * [$(converter.controls[:ccc].ref[1]); $(converter.controls[:ccc].ref[2])];
@@ -279,34 +286,21 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         # vMΣz_ref = Vdc/2 - Kp_Σz*(iΣz_ref - iΣz) - Ki_Σz * xiΣz,
                         vMΣz_ref = (Vdc/2 - $(converter.controls[:zcc].Kₚ) *
                             (iΣz_ref - x[5]) -  $(converter.controls[:zcc].Kᵢ) * x[$index+2])))
-            index += 2
-        elseif (key == :power)
-            # active and reactive power control
+            index += 2            
+        elseif (key == :occ)
+            # output current control
             push!(exp.args, :(
-                        # Pac = (3/2)*(Vgd*iΔd + Vgq*iΔq)
-                        P_ac = 1.5 * (Vᴳd * iΔd + Vᴳq * iΔq);
-                        # Q_ac = (3/2)*(Vgq*iΔd - Vgd*iΔq)
-                        Q_ac = 1.5 * (Vᴳq * iΔd - Vᴳd * iΔq);
-                        # iΔd_ref = (Kp_Pac * (Pac_ref - Pac) + Ki_Pac * xiPac);
-                        iΔd_ref = ($(converter.controls[:power].Kₚ) * ($(converter.controls[:power].ref[1]) - P_ac) +
-                                    $(converter.controls[:power].Kᵢ) * x[$index+1]);
-                        # iΔq_ref = -(Kp_Qac * (Qac_ref - Qac) + Ki_Qac * xiQac);
-                        iΔq_ref = -($(converter.controls[:power].Kₚ) * ($(converter.controls[:power].ref[2]) - Q_ac) +
-                                    $(converter.controls[:power].Kᵢ) * x[$index+2]);
-                        F[$index+1] = $(converter.controls[:power].ref[1]) - P_ac;
-                        F[$index+2] = $(converter.controls[:power].ref[2]) - Q_ac;
-
-                        # OCC
-                        F[$index+3] = iΔd_ref - iΔd;
-                        F[$index+4] = iΔq_ref - iΔq;
+                        (iΔd_ref, iΔq_ref) = T_θ * [iΔd_ref; iΔq_ref];
+                        F[$index+1] = iΔd_ref - iΔd;
+                        F[$index+2] = iΔq_ref - iΔq;
                         # vMΔd_ref = Ki_Δ * xiΔd + Kp_Δ * (iΔd_ref -  iΔd) + w*L_eqac*iΔq + Vᴳd
-                        vMΔd_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+3] +
+                        vMΔd_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+1] +
                                     $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + ω * $Lₑ * iΔq + Vᴳd);
                         # vMΔq_ref = Ki_Δ * xiΔq + Kp_Δ * (iΔq_ref -  iΔq) - w*Leqac*iΔd + Vᴳq
-                        vMΔq_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+4] +
+                        vMΔq_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+2] +
                                     $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - ω * $Lₑ * iΔd + Vᴳq);
                         (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c]))
-            index += 4
+            index += 2
         end
     end
     push!(exp.args,

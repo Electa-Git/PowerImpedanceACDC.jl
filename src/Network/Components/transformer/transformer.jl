@@ -195,10 +195,10 @@ function make_power_flow_ac!(t :: Transformer, dict :: Dict{String, Any},
     ((dict["branch"])[string(key)])["tap"] = tap
     ((dict["branch"])[string(key)])["br_r"] = real(1/ys)
     ((dict["branch"])[string(key)])["br_x"] = imag(1/ys)
-    ((dict["branch"])[string(key)])["g_fr"] = real(yc)
-    ((dict["branch"])[string(key)])["b_fr"] = imag(yc)
-    ((dict["branch"])[string(key)])["g_to"] = real(yc)
-    ((dict["branch"])[string(key)])["b_to"] = imag(yc)
+    ((dict["branch"])[string(key)])["g_fr"] = real(yc)/2
+    ((dict["branch"])[string(key)])["b_fr"] = imag(yc)/2
+    ((dict["branch"])[string(key)])["g_to"] = real(yc)/2
+    ((dict["branch"])[string(key)])["b_to"] = imag(yc)/2    
 end
 
 function make_power_flow_dc!(t :: Transformer, dict :: Dict{String, Any},
