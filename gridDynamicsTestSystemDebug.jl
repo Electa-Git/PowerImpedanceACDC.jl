@@ -3,8 +3,8 @@ s = symbols("s")
 @time net = @network begin
     
         # The SG branch is added twice here!
-        sg1 = synchronousmachine(V = 1.000463366628750 * 380 * sqrt(2/3), Vᵃᶜ_base = 380.0, P_min = -2000, P_max = 2000, Q_max = 2000, Q_min = -2000, P = 900)
-        g2 = ac_source(V = 380 * sqrt(2/3), P_min = -2000, P_max = 2000, Q_max = 2000, Q_min = -2000, pins = 3, transformation = true)
+        sg1 = synchronousmachine(V = 1.0005 * 380/sqrt(3), Vᵃᶜ_base = 380.0, P = 900)
+        g2 = ac_source(V = 380/sqrt(3), pins = 3, transformation = true)
 
         sg1[2.1] == gndd
         sg1[2.2] == gndq

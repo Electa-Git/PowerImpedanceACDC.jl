@@ -235,7 +235,7 @@ function power_flow(net :: Network)
     global global_dict
     global ang_min, ang_max
     global max_gen
-    global_dict = PowerModelsACDC.get_pu_bases(100, 320)
+    global_dict = PowerModelsACDC.get_pu_bases(100, 320) # 3-PH MVA, LN-RMS
     global_dict["omega"] = 2π * 50
 
     ang_min = deg2rad(360)
@@ -373,9 +373,9 @@ function power_flow(net :: Network)
         ((data["branch"])[string(key_e)])["shift"] = 0
         ((data["branch"])[string(key_e)])["c_rating_a"] = 1
 
-        # TODO: To be fixed! This branch seems to be added twice..
-        ((data["branch"])[string(key_e)])["br_r"] = 2 * (element.element_value.Ra + element.element_value.rt) * (element.element_value.Vᵃᶜ_base^2 / element.element_value.S_base) / global_dict["Z"]
-        ((data["branch"])[string(key_e)])["br_x"] = 2 * (element.element_value.Ll + element.element_value.lt) * (element.element_value.Vᵃᶜ_base^2 / element.element_value.S_base) / global_dict["Z"]
+        
+        ((data["branch"])[string(key_e)])["br_r"] = element.element_value.rt * (element.element_value.Vᵃᶜ_base^2 / element.element_value.S_base) / global_dict["Z"]
+        ((data["branch"])[string(key_e)])["br_x"] = element.element_value.lt * (element.element_value.Vᵃᶜ_base^2 / element.element_value.S_base) / global_dict["Z"]
         ((data["branch"])[string(key_e)])["g_fr"] = 0
         ((data["branch"])[string(key_e)])["b_fr"] = 0
         ((data["branch"])[string(key_e)])["g_to"] = 0
@@ -492,7 +492,7 @@ function power_flow(net :: Network)
     PowerModelsACDC.process_additional_data!(data)
     ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
-    # println(data)
+    println(data)
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
     println(result["termination_status"])
     # println(result["solution"]["bus"])
@@ -504,8 +504,8 @@ function power_flow(net :: Network)
             conv_dict = result["solution"]["convdc"][string(id_converter)]
             I = conv_dict["iconv"] * global_dict["I"]
             Pdc = conv_dict["pdc"] * global_dict["S"] / 1e6
-            Vm = result["solution"]["bus"][string(data["convdc"][string(id_converter)]["busac_i"])]["vm"] *
-                    global_dict["V"] / 1e3
+            Vm = (result["solution"]["bus"][string(data["convdc"][string(id_converter)]["busac_i"])]["vm"] *
+                    global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
             θ = result["solution"]["bus"][string(data["convdc"][string(id_converter)]["busac_i"])]["va"]
             Vdc = result["solution"]["busdc"][string(data["convdc"][string(id_converter)]["busdc_i"])]["vm"] *
                     global_dict["V"] / 1e3
@@ -543,8 +543,8 @@ function power_flow(net :: Network)
                 # gen_bus = data["branch"][string(gen_branch_id)]["t_bus"]
                 Pgen = gen_dict["pg"] * global_dict["S"] / 1e6 #MW
                 Qgen = gen_dict["qg"] * global_dict["S"] / 1e6 #MVAr
-                Vm = result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["vm"] *
-                        global_dict["V"] / 1e3
+                Vm = (result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["vm"] *
+                        global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
                 θ = result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["va"]
                 print("SG #" * string(id_converter) * " Active Power [MW]: ")
                 println(Pgen)

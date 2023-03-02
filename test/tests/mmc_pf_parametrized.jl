@@ -4,7 +4,8 @@
 # Pkg.activate(".")
 # using HVDCstability
 powerTransfer = 500 # Reference value for MMC2, positive value means power transfer from DC to AC
-voltageMagnitude = 333*sqrt(2/3) # Line-to-neutral voltage peak value. Corresponds to a L-L RMS value of 333 kV, which was used in the INELFE project with a DC link voltage of 640 kV
+voltageMagnitude = 333/sqrt(3) # Different from the line below, now the voltage here is set as the L-L RMS, and inside the MMCs conversion to L-N peak is done.
+# voltageMagnitude = 333*sqrt(2/3) # Line-to-neutral voltage peak value. Corresponds to a L-L RMS value of 333 kV, which was used in the INELFE project with a DC link voltage of 640 kV
 @time net = @network begin
     
     gen1 = ac_source(pins = 3, P_min = 50, P = powerTransfer, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
