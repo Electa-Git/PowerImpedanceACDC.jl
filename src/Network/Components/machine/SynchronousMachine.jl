@@ -46,11 +46,8 @@ include("controller.jl")
 
     # Governor
     T_w :: Union{Int, Float64} = 0.1 # Speed lag time constant [s]
-    # T_p :: Union{Int, Float64} = 0.2  # Time constant of the power measurement [s]
     T_G :: Union{Int, Float64} = 0.2 # Time constant of the governor [s]
-    # ki_pg :: Union{Int, Float64} = 0.1# Integral gain of the power control 
     R :: Union{Int, Float64} = 0.05   # Frequency control droop / Inverse of the gain [pu/pu]
-    # Imax :: Union{Int, Float64}  = 0.10# Maximum contribution from the power control [pu]
 
     # AVR
     vref_SG :: Union{Int, Float64}   = 1.01 # Terminal voltage magnitude reference [pu]
@@ -59,10 +56,6 @@ include("controller.jl")
     T_C :: Union{Int, Float64}       = 0.1        # Lead time constant [s]
     T_A :: Union{Int, Float64}       = 0.02    # Regulator (lag) time constant [s]
     K_A :: Union{Int, Float64}       = 200      # Regulator gain [pu]
-    Vimax :: Union{Int, Float64}     = 10     # Error absolute limit
-    Vfmax :: Union{Int, Float64}     = 5.64   # Regulator maximum output 
-    Vfmin :: Union{Int, Float64}     = -4.53  # Regulator minimum output
-
 
     P :: Union{Int, Float64} = 0              # active power [MW]
     Q :: Union{Int, Float64} = 0                # reactive power [MVA]
@@ -112,40 +105,33 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
 
     Z_base = gen.Vᵃᶜ_base^2 / gen.S_base
     I_base = sqrt(2/3)*gen.S_base / gen.Vᵃᶜ_base
-    # TODO: check if these need to be in pu or kV
+    
+
     gen.V = Vm
     gen.θ = θ
     gen.P = Pac
     gen.Q = Qac
 
-    # Disabling the lines below for now
-    # Vm *= 1e3
-    # Pac *= 1e6
-    # Qac *= 1e6
-
-    init_x = zeros(16, 1)# TODO: Generalize this.
+    init_x = zeros(16, 1) # TODO: Automatize this based on the presence of the AVR.
 
     # Initialization values
 
-    println(Vm)
-    println(θ)
-    # println(gen.Vᵃᶜ_base)
-    v_bus_d0 = Vm * cos(θ) /  (gen.Vᵃᶜ_base * sqrt(2/3))
-    v_bus_q0 = -Vm * sin(θ) / (gen.Vᵃᶜ_base * sqrt(2/3))
-    # TODO: Check these!
+    v_bus_d0 = gen.V * cos(θ) /  (gen.Vᵃᶜ_base * sqrt(2/3))
+    v_bus_q0 = -gen.V * sin(θ) / (gen.Vᵃᶜ_base * sqrt(2/3))
+    # Initialization without an AVR
     # e_df0   = 0.005 * 200 * gen.Rf_d/gen.La_d # Exciter [pu]
-    # Initial status
     # Tm0     = 0.5                     # Mechanical torque [pu]
-    Tm0 = gen.P / gen.S_base # TODO: Check this!
+    Tm0 = gen.P / gen.S_base
 
     # State variables initialization
     # Damper winding currents initialized at zero. These are located at indices 3, 5 and 6. The same also holds for the filtered speed difference at index 9
-    # init_x[2] = e_df0 / gen.Rf_d
+    # init_x[2] = e_df0 / gen.Rf_d # In the absence of an AVR
     init_x[7] = 1 # initialize the inital rotating speed to 1
     init_x[10:13] = [Tm0;Tm0;Tm0;Tm0] # initialize all the torques to be the same as the mechanical torque
     # The remaining state variables to be initialized are the stator currents (indices 1 and 4) and the angular position of the rotor reference frame (index 8)
 
     exp_init = Expr(:block)
+    # Initialization without an AVR
     # input1 - vd
     # input2 - vq
     # input3 - if
@@ -222,9 +208,8 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
         v_bus_d = inputs[1];  # d-axis grid voltage [pu]
         v_bus_q = inputs[2]; # q-axis grid voltage [pu]
 
-        # Infinite bus
-        # theta_grid = 0; 
-        theta_grid = atan(-v_bus_q,v_bus_d); 
+        # theta_grid = atan(-v_bus_q,v_bus_d);
+        theta_grid = 0;  
         d = theta_sg - theta_grid; # New reference frame angle - old RF angle
         T = [cos(d) -sin(d);
             sin(d)  cos(d)]; # Rotation to rotor's RF
@@ -291,9 +276,9 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
     init_init[4] = 1
     k_init = nlsolve(k!, init_init , autodiff = :forward, iterations = 200, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
     equilibrium_init= k_init.zero #debug here
-    println("Inputs for the first steady state solution")
+    println("Inputs for the steady state solution")
     println(inputs_init)
-    println("First steady state solution")
+    println("Steady state solution")
     println(equilibrium_init)
     init_x[1] = equilibrium_init[1]
     init_x[2] = equilibrium_init[2]
@@ -303,11 +288,10 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
     init_x[15] = equilibrium_init[7]
     init_x[16] = equilibrium_init[8]
 
-    # vector_inputs = [v_bus_d0;v_bus_q0;Tm0]
-    vector_inputs = [Vm * cos(θ); -Vm * sin(θ);Tm0]
+    # vector_inputs = [v_bus_d0;v_bus_q0;Tm0] # voltages are not in pu here!
+    vector_inputs = [gen.V * cos(θ); -gen.V * sin(θ);Tm0]
     # setup control parameters and equations 
     # TODO: for now, AVR is added as a standard. Can make it optional in the future.
-
     
     # add state variables
     exp_fin = Expr(:block)
@@ -335,15 +319,13 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
         x_AVR       = x[15];
         v_df        = x[16];
 
-        v_bus_d = inputs[1] /  ($gen.Vᵃᶜ_base * sqrt(2/3));  # d-axis grid voltage [pu]
+        v_bus_d = inputs[1] /  ($gen.Vᵃᶜ_base * sqrt(2/3)); # d-axis grid voltage [pu]
         v_bus_q = inputs[2] /  ($gen.Vᵃᶜ_base * sqrt(2/3)); # q-axis grid voltage [pu]
-        # e_df    = inputs[3];  # Field voltage [pu]
-        Tm      = inputs[3];  # Initial torque [pu]
-
+        Tm      = inputs[3];  # Initial torque [pu] # When the AVR is not implemented, this input is the field voltage e_df
 
         # Infinite bus
-        # theta_grid = 0; # atan2(-v_bus_q,v_bus_d)
-        theta_grid = atan(-v_bus_q,v_bus_d);  
+        # theta_grid = atan(-v_bus_q,v_bus_d);
+        theta_grid = 0; # The angle of the global dq reference frame
         d = theta_sg - theta_grid; # New reference frame angle - old RF angle
         T = [cos(d) -sin(d);
             sin(d)  cos(d)]; # Rotation to rotor's RF
@@ -393,22 +375,18 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
         F[13] = 1/$gen.T_CO*(TreIP - TcrLP); # LP turbine fraction
         
         # AVR and exciter
-        v_t = v_dq + $gen.rt*[x[1];x[4]] + w_pu*$gen.lt*Wpu*[x[1];x[4]] + $gen.lt/$gen.wn*[F[1];F[4]]; # Machine terminal voltage
-
-        F[14] = 1/$gen.T_R*(sqrt(transpose(v_t)*v_t) - v_f);        # Voltage magnitude measurement (LPF)
+        v_t = v_dq + $gen.rt*[i_d;i_q] + w_pu*$gen.lt*Wpu*[i_d;i_q] + $gen.lt/$gen.wn*[F[1];F[4]]; # Machine terminal voltage
+        
+        # F[14] = 1/$gen.T_R*(sqrt(transpose(v_t)*v_t) - v_f);        # Voltage magnitude measurement (LPF)
+        F[14] = 1/$gen.T_R*(sqrt(v_t[1]*v_t[1]+v_t[2]*v_t[2]) - v_f);        # Voltage magnitude measurement (LPF)
         dv = $gen.vref_SG - v_f;                             # Error TODO: The voltage reference can be made an input to the state-space model.
         F[15] = 1/$gen.T_B*(dv - x_AVR);                 # Lead-lag state
         y_AVR = $gen.T_C/$gen.T_B*dv + (1 - $gen.T_C/$gen.T_B)*x_AVR;       # Lead-lag output 
-        F[16] = 1/$gen.T_A*( $gen.K_A*y_AVR*$gen.Rf_d/$gen.La_d - v_df)
+        F[16] = 1/$gen.T_A*( $gen.K_A*y_AVR*$gen.Rf_d/$gen.La_d - v_df);
+        F[17:18] = -T\[i_d;i_q]
 
         ))
 
-    # Running NLsolve once more to get the equilibrium
-    # g!(F,x) = f!(exp_fin, F, x, vector_inputs)
-    # k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
-    # gen.equilibrium = k.zero
-    # println("Overall steady-state solution")
-    # println(gen.equilibrium)
     # Setting up the equilibrium point based on the initial solution
     gen.equilibrium = init_x
     println("Overall steady-state solution")
@@ -416,8 +394,8 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
 
     # Add outputs
 
-    push!(exp_fin.args,
-    :(  F[17:18] = -T\[x[1];x[4]]))
+    # push!(exp_fin.args,
+    # :(  F[17:18] = -T\[i_d;i_q]))
     
     state_vars = 16
     input_vars = 3 # vd, vq, Tm
@@ -436,6 +414,7 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
 
     gen.B /= 1e3
     gen.C *= I_base * 1e3
+    gen.D *= I_base 
 
     writedlm( "A.csv",  gen.A, ',')
     writedlm( "B.csv",  gen.B, ',')

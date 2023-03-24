@@ -1,13 +1,11 @@
 using DelimitedFiles,SymEngine
 s = symbols("s")
+transmissionVoltage = 380 / sqrt(3)
 @time net = @network begin
     
-        
-        # g1 = ac_source(V = 16.5 * sqrt(2/3), P_min = 50, P = 200, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500, pins = 3, transformation = true)
-        sg1 = synchronousmachine(V = 1.01 * 380/sqrt(3), Vᵃᶜ_base = 380.0, P_min = -2000, P_max = 2000, Q_max = 2000, Q_min = -2000, P = 1000)
-        # sg1 = ac_source(V = 380 * sqrt(2/3), P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
+        # TODO: Changing the DC side capacitance seems to have an impact on the behavior between 100-300 Hz. Find the optimal value!
+        sg1 = synchronousmachine(V = 1* transmissionVoltage, Vᵃᶜ_base = 380.0, P_min = -2000, P_max = 2000, Q_max = 2000, Q_min = -2000, P = 900)
         g3 = ac_source(V = 13.8/sqrt(3), P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
-        # g2 = ac_source(V = 380 * sqrt(2/3), P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
 
         # Gezelle - Horta OHL
         # tl78 = overhead_line(length = 30e3,
@@ -73,15 +71,6 @@ s = symbols("s")
         l6 = impedance(z = 960 + s, pins = 3, transformation = true) 
         l8 = impedance(z = 960 + s, pins = 3, transformation = true) 
 
-        # The reactive power setting here has to be the negative of Qref in PSCAD.
-        # old tuningg
-        # c1 = mmc(Vᵈᶜ = 640, Vₘ = 380*sqrt(2/3),
-        #         P_max = 1000, P_min = -1000, P = 400, Q = -400, Q_max = 1000, Q_min = -1000,
-        #         occ = PI_control(Kₚ = 135.0011, Kᵢ = 9.1603e+04),
-        #         ccc = PI_control(Kₚ = 42.9123, Kᵢ = 1.9739e+04),
-        #         pll = PI_control(Kₚ = 2.8351e-04, Kᵢ = 0.0127),
-        #         power = PI_control(Kₚ = 2.1487e-07, Kᵢ = 6.7503e-05)
-        #         )
 
         # dc = dc_source(V = 640, P_min = -2000, P_max = 2000, P = 500)
 
@@ -90,7 +79,9 @@ s = symbols("s")
         # dc[2.1] == c1[1.1]
         
         # new tuning, supposed to match
-        c1 = mmc(Vᵈᶜ = 640, Vₘ = 380/sqrt(3),
+        # The P and Q defined here are what is injected into the network. 
+        # The setpoint of the reactive power controller is minus the value set here. This is adjusted internally, no action here needed.
+        c1 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
                 P_max = 1000, P_min = -1000, P = 400, Q = -400, Q_max = 1000, Q_min = -1000,
                 occ = PI_control(Kₚ = 111.0624, Kᵢ = 7.5487e+04),
                 ccc = PI_control(Kₚ = 42.9123, Kᵢ = 1.9739e+04),
@@ -99,8 +90,8 @@ s = symbols("s")
                 q = PI_control(Kₚ = 2.1487e-07, Kᵢ = 6.7503e-05)
                 )
 
-        c2 = mmc(Vᵈᶜ = 640, Vₘ = 380/sqrt(3),
-                P_max = -50, P_min = -1500, P = -400, Q = 0, Q_max = 500, Q_min = -500, P_dc = 400,
+        c2 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
+                P_max = 1500, P_min = -1500, P = -400, Q = 0, Q_max = 500, Q_min = -500,
                 # P_max = -50, P_min = -1500, P = -400, Q = 0, Q_max = 500, Q_min = -500,
                 occ = PI_control(Kₚ = 111.0624, Kᵢ = 7.5487e+04),
                 ccc = PI_control(Kₚ = 42.9123, Kᵢ = 1.9739e+04),
@@ -117,7 +108,7 @@ s = symbols("s")
             I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
             I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)
 
-        g4 = ac_source(V = 380/sqrt(3), P = 400, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
+        g4 = ac_source(V = transmissionVoltage, P = 400, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
 
         g4[1.1] ⟷ c2[2.1]
         g4[1.2] ⟷ c2[2.2]
@@ -206,13 +197,24 @@ s = symbols("s")
 end
 
 
-@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
+
+@time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
 output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
 
-# p = bode(imp_ac, omega = omega_ac)
+writedlm("imp_Z2.csv",  imp_ac1, ',')
+writedlm("w_Z2.csv",  omega_ac1, ',')
 
-writedlm("imp_dq_MMC_SG.csv",  imp_ac, ',')
-writedlm("w_dq_MMC_SG.csv",  omega_ac, ',')
+@time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:g3,:c1,:c2,:dc_line,:g4], input_pins=Any[:Bus3d,:Bus3q], 
+output_pins=Any[:Bus7d,:Bus7q], omega_range = (-2,4,2000))
+
+writedlm("imp_Z12.csv",  imp_ac2, ',')
+writedlm("w_Z12.csv",  omega_ac2, ',')
+
+# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
+# output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
+
+# writedlm("imp_dq_MMC_SG.csv",  imp_ac, ',')
+# writedlm("w_dq_MMC_SG.csv",  omega_ac, ',')
 
 # @time imp_c1, omega_c1 = check_stability(net, net.elements[:c1], direction = :ac, omega_range = (0,4,1000))
 # @time imp_sg1, omega_sg1 = check_stability(net, net.elements[:sg1], direction = :ac, omega_range = (0,4,1000))

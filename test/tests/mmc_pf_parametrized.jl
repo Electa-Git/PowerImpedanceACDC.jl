@@ -4,13 +4,13 @@
 # Pkg.activate(".")
 # using HVDCstability
 powerTransfer = 500 # Reference value for MMC2, positive value means power transfer from DC to AC
-voltageMagnitude = 333/sqrt(3) # Different from the line below, now the voltage here is set as the L-L RMS, and inside the MMCs conversion to L-N peak is done.
+voltageMagnitude = 333/sqrt(3) # Different from the line below, now the voltage here is set as the L-N RMS, and inside the MMCs conversion to L-N peak is done.
 # voltageMagnitude = 333*sqrt(2/3) # Line-to-neutral voltage peak value. Corresponds to a L-L RMS value of 333 kV, which was used in the INELFE project with a DC link voltage of 640 kV
 @time net = @network begin
     
-    gen1 = ac_source(pins = 3, P_min = 50, P = powerTransfer, P_max = 1500, Q = 0, Q_max = 500, Q_min = -500,
+    gen1 = ac_source(pins = 3, P_min = -1500, P = powerTransfer, P_max = 1500, Q = 0, Q_max = 1000, Q_min = -1000,
                     V = voltageMagnitude, transformation = true)
-    gen2 = ac_source(pins = 3, P_min = -1500, P = -powerTransfer, P_max = -50, Q = 0, Q_max = 500, Q_min = -500,
+    gen2 = ac_source(pins = 3, P_min = -1500, P = -powerTransfer, P_max = 1500, Q = 0, Q_max = 1000, Q_min = -1000,
                     V = voltageMagnitude, transformation = true)
 
     tl1 = overhead_line(length = 100e3,
@@ -37,6 +37,7 @@ voltageMagnitude = 333/sqrt(3) # Different from the line below, now the voltage 
             occ = PI_control(ζ = 0.7, bandwidth = 1000),
             ccc = PI_control(ζ = 0.7, bandwidth = 300),
             dc = PI_control(Kₚ = 0.01, Kᵢ = 2),# by reducing the integral gain to 1, the DC-side instability at rated power transfer can be eliminated.
+            # q = PI_control(Kₚ = 2.0020e-07, Kᵢ = 1.0010e-04), # New addition, not part of the journal paper.
             energy = PI_control(Kₚ = 120, Kᵢ = 400, ref=[1*3072e4]),
             zcc = PI_control(ζ = 0.7, bandwidth = 300),
             timeDelay=150e-6, padeOrderNum=3, padeOrderDen=3
@@ -53,6 +54,8 @@ voltageMagnitude = 333/sqrt(3) # Different from the line below, now the voltage 
             )
     # connections
     gen1[2.1] ⟷ gen1[2.2] ⟷ gnd1
+    # gen1[2.1] ⟷ gndd
+    # gen1[2.2] ⟷ gndq
     gen1[1.1] ⟷ tl1[1.1]
     gen1[1.2] ⟷ tl1[1.2]
 
@@ -68,6 +71,8 @@ voltageMagnitude = 333/sqrt(3) # Different from the line below, now the voltage 
     gen2[1.1] ⟷ tl2[2.1]
     gen2[1.2] ⟷ tl2[2.2]
     gen2[2.1] ⟷ gen2[2.2] ⟷ gnd2
+    # gen2[2.1] ⟷ gndd
+    # gen2[2.2] ⟷ gndq
 end
 
 # imp_ac, omega_ac = determine_impedance(net, elim_elements = [:c1],

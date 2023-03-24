@@ -492,7 +492,7 @@ function power_flow(net :: Network)
     PowerModelsACDC.process_additional_data!(data)
     ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
-    println(data)
+    # println(data)
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
     println(result["termination_status"])
     # println(result["solution"]["bus"])
@@ -533,9 +533,9 @@ function power_flow(net :: Network)
                 # Trying now a seach based on the reactive power.
                 branch_dict = result["solution"]["branch"]
                 gen_branch_id = 0
-                for (key,value) in branch_dict
-                    if isapprox(branch_dict[key]["qf"],gen_dict["qg"],atol=1e-3)
-                        gen_branch_id = key
+                for (key_i,value) in branch_dict
+                    if isapprox(branch_dict[key_i]["qf"],gen_dict["qg"],atol=1e-3)
+                        gen_branch_id = key_i
                     end
                 end
                 # gen_branch_dict = data["branch"][string(key)]

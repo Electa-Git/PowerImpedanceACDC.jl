@@ -97,7 +97,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Lₐᵣₘ = converter.Lₐᵣₘ
     Rₐᵣₘ = converter.Rₐᵣₘ
     Cₐᵣₘ = converter.Cₐᵣₘ
-    Cₑ = 6*Cₐᵣₘ / N
+    # Cₑ = 6*Cₐᵣₘ / N
+    Cₑ = 1e-6
     ω₀ = converter.ω₀
 
     converter.Vₘ = Vm
@@ -169,6 +170,10 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
                 val.ref = [Vdc]
             end
+        elseif (key == :vac)
+            if (length(val.ref) == 1) && (val.ref[1] == 0)
+                val.ref = [Vm]
+            end
         end
     end
     init_x[5] = Pdc/3/Vdc
@@ -218,6 +223,11 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
         push!(exp.args, :(Vdc = inputs[1]))
     end
 
+    # Not implemented yet, need to think about it..
+    if in(:vac, keys(converter.controls))
+        push!(exp.args, :())
+    end
+
     if in(:p, keys(converter.controls))
         # active power control
         push!(exp.args, :(
@@ -243,7 +253,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         $(converter.controls[:q].Kᵢ) * x[$index+1]);
             F[$index+1] = $(converter.controls[:q].ref[1]) - Q_ac))
         index += 1
-    else
+    elseif !in(:vac, keys(converter.controls))
         push!(exp.args, :(
             iΔq_ref = $(converter.controls[:occ].ref[2])))
     end
@@ -256,11 +266,17 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         F[$index+1] = iΣd_ref - iΣd;
                         F[$index+2] = iΣq_ref - iΣq;
                         # vMΣd_ref = - Ki_Σ * xiΣd - Kp_Σ * (iΣd_ref -  iΣd) + 2*w*Larm*iΣq
-                        vMΣd_ref_c = (-$(converter.controls[:ccc].Kᵢ) * x[$index+1] -
-                                $(converter.controls[:ccc].Kₚ) * (iΣd_ref - iΣd) + 2 * ω * $Lₐᵣₘ * iΣq);
                         # vMΣq_ref = - Ki_Σ * xiΣq - Kp_Σ * (iΣq_ref -  iΣq) - 2*w*Larm*iΣd
+                        # Original case, w provided by the PLL
+                        # vMΣd_ref_c = (-$(converter.controls[:ccc].Kᵢ) * x[$index+1] -
+                        #         $(converter.controls[:ccc].Kₚ) * (iΣd_ref - iΣd) + 2 * ω * $Lₐᵣₘ * iΣq);
+                        # vMΣq_ref_c = (-$(converter.controls[:ccc].Kᵢ) * x[$index+2] -
+                        #         $(converter.controls[:ccc].Kₚ) * (iΣq_ref - iΣq) - 2 * ω * $Lₐᵣₘ * iΣd);
+                        # Assuming constant w
+                        vMΣd_ref_c = (-$(converter.controls[:ccc].Kᵢ) * x[$index+1] -
+                                $(converter.controls[:ccc].Kₚ) * (iΣd_ref - iΣd) + 2 * $(converter.ω₀) * $Lₐᵣₘ * iΣq);
                         vMΣq_ref_c = (-$(converter.controls[:ccc].Kᵢ) * x[$index+2] -
-                                $(converter.controls[:ccc].Kₚ) * (iΣq_ref - iΣq) - 2 * ω * $Lₐᵣₘ * iΣd);
+                                $(converter.controls[:ccc].Kₚ) * (iΣq_ref - iΣq) - 2 * $(converter.ω₀) * $Lₐᵣₘ * iΣd);
                         (vMΣd_ref, vMΣq_ref) = I_2θ * [vMΣd_ref_c; vMΣq_ref_c]))
             index += 2
         elseif (key == :zcc) && !in(:energy, keys(converter.controls))
@@ -294,11 +310,18 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         F[$index+1] = iΔd_ref - iΔd;
                         F[$index+2] = iΔq_ref - iΔq;
                         # vMΔd_ref = Ki_Δ * xiΔd + Kp_Δ * (iΔd_ref -  iΔd) + w*L_eqac*iΔq + Vᴳd
-                        vMΔd_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+1] +
-                                    $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + ω * $Lₑ * iΔq + Vᴳd);
                         # vMΔq_ref = Ki_Δ * xiΔq + Kp_Δ * (iΔq_ref -  iΔq) - w*Leqac*iΔd + Vᴳq
+                        
+                        # Original case, w provided by the PLL
+                        # vMΔd_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+1] +
+                        #             $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + ω * $Lₑ * iΔq + Vᴳd);
+                        # vMΔq_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+2] +
+                        #             $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - ω * $Lₑ * iΔd + Vᴳq);
+                        # Assuming constant w
+                        vMΔd_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+1] +
+                                    $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + $(converter.ω₀) * $Lₑ * iΔq + Vᴳd);
                         vMΔq_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+2] +
-                                    $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - ω * $Lₑ * iΔd + Vᴳq);
+                                    $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - $(converter.ω₀) * $Lₑ * iΔd + Vᴳq);
                         (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c]))
             index += 2
         end
@@ -447,7 +470,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     end
 
     g!(F,x) = f!(exp, F, x, vector_inputs)
-    k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, ftol = 1e-6, xtol = 1e-3, method = :newton)
+    k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
     converter.equilibrium = k.zero
 
     h(F,x) = f!(exp, F, x[1:end-3], x[end-2:end])
