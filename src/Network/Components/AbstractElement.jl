@@ -92,21 +92,19 @@ end
 function nip_abcd(e::Element)
     if isa(e.element_value, MMC)
         return 3
-    # elseif isa(e.element_value, SynchronousMachine)
-    #     return 2
     else
         return 2nip(e)
     end
+    # return 2nip(e)
 end
 
 function nop_abcd(e::Element)
     if isa(e.element_value, MMC)
         return 3
-    # elseif isa(e.element_value, SynchronousMachine)
-    #     return 2
     else
         return 2nop(e)
     end
+    # return 2nop(e)
 end
 np_abcd(e::Element) = Int((nip_abcd(e) + nop_abcd(e))/2) # number pins
 

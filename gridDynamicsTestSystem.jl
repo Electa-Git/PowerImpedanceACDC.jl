@@ -196,7 +196,8 @@ transmissionVoltage = 380 / sqrt(3)
 
 end
 
-
+MMC = net.elements[:c1]
+plot_data(MMC, omega_range = (0, 4, 1000), scale = :log)
 
 @time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
 output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
@@ -204,11 +205,11 @@ output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
 writedlm("imp_Z2.csv",  imp_ac1, ',')
 writedlm("w_Z2.csv",  omega_ac1, ',')
 
-@time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:g3,:c1,:c2,:dc_line,:g4], input_pins=Any[:Bus3d,:Bus3q], 
-output_pins=Any[:Bus7d,:Bus7q], omega_range = (-2,4,2000))
+# @time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:g3,:c1,:c2,:dc_line,:g4], input_pins=Any[:Bus3d,:Bus3q], 
+# output_pins=Any[:Bus7d,:Bus7q], omega_range = (-2,4,2000))
 
-writedlm("imp_Z12.csv",  imp_ac2, ',')
-writedlm("w_Z12.csv",  omega_ac2, ',')
+# writedlm("imp_Z12.csv",  imp_ac2, ',')
+# writedlm("w_Z12.csv",  omega_ac2, ',')
 
 # @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
 # output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))

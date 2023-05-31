@@ -135,7 +135,7 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
     # make closing impedance
     p = length(unique(output_pins))
     Zₜ = zeros(Complex, p, p)
-
+    # Zₜ = Diagonal(1e-6*ones(Complex, p))
     impedance = []
 
     if parameters_type == :ABCD

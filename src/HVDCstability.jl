@@ -23,6 +23,8 @@ module HVDCstability
     using Ipopt
     using JuMP
 
+    # using SparseArrays
+
     # file includes
     include("Network/globals.jl")
 

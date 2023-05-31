@@ -95,7 +95,7 @@ function mmc(;args...)
         end
     end
 
-    elem = Element(input_pins = 1, output_pins = 2, element_value = converter)
+    elem = Element(input_pins = 2, output_pins = 2, element_value = converter)
 end
 
 function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
@@ -152,10 +152,10 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Vᴳd = Vm * cos(θ)
     Vᴳq = -Vm * sin(θ)
 
-    println(Vᴳd)
-    println(Vᴳq)
-    println(Vdc)
-    println(Pdc)
+    # println(Vᴳd)
+    # println(Vᴳq)
+    # println(Vdc)
+    # println(Pdc)
 
     # println(Vᴳd)
     # println(Vᴳq)
@@ -225,8 +225,6 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     init_x[5] = Pdc/3/Vdc
     init_x[12] = Vdc
 
-    vdc_position = 12
-
     exp = Expr(:block)
 
     # add PLL
@@ -236,7 +234,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         I_θ = [cos(x[14]) sin(x[14]); -sin(x[14]) cos(x[14])];
                         T_2θ = [cos(-2x[14]) -sin(-2x[14]); sin(-2x[14]) cos(-2x[14])];
                         I_2θ = [cos(-2x[14]) sin(-2x[14]); -sin(-2x[14]) cos(-2x[14])];
-                        (Vᴳd, Vᴳq) = T_θ * [inputs[2]; inputs[3]];
+                        (Vᴳd, Vᴳq) = T_θ * [inputs[3]; inputs[4]];
                         F[13] = -Vᴳq*$(converter.controls[:pll].Kᵢ);
                         Δω = $(converter.controls[:pll].Kₚ) * (-Vᴳq) + x[13];
                         ω = $(converter.ω₀)/$wbase + Δω;
@@ -249,8 +247,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         I_θ = [1 0; 0 1];
                         T_2θ = [1 0; 0 1];
                         I_2θ = [1 0; 0 1];
-                        Vᴳd = inputs[2];
-                        Vᴳq = inputs[3];
+                        Vᴳd = inputs[3];
+                        Vᴳq = inputs[4];
                         ω = $(converter.ω₀)))
         index = 12
     end
@@ -259,16 +257,15 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     if in(:dc, keys(converter.controls))
         push!(exp.args, :(
 
-                    Vdc = inputs[1];
+                    Vdc = inputs[1] - inputs[2];
                     F[$index+1] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - Vdc);
 
                     iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - Vdc) +
                                  x[$index+1])))
-        vdc_position = index + 1
         # index += 2
         index += 1
     else
-        push!(exp.args, :(Vdc = inputs[1]))
+        push!(exp.args, :(Vdc = inputs[1] - inputs[2]))
     end
 
     # Not implemented yet, need to think about it..
@@ -476,8 +473,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     # vMΣz = (mΔd*vCΔd)/4 + (mΔq*vCΔq)/4 + (mΔZd*vCΔZd)/4 + (mΔZq*vCΔZq)/4 + (mΣd*vCΣd)/4 + (mΣq*vCΣq)/4 + (mΣz*vCΣz)/2;
     vMΣz = mΔd*x[6]/4 + mΔq*x[7]/4 + mΔZd*x[8]/4 + mΔZq*x[9]/4 + mΣd*x[10]/4 + mΣq*x[11]/4 + mΣz*x[12]/2;
 
-    F[1] = -(inputs[2] - vMΔd + $Rₑ*x[1] + $Lₑ*x[2])/$Lₑ;                 # diΔd_dt =-(Vgd - vMΔd + Rₑ*iΔd + Lₑ*iΔq*w)/Lₑ
-    F[2] = -(inputs[3] - vMΔq + $Rₑ*x[2] - $Lₑ*x[1])/$Lₑ;                 # diΔq_dt =-(Vgq - vMΔq + Rₑ*iΔq - Lₑ*iΔd*w)/Lₑ
+    F[1] = -(inputs[3] - vMΔd + $Rₑ*x[1] + $Lₑ*x[2])/$Lₑ;                 # diΔd_dt =-(Vgd - vMΔd + Rₑ*iΔd + Lₑ*iΔq*w)/Lₑ
+    F[2] = -(inputs[4] - vMΔq + $Rₑ*x[2] - $Lₑ*x[1])/$Lₑ;                 # diΔq_dt =-(Vgq - vMΔq + Rₑ*iΔq - Lₑ*iΔd*w)/Lₑ
     F[3] = -(vMΣd + $Rₐᵣₘ*x[3] - 2*$Lₐᵣₘ*x[4])/$Lₐᵣₘ;                                  # diΣd_dt =-(vMΣd + Rₐᵣₘ*iΣd - 2*Lₐᵣₘ*iΣq*w)/Lₐᵣₘ
     F[4] = -(vMΣq + $Rₐᵣₘ*x[4] + 2*$Lₐᵣₘ*x[3])/$Lₐᵣₘ;                                  # diΣq_dt =-(vMΣq + Rₐᵣₘ*iΣq + 2*Lₐᵣₘ*iΣd*w)/Lₐᵣₘ
     F[5] = -(vMΣz - Vdc/2 + $Rₐᵣₘ*x[5])/$Lₐᵣₘ;                                     # diΣz_dt =-(vMΣz - Vᵈᶜ/2 + Rₐᵣₘ*iΣz)/Lₐᵣₘ
@@ -510,8 +507,9 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     #     vector_inputs = [Vdc, Vᴳd, Vᴳq]
     #     init_x = [init_x; zeros(index-12,1)]
     # end
-
-    vector_inputs = [Vdc, Vᴳd, Vᴳq]
+    Vdcu = Vdc/2
+    Vdcl = -Vdc/2
+    vector_inputs = [Vdcu, Vdcl, Vᴳd, Vᴳq]
     init_x = [init_x; zeros(index-12,1)]
 
     g!(F,x) = f!(exp, F, x, vector_inputs)
@@ -520,19 +518,20 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
 
     println(k.zero)
 
-    h(F,x) = f!(exp, F, x[1:end-3], x[end-2:end])
-    ha = x -> (F = fill(zero(promote_type(eltype(x), Float64)), index+3); h(F, x); return F)
-    A = zeros(index+3,index+3)
+    h(F,x) = f!(exp, F, x[1:end-4], x[end-3:end])
+    ha = x -> (F = fill(zero(promote_type(eltype(x), Float64)), index+4); h(F, x); return F)
+    A = zeros(index+4,index+4)
     ForwardDiff.jacobian!(A, ha, [k.zero' vector_inputs'])
-    converter.A = A[1:end-3, 1:end-3]
-    converter.B = A[1:end-3, end-2:end]
+    converter.A = A[1:end-4, 1:end-4]
+    converter.B = A[1:end-4, end-3:end]
 
-    converter.C = zeros(3, size(converter.A,1))
-    converter.C[2,1] = 1
-    converter.C[3,2] = 1
+    converter.C = zeros(4, size(converter.A,1))
+    converter.C[3,1] = 1
+    converter.C[4,2] = 1
     # !in(:dc, keys(converter.controls)) ? converter.C[1,5] = 3 : converter.C[1, vdc_position] = 1
-    converter.C[1,5] = 3
-    converter.D = zeros(3,3)
+    converter.C[1,5] = -3
+    converter.C[2,5] = 3
+    converter.D = zeros(4,4)
 end
 
 function eval_parameters(converter :: MMC, s :: Complex)
@@ -540,10 +539,15 @@ function eval_parameters(converter :: MMC, s :: Complex)
     I = Matrix{Complex}(Diagonal([1 for dummy in 1:size(converter.A,1)]))
     Y = (converter.C*inv(s*I-converter.A))*converter.B + converter.D # This matrix is in pu
     
-    Y[1,:] *= converter.iDCbase
-    Y[:,1] /= converter.vDCbase
-    Y[2:3,:] *= converter.iACbase
-    Y[:,2:3] /= converter.vACbase
+    Y[1:2,:] *= converter.iDCbase
+    Y[:,1:2] /= converter.vDCbase
+    Y[3:4,:] *= converter.iACbase
+    Y[:,3:4] /= converter.vACbase
+
+    # Y[1,:] *= converter.iDCbase
+    # Y[:,1] /= converter.vDCbase
+    # Y[2:3,:] *= converter.iACbase
+    # Y[:,2:3] /= converter.vACbase
 
 
     # Y[2:3,2:3] *= converter.iACbase/converter.vACbase

@@ -18,8 +18,8 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
     mₚ = sum(nip_abcd(net.elements[element]) for element in dict[:element_list])
     mₛ = sum(np_abcd(net.elements[element]) for element in dict[:element_list])
 
-    matrix = zeros(Complex, nₙ+mₚ, nᵥ+nᵢ+mₛ)
-    output = zeros(Complex, nₙ+mₚ, 2nₒ)
+    matrix = zeros(ComplexF64, nₙ+mₚ, nᵥ+nᵢ+mₛ)
+    output = zeros(ComplexF64, nₙ+mₚ, 2nₒ)
     elim_rows = Int[]
     elim_cols = Int[]
 
@@ -37,9 +37,13 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
         if isa(net.elements[element].element_value, MMC)
             Y = get_abcd(net.elements[element], s)
             pₚ = nip_abcd(net.elements[element])  # element input pins
-            I = convert(Array{Complex}, Diagonal([1 for dummy in 1:pₚ]))
+            I = convert(Array{ComplexF64}, Diagonal([1 for dummy in 1:pₚ]))
 
-            matrix[nₑₚ+1:nₑₚ+pₚ, nₑₛ+1:nₑₛ+pₚ] = -I                                 # -Iₚ in element eq
+            if rank(Y) != 3
+                display("Y matrix is singular at frequency" + s)
+            end
+            
+            matrix[nₑₚ+1:nₑₚ+pₚ, nₑₛ+1:nₑₛ+pₚ] = -I                                 # -Iₚ in element eq Could be problematic?
             for (pin, node_name) in pairs(net.elements[element].pins)
                 n = findfirst(p -> p == node_name, dict[:node_list])  # position of the node in dict
                 i = parse(Int,string(pin)[1])
@@ -47,36 +51,16 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                 if (n == nothing)
                     n = findfirst(p -> p == node_name, dict[:output_list])
                     (n == nothing) && continue
+                    # Original
                     matrix[nᵥ+n,  nₑₛ+yi] = -(-1)^i
                     output[nᵥ+n, 2n] = -(-1)^i
                     output[nₑₚ+1:nₑₚ+pₚ, 2(n-1)+1] += -Y[1:end, yi]               # -Y[:, yi]
                 else
+                    # Original
                     matrix[n, nₑₛ+yi] = -(-1)^i
-                    matrix[nₑₚ+1:nₑₚ+pₚ, n] += Y[1:end, yi]                       # +Y[:, yi]
+                    matrix[nₑₚ+1:nₑₚ+pₚ, n] += Y[1:end, yi]                       # +Y[:, yi] 
                 end
             end
-        # elseif isa(net.elements[element].element_value, SynchronousMachine)
-            # # The code below works without bugs, but the result is not correct.
-            # Y = get_abcd(net.elements[element], s)
-            # # pₚ = nip_abcd(net.elements[element])  # element input pins
-            # pₚ = 2  # element input pins
-            # I = convert(Array{Complex}, Diagonal([1 for dummy in 1:pₚ]))
-            # matrix[nₑₚ+1:nₑₚ+pₚ, nₑₛ+1:nₑₛ+pₚ] = -I                                 # -Iₚ in element eq
-            # for (pin, node_name) in pairs(net.elements[element].pins)
-            #     n = findfirst(p -> p == node_name, dict[:node_list])  # position of the node in dict
-            #     i = parse(Int,string(pin)[1])
-            #     yi = parse(Int,string(pin)[3:end])
-            #     if (n == nothing)
-            #         n = findfirst(p -> p == node_name, dict[:output_list])
-            #         (n == nothing) && continue
-            #         matrix[nᵥ+n,  nₑₛ+yi] = -(-1)^i
-            #         output[nᵥ+n, 2n] = -(-1)^i
-            #         output[nₑₚ+1:nₑₚ+pₚ, 2(n-1)+1] += -Y[1:end, yi]               # -Y[:, yi]
-            #     else
-            #         matrix[n, nₑₛ+yi] = -(-1)^i
-            #         matrix[nₑₚ+1:nₑₚ+pₚ, n] += Y[1:end, yi]                       # +Y[:, yi]
-            #     end
-            # end
         else
             if isa(net.elements[element].element_value, SynchronousMachine)
                 pₚ = 2          # element input pins
@@ -85,12 +69,33 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                 Y = get_abcd(net.elements[element], s)
                 Z = inv(Y)
 
-                I = convert(Array{Complex}, Diagonal([1 for dummy in 1:pₚ]))
+                I = convert(Array{ComplexF64}, Diagonal([1 for dummy in 1:pₚ]))
 
                 a = I
                 b = Z
-                c = convert(Array{Complex}, zeros(2,2))
+                c = convert(Array{ComplexF64}, zeros(2,2))
                 d = I
+            # elseif isa(net.elements[element].element_value, MMC)
+            #     pₚ = 2          # element input pins
+            #     pₛ = 2          # element output pins
+                
+            #     Y = get_abcd(net.elements[element], s)
+
+            #     # Ydcud = Y[1,3]
+            #     # Ydcuq = Y[1,4]
+            #     # Ydcld = Y[2,3]
+            #     # Ydclq = Y[2,4]
+            #     Yddcu = Y[3,1]
+            #     Yddcl = Y[3,2]
+            #     Yqdcu = Y[4,1]
+            #     Yqdcl = Y[4,2]
+
+            #     display(Y)
+                
+            #     a = convert(Array{Complex}, zeros(2,2))
+            #     b = [-Yqdcl/(Yddcl*Yqdcu - Yddcu*Yqdcl) Yddcl/(Yddcl*Yqdcu - Yddcu*Yqdcl); Yqdcu/(Yddcl*Yqdcu - Yddcu*Yqdcl) -Yddcu/(Yddcl*Yqdcu - Yddcu*Yqdcl)]
+            #     c = Y[1:2,3:4]
+            #     d = convert(Array{Complex}, zeros(2,2))
             else
                 ABCD = get_abcd(net.elements[element], s) 
 
@@ -99,7 +104,7 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                 (a, b, c, d) = (ABCD[1:pₚ,1:pₛ], ABCD[1:pₚ,pₛ+1:end], ABCD[pₚ+1:end,1:pₛ], ABCD[pₚ+1:end, pₛ+1:end]) 
             end
 
-            I = convert(Array{Complex}, Diagonal([1 for dummy in 1:pₚ]))
+            I = convert(Array{ComplexF64}, Diagonal([1 for dummy in 1:pₚ]))
             matrix[nₑₚ+1:nₑₚ+pₚ, nₑₛ+pₚ+1:nₑₛ+pₚ+pₛ] += b                               # BIₛ in element eq
             matrix[nₑₚ+pₚ+1:nₑₚ+2pₚ, nₑₛ+1:nₑₛ+pₚ] = -I                                 # -Iₚ in element eq
             matrix[nₑₚ+pₚ+1:nₑₚ+2pₚ, nₑₛ+pₚ+1:nₑₛ+pₚ+pₛ] += d                            # DIₛ in element eq
@@ -216,7 +221,33 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
         nₑₛ += np_abcd(net.elements[element])   # update output element position
     end
 
-    sol = pinv(matrix) * output
+    # display(matrix)
+    # println(svd(matrix))
+    if size(matrix,1) == rank(matrix)
+        display("Matrix is non-singular at frequency")
+        display(s)
+    end
+
+    if size(output,1) == rank(output)
+        display("output is non-singular at frequency")
+        display(s)
+    end
+
+    # lumatrix = lu(matrix)
+    # sol = pinv(matrix) * output
+    sol = svd(matrix) \ output
+    # sol = LDLt(matrix) \ output
+
+    # sol = rfldiv(matrix,output)
+
+    # Q,R = qr(matrix)
+    # sol = inv(R)*(transpose(Q)*output)
+    # sol = qr(matrix, Val(true)) \ output
+    # sol = qr(matrix) * output
+    
+
+
+
 
     pᵢ = length(unique(start_pins))
     pₒ = length(unique(end_pins))

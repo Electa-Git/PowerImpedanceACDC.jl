@@ -546,13 +546,13 @@ function power_flow(net :: Network)
                 Vm = (result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["vm"] *
                         global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
                 θ = result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["va"]
-                print("SG #" * string(id_converter) * " Active Power [MW]: ")
+                print("SG #" * string(id_gen) * " Active Power [MW]: ")
                 println(Pgen)
-                print("SG #" * string(id_converter) * " Reactive Power [MVar]: ")
+                print("SG #" * string(id_gen) * " Reactive Power [MVar]: ")
                 println(Qgen)
-                print("SG #" * string(id_converter) * " AC Voltage Magnitude [kV]: ")
+                print("SG #" * string(id_gen) * " AC Voltage Magnitude [kV]: ")
                 println(Vm)
-                print("SG #" * string(id_converter) * " AC Voltage Angle [rad]: ")
+                print("SG #" * string(id_gen) * " AC Voltage Angle [rad]: ")
                 println(θ)
                 update_gen(element.element_value, Pgen, Qgen, Vm, θ)
             end
