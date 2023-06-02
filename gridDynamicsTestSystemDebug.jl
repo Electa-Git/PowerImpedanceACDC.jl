@@ -181,7 +181,7 @@ writedlm("w_dq_MMC_SG.csv",  omega_ac, ',')
 
 # p = bode(imp_sg1, omega = omega_sg1)
 
-writedlm("A_julia.csv",  net.elements[:c2].element_value.A, ',')
-writedlm("B_julia.csv",  net.elements[:c2].element_value.B, ',')
-writedlm("C_julia.csv",  net.elements[:c2].element_value.C, ',')
-writedlm("D_julia.csv",  net.elements[:c2].element_value.D, ',')
+# writedlm("A_julia.csv",  net.elements[:c2].element_value.A, ',')
+# writedlm("B_julia.csv",  net.elements[:c2].element_value.B, ',')
+# writedlm("C_julia.csv",  net.elements[:c2].element_value.C, ',')
+# writedlm("D_julia.csv",  net.elements[:c2].element_value.D, ',')

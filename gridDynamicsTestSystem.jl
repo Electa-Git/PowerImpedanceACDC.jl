@@ -81,25 +81,42 @@ transmissionVoltage = 380 / sqrt(3)
         # new tuning, supposed to match
         # The P and Q defined here are what is injected into the network. 
         # The setpoint of the reactive power controller is minus the value set here. This is adjusted internally, no action here needed.
-        c1 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
-                P_max = 1000, P_min = -1000, P = 400, Q = -400, Q_max = 1000, Q_min = -1000,
-                occ = PI_control(Kₚ = 111.0624, Kᵢ = 7.5487e+04),
-                ccc = PI_control(Kₚ = 42.9123, Kᵢ = 1.9739e+04),
-                pll = PI_control(Kₚ = 2.8351e-04, Kᵢ = 0.0127),
-                p = PI_control(Kₚ = 2.1487e-07, Kᵢ = 6.7503e-05),
-                q = PI_control(Kₚ = 2.1487e-07, Kᵢ = 6.7503e-05)
+        # c1 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
+        #         P_max = 1000, P_min = -1000, P = 400, Q = -400, Q_max = 1000, Q_min = -1000,
+        #         occ = PI_control(Kₚ = 111.0624, Kᵢ = 7.5487e+04),
+        #         ccc = PI_control(Kₚ = 42.9123, Kᵢ = 1.9739e+04),
+        #         pll = PI_control(Kₚ = 2.8351e-04, Kᵢ = 0.0127),
+        #         p = PI_control(Kₚ = 2.1487e-07, Kᵢ = 6.7503e-05),
+        #         q = PI_control(Kₚ = 2.1487e-07, Kᵢ = 6.7503e-05)
+        #         )
+
+        # c2 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
+        #         P_max = 1500, P_min = -1500, P = -400, Q = 0, Q_max = 500, Q_min = -500,
+        #         # P_max = -50, P_min = -1500, P = -400, Q = 0, Q_max = 500, Q_min = -500,
+        #         occ = PI_control(Kₚ = 111.0624, Kᵢ = 7.5487e+04),
+        #         ccc = PI_control(Kₚ = 42.9123, Kᵢ = 1.9739e+04),
+        #         pll = PI_control(Kₚ = 2.8351e-04, Kᵢ = 0.0127),
+        #         q = PI_control(Kₚ = 2.1487e-07, Kᵢ = 6.7503e-05),
+        #         dc = PI_control(Kₚ = 0.0168, Kᵢ = 0.0504)
+        #         )
+        # PU gains
+        c2 = mmc(Vᵈᶜ = 640, Vₘ = voltage,
+                P_max = 1000, P_min = -1000, P = pHVDC, Q = 0, Q_max = 1000, Q_min = -1000,
+                occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
+                ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
+                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
                 )
 
-        c2 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
-                P_max = 1500, P_min = -1500, P = -400, Q = 0, Q_max = 500, Q_min = -500,
-                # P_max = -50, P_min = -1500, P = -400, Q = 0, Q_max = 500, Q_min = -500,
-                occ = PI_control(Kₚ = 111.0624, Kᵢ = 7.5487e+04),
-                ccc = PI_control(Kₚ = 42.9123, Kᵢ = 1.9739e+04),
-                pll = PI_control(Kₚ = 2.8351e-04, Kᵢ = 0.0127),
-                q = PI_control(Kₚ = 2.1487e-07, Kᵢ = 6.7503e-05),
-                dc = PI_control(Kₚ = 0.0168, Kᵢ = 0.0504)
+        c1 = mmc(Vᵈᶜ = 640, Vₘ = voltage,
+                P_max = 1500, P_min = -1500, P = -pHVDC, Q = 0, Q_max = 500, Q_min = -500,
+                occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
+                ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+                dc = PI_control(Kₚ = 5, Kᵢ = 15)
                 )
-
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
             C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
             C2 = Conductor(rᵢ = 41.75e-3, rₒ = 46.25e-3, ρ = 22e-8),
@@ -202,8 +219,8 @@ plot_data(MMC, omega_range = (0, 4, 1000), scale = :log)
 @time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
 output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
 
-writedlm("imp_Z2.csv",  imp_ac1, ',')
-writedlm("w_Z2.csv",  omega_ac1, ',')
+writedlm("imp_dq_MMC_SG.csv",  imp_ac1, ',')
+writedlm("w_dq_MMC_SG.csv",  omega_ac1, ',')
 
 # @time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:g3,:c1,:c2,:dc_line,:g4], input_pins=Any[:Bus3d,:Bus3q], 
 # output_pins=Any[:Bus7d,:Bus7q], omega_range = (-2,4,2000))

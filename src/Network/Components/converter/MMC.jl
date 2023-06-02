@@ -125,16 +125,11 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Rₐᵣₘ = converter.Rₐᵣₘ / zDC_base
     Cₐᵣₘ = converter.Cₐᵣₘ / cbase
     # Cₑ = 6*Cₐᵣₘ / N
-    Cₑ = 1e-9
     ω₀ = converter.ω₀
 
     baseConv1 = vAC_base/vDC_base;# AC to DC voltage
     baseConv2 = vDC_base/vAC_base;# DC to AC voltage
     baseConv3 = iAC_base/iDC_base;# AC to DC current
-
-    # println(baseConv1)
-    # println(baseConv2)
-    # println(baseConv3)
 
     converter.Vₘ = Vm
     converter.θ = θ
@@ -152,19 +147,9 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Vᴳd = Vm * cos(θ)
     Vᴳq = -Vm * sin(θ)
 
-    println(Vᴳd)
-    println(Vᴳq)
-    println(Vdc)
-    println(Pdc)
-
-    # println(Vᴳd)
-    # println(Vᴳq)
-    # println(converter.controls)
     Id = ((Vᴳd * Pac + Vᴳq * Qac) / (Vᴳd^2 + Vᴳq^2)) 
     Iq = ((Vᴳq * Pac - Vᴳd * Qac) / (Vᴳd^2 + Vᴳq^2)) 
 
-    # println(Pac)
-    # println(Qac) 
     # setup control parameters and equations
     init_x = zeros(12, 1)
 
@@ -518,8 +503,6 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, ftol = 1e-6, xtol = 1e-3, method = :newton)
     converter.equilibrium = k.zero
 
-    println(k.zero)
-
     h(F,x) = f!(exp, F, x[1:end-3], x[end-2:end])
     ha = x -> (F = fill(zero(promote_type(eltype(x), Float64)), index+3); h(F, x); return F)
     A = zeros(index+3,index+3)
@@ -544,11 +527,6 @@ function eval_parameters(converter :: MMC, s :: Complex)
     Y[:,1] /= converter.vDCbase
     Y[2:3,:] *= converter.iACbase
     Y[:,2:3] /= converter.vACbase
-
-
-    # Y[2:3,2:3] *= converter.iACbase/converter.vACbase
-    # Y[1,2:3] /= converter.vACbase
-    # Y[2:3,1] *=converter.iACbase
 
     # if in(:dc, keys(converter.controls))
     #     (m11, m12, m21, m22) = (Y[1,1], Y[1,2:3], Y[2:3,1], Y[2:3,2:3])

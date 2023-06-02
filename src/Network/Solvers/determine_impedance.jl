@@ -130,19 +130,19 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
     # make frequency range
     (min_ω, max_ω, n_ω) = omega_range
     n = (max_ω - min_ω) / n_ω
-    omegas= 2*pi* 10 .^range(min_ω, max_ω, length= n_ω) #omegas = [exp10(min_ω)*10^(i*n) for i in 1:Int(n_ω)] The commented part is from Aleksandra
+    omegas= 2*pi* 10 .^range(min_ω, max_ω, length= n_ω) 
 
     # make closing impedance
     p = length(unique(output_pins))
     Zₜ = zeros(Complex, p, p)
-    # Zₜ = Diagonal(1e-6*ones(Complex, p))
     impedance = []
 
     if parameters_type == :ABCD
         for omega in omegas
-            abcd = make_abcd(network, dict, input_pins, output_pins, omega*1im)
-            z = closing_impedance(abcd, Zₜ)
-            push!(impedance, z)
+            # abcd = make_abcd(network, dict, input_pins, output_pins, omega*1im)
+            # z = closing_impedance(abcd, Zₜ)
+            # push!(impedance, z)
+            push!(impedance, make_z(network, dict, input_pins, output_pins, omega*1im))
         end
     else
         dict[:node_list] = [dict[:node_list]; dict[:output_list]]
