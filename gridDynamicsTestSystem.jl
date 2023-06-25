@@ -1,4 +1,4 @@
-using DelimitedFiles,SymEngine
+using DelimitedFiles,SymEngine, HVDCstability
 s = symbols("s")
 transmissionVoltage = 380 / sqrt(3)
 pHVDC1 = 600

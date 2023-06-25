@@ -494,6 +494,10 @@ function power_flow(net :: Network)
     # println(result["solution"]["bus"])
     # println("Power flow solution:")
     # println(result["solution"])
+    # println("Calculating Jacobian")
+    # data_for_jac = make_basic_network(data)
+    jac = calc_basic_jacobian_matrix(data)
+    writedlm("power_flow_jacobian.csv",  jac, ',')
     id_converter = 1
     for (key, element) in net.elements
         if is_converter(element)
