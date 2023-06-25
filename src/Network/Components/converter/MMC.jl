@@ -143,7 +143,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Pac /= Sbase
     Qac /= Sbase
     Pdc /= Sbase
-
+    
     Vᴳd = Vm * cos(θ)
     Vᴳq = -Vm * sin(θ)
 
@@ -273,7 +273,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
         index += 1
     elseif !in(:dc, keys(converter.controls))
         push!(exp.args, :(
-            iΔd_ref = $(converter.controls[:occ].ref[1])))
+            iΔd_ref = $Pac))
     end
     if in(:q, keys(converter.controls))
         # reactive power control
@@ -288,7 +288,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
         index += 1
     elseif !in(:vac, keys(converter.controls))
         push!(exp.args, :(
-            iΔq_ref = $(converter.controls[:occ].ref[2])))
+            iΔq_ref = $Qac))
     end
     # add control equations
     for (key, val) in (converter.controls)
@@ -345,7 +345,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         #             $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + ω * $Lₑ * iΔq + Vᴳd);
                         # vMΔq_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+2] +
                         #             $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - ω * $Lₑ * iΔd + Vᴳq);
-                        # Assuming constant w
+                        # Assuming constant w. Having (1+deltaw) instead of 1 results in mismatches above 100 Hz in y_dq and y_qq.
                         vMΔd_ref_c = ( x[$index+1] +
                                     $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + $Lₑ * iΔq + Vᴳd);
                         vMΔq_ref_c = ( x[$index+2] +
@@ -521,8 +521,8 @@ end
 function eval_parameters(converter :: MMC, s :: Complex)
     # numerical
     I = Matrix{Complex}(Diagonal([1 for dummy in 1:size(converter.A,1)]))
-    Y = (converter.C*inv(s*I-converter.A))*converter.B + converter.D # This matrix is in pu
-    
+    # Y = (converter.C*inv(s*I-converter.A))*converter.B + converter.D # This matrix is in pu
+    Y = converter.C * ((s*I-converter.A) \ converter.B) + converter.D # This matrix is in pu
     Y[1,:] *= converter.iDCbase
     Y[:,1] /= converter.vDCbase
     Y[2:3,:] *= converter.iACbase

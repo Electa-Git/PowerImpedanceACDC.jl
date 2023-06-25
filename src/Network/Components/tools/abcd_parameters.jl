@@ -76,16 +76,25 @@ function transformation_dq(ABCD₁, ABCD₂)
     (a₁, b₁, c₁, d₁) = (ABCD₁[1:n,1:n], ABCD₁[1:n,n+1:end], ABCD₁[n+1:end,1:n], ABCD₁[n+1:end, n+1:end])
     (a₂, b₂, c₂, d₂) = (ABCD₂[1:n,1:n], ABCD₂[1:n,n+1:end], ABCD₂[n+1:end,1:n], ABCD₂[n+1:end, n+1:end])
 
-    ϕ = 2π/3
-    e = exp(1im*ϕ)
-    a = [1 e e^2;
-        1im 1im*e 1im*e^2;
-        0 0 0]
+    # ϕ = 2π/3
+    # e = exp(1im*ϕ)
+    # a = [1 e e^2;
+    #     1im 1im*e 1im*e^2;
+    #     0 0 0]
 
-    a_dq = (1/3 * (a * a₁ + conj(a) * a₂) * transpose(real(a)))[1:2,1:2]
-    b_dq = (1/3 * (a * b₁ + conj(a) * b₂) * transpose(real(a)))[1:2,1:2]
-    c_dq = (1/3 * (a * c₁ + conj(a) * c₂) * transpose(real(a)))[1:2,1:2]
-    d_dq = (1/3 * (a * d₁ + conj(a) * d₂) * transpose(real(a)))[1:2,1:2]
+    # a_dq = (1/3 * (a * a₁ + conj(a) * a₂) * transpose(real(a)))[1:2,1:2]
+    # b_dq = (1/3 * (a * b₁ + conj(a) * b₂) * transpose(real(a)))[1:2,1:2]
+    # c_dq = (1/3 * (a * c₁ + conj(a) * c₂) * transpose(real(a)))[1:2,1:2]
+    # d_dq = (1/3 * (a * d₁ + conj(a) * d₂) * transpose(real(a)))[1:2,1:2]
+
+    T = [1 -1im;-1im -1]
+    CK = (2/3)*[1 -1/2 -1/2;0 sqrt(3)/2 -sqrt(3)/2]
+    CKinv = [1 0;-1/2 sqrt(3)/2; -1/2 -sqrt(3)/2]
+
+    a_dq = T * CK * a₂ * CKinv * conj(T) + conj(T) * CK * a₁ * CKinv * T
+    b_dq = T * CK * b₂ * CKinv * conj(T) + conj(T) * CK * b₁ * CKinv * T
+    c_dq = T * CK * c₂ * CKinv * conj(T) + conj(T) * CK * c₁ * CKinv * T
+    d_dq = T * CK * d₂ * CKinv * conj(T) + conj(T) * CK * d₁ * CKinv * T
 
     abcd = [a_dq b_dq; c_dq d_dq]
 end

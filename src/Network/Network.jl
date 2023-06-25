@@ -337,8 +337,6 @@ function power_flow(net :: Network)
     end
 
     function make_syngen(data :: Dict{String, Any}, element :: Element, dict_dc :: Array{Any}, new_i :: Array{Symbol}, new_o :: Array{Symbol})
-        # println("Inside")
-        # println(element)
         !isempty(new_i) ? (!any(occursin("gnd", string(x)) for x in new_i) && (push!(dict_ac, new_i); add_bus_ac(data))) : nothing
         key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
         !isempty(new_o) ? (!any(occursin("gnd", string(x)) for x in new_o) && (push!(dict_ac, new_o); add_bus_ac(data))) : nothing
@@ -431,7 +429,6 @@ function power_flow(net :: Network)
         make_power_flow_ac!(element.element_value, data, global_dict)
     end
 
-    # println(values(net.elements))
     !any((is_converter(element) || is_generator(element)) for element in values(net.elements)) && return
 
     dict_ac = Any[]
@@ -492,12 +489,11 @@ function power_flow(net :: Network)
     PowerModelsACDC.process_additional_data!(data)
     ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
-    # println(data)
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
-    println(result["termination_status"])
+    # println(result["termination_status"])
     # println(result["solution"]["bus"])
-    println("Power flow solution:")
-    println(result["solution"])
+    # println("Power flow solution:")
+    # println(result["solution"])
     id_converter = 1
     for (key, element) in net.elements
         if is_converter(element)
@@ -515,6 +511,10 @@ function power_flow(net :: Network)
             println(Pac)
             print("MMC #" * string(id_converter) * " Reactive Power [MVar]: ")
             println(Qac)
+            print("MMC #" * string(id_converter) * " AC Voltage Magnitude [kV]: ")
+            println(Vm)
+            print("MMC #" * string(id_converter) * " AC Voltage Angle [rad]: ")
+            println(θ)
             print("MMC #" * string(id_converter) * " DC Voltage [kV]: ")
             println(Vdc)
             update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
@@ -685,7 +685,7 @@ macro network(cdef)
             elem_spec(expr)
         elseif is_conn_spec(expr)
             push!(ccode.args, Expr(:call, :connect!, :network, extractpins(expr)...))
-        else
+        else 
             error("invalid statement in network definition$locinfo: $expr")
         end
     end

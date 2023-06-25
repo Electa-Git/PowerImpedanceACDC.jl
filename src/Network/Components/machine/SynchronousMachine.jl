@@ -276,10 +276,10 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
     init_init[4] = 1
     k_init = nlsolve(k!, init_init , autodiff = :forward, iterations = 200, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
     equilibrium_init= k_init.zero #debug here
-    println("Inputs for the steady state solution")
-    println(inputs_init)
-    println("Steady state solution")
-    println(equilibrium_init)
+    # println("Inputs for the steady state solution")
+    # println(inputs_init)
+    # println("Steady state solution")
+    # println(equilibrium_init)
     init_x[1] = equilibrium_init[1]
     init_x[2] = equilibrium_init[2]
     init_x[4] = equilibrium_init[3]
@@ -389,8 +389,8 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
 
     # Setting up the equilibrium point based on the initial solution
     gen.equilibrium = init_x
-    println("Overall steady-state solution")
-    println(gen.equilibrium)
+    # println("Overall steady-state solution")
+    # println(gen.equilibrium)
 
     # Add outputs
 

@@ -62,7 +62,7 @@ function impedance(;z :: Union{Int, Float64, Basic, Array{Basic}} = 0, pins :: I
         for i in 1:pins  #for cycle that goes from 1 to the number that pins has
           for j in 1:pins #nested for loop, e.g. if pins=3 it does : i=1,j=1 enter. i=1; j=2 enter. i=1 j=3 enter. i=2,j=1 enter etc.
             z = imp.value[i,j] #access to the value in impedance at the position (i,j)
-            if (z != 0) #if the impedance matrix in position (i,j is not void it enters)
+            if (z != 0 && z!=0.0) #if the impedance matrix in position (i,j is not void it enters) # TODO: to be generalized.
               m1[i,i] += 1/z
               m1[pins + j, i] -= 1/z
               m2[i,j] += 1/z

@@ -23,6 +23,10 @@ module HVDCstability
     using Ipopt
     using JuMP
 
+    # New Nyquist plots from Thomas
+    using Plots
+    using Combinatorics
+
     # file includes
     include("Network/globals.jl")
 

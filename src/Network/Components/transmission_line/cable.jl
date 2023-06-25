@@ -101,12 +101,12 @@ function cable(;args...) # in parenthesis the input of the function julia uses "
 
     # conversion procedure #not FP
     # core outer radius    #not FP
-    (c.conductors[:C1].A != 0) ? c.conductors[:C1].ρ = c.conductors[:C1].ρ * π *
+    (c.conductors[:C1].A != 0 && c.conductors[:C1].A != 0.0) ? c.conductors[:C1].ρ = c.conductors[:C1].ρ * π *
                         c.conductors[:C1].rₒ^2 / c.conductors[:C1].A : nothing #If the equivalent area of C1 is different from 0 -> "conversion" operation, othewise do nothing.
     # add metalic screen conversions, equivalent sheat layer
     if in(:SC, keys(c.conductors)) #true if in the keys of the variable conductors (Mutable structure Conductor) it is defined a semiconductor-> key :SC, row 48 of this code
         !in(:C2, keys(c.conductors)) && throw(ArgumentError("There must be present sheath together with screen layer.")) #If key C2 is not present in conductors variable (Conductor mutable structure) throw a message error: "C2 must be...""
-        if (c.conductors[:SC].A != 0) #if the equivalent area of the semi conductor is defined and different from zero-> enter
+        if (c.conductors[:SC].A != 0 && c.conductors[:SC].A != 0.0) #if the equivalent area of the semi conductor is defined and different from zero-> enter
             c.conductors[:C2].rᵢ = sqrt(c.conductors[:SC].rₒ^2 - c.conductors[:SC].A / π) #The internal radium of the conductor C2 is -> External radius of the Screen - Equivalent Screen radius
         else
             c.conductors[:C2].rᵢ = c.conductors[:SC].rᵢ #If the screen equivalent area is not defined -> put the internal radius of the conductor C2 equal to the internal screen radius
@@ -126,7 +126,7 @@ function cable(;args...) # in parenthesis the input of the function julia uses "
         end
     end
     # semiconductor configuration
-    if in(:I1, keys(c.insulators)) && (c.insulators[:I1].a != 0) #If in the keys of the variable c is defined I₁ AND I₁ has a semiconductor section (outer radius, inner semiconductor different from 0) -> enter
+    if in(:I1, keys(c.insulators)) && (c.insulators[:I1].a != 0) && (c.insulators[:I1].a != 0.0) #If in the keys of the variable c is defined I₁ AND I₁ has a semiconductor section (outer radius, inner semiconductor different from 0) -> enter
         x = log(c.insulators[:I1].rₒ / c.insulators[:I1].rᵢ) / log(c.insulators[:I1].b / c.insulators[:I1].a) # x = log(rₒI₁/rᵢI₁)/log(bI₁/aI₁)
         c.insulators[:I1].ϵᵣ *=  x #Same as c.insulators[:I₁].ϵᵣ =  c.insulators[:I₁].ϵᵣ*x ->  ϵᵣI1 = ϵᵣI₁ * x
         N = 1.4
