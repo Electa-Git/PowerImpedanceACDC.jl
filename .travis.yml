@@ -1,0 +1,23 @@
+language: julia
+os:
+  - linux
+julia:
+  - 1.2
+#  - nightly
+matrix:
+  allow_failures:
+    # - julia: nightly
+codecov: true
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.2
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg; Pkg.instantiate();
+                  Pkg.develop(PackageSpec(path=pwd()))'
+        - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+        - julia -e 'using Pkg; Pkg.test("HVDCstability")'
+
+      after_success:
+        - julia -e 'using Pkg; cd(Pkg.dir("HVDCstability")); include(joinpath("docs", "make.jl"))'
