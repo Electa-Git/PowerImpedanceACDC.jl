@@ -166,12 +166,12 @@ function transformer(;args...)
         transformation = transformation)
 end
 
-function eval_abcd(t :: Transformer, s :: Complex)
+function eval_abcd(t :: Transformer, s :: ComplexF64)
     value = N.(subs.(t.ABCD, symbols(:s), s))
-    return convert(Array{Complex}, value)
+    return convert(Array{ComplexF64}, value)
 end
 
-function eval_y(t :: Transformer, s :: Complex)
+function eval_y(t :: Transformer, s :: ComplexF64)
     return abcd_to_y(eval_abcd(t, s))
 end
 
