@@ -284,8 +284,8 @@ end
 @time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
 output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
 
-# writedlm("imp_dq_MMC_SG.csv",  imp_ac1, ',')
-# writedlm("w_dq_MMC_SG.csv",  omega_ac1, ',')
+writedlm("imp_dq_MMC_SG.csv",  imp_ac1, ',')
+writedlm("w_dq_MMC_SG.csv",  omega_ac1, ',')
 
 # @time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:g3,:c1,:c2,:dc_line,:g4], input_pins=Any[:Bus3d,:Bus3q], 
 # output_pins=Any[:Bus7d,:Bus7q], omega_range = (-2,4,2000))
