@@ -200,7 +200,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
                 val.ref = [Vdc]
             end
-        elseif (key == :vac)
+        elseif (key == :vac) || (key == :vac_supp)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
                 val.ref = [Vm]
             end
@@ -256,9 +256,14 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
         push!(exp.args, :(Vdc = inputs[1]))
     end
 
-    # Not implemented yet, need to think about it..
     if in(:vac, keys(converter.controls))
-        push!(exp.args, :())
+        push!(exp.args, :(
+            Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
+            iΔq_ref = ($(converter.controls[:vac].Kₚ) * ($(converter.controls[:vac].ref[1]) - Vᴳ_mag) +
+                         x[$index+1]);
+            F[$index+1] = $(converter.controls[:vac].Kᵢ) *($(converter.controls[:vac].ref[1]) - Vᴳ_mag)
+        ))
+        index +=1
     end
 
     if in(:p, keys(converter.controls))
@@ -276,15 +281,26 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             iΔd_ref = $Pac))
     end
     if in(:q, keys(converter.controls))
+        if in(:vac_supp, keys(converter.controls))
+            push!(exp.args, :(
+                Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
+                Δq_unf = $(converter.controls[:vac_supp].Kₚ)*($(converter.controls[:vac_supp].ref[1])-Vᴳ_mag);
+                F[$index+1] = $(converter.controls[:vac_supp].ω_f) *(Δq_unf - x[$index+1]);
+                q_ref = x[$index+1]))
+            index +=1
+        else
+            push!(exp.args, :(
+                q_ref = $(converter.controls[:q].ref[1])))
+        end
         # reactive power control
         push!(exp.args, :(
 
             # Q_ac = (3/2)*(Vgq*iΔd - Vgd*iΔq)
             Q_ac =  (Vᴳq * iΔd - Vᴳd * iΔq);
             # iΔq_ref = -(Kp_Qac * (Qac_ref - Qac) + Ki_Qac * xiQac);
-            iΔq_ref = -($(converter.controls[:q].Kₚ) * ($(converter.controls[:q].ref[1]) - Q_ac) +
+            iΔq_ref = -($(converter.controls[:q].Kₚ) * (q_ref - Q_ac) +
                          x[$index+1]);
-            F[$index+1] = $(converter.controls[:q].Kᵢ) *($(converter.controls[:q].ref[1]) - Q_ac)))
+            F[$index+1] = $(converter.controls[:q].Kᵢ) *(q_ref - Q_ac)))
         index += 1
     elseif !in(:vac, keys(converter.controls))
         push!(exp.args, :(

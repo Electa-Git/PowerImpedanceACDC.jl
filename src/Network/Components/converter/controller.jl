@@ -8,4 +8,5 @@ abstract type Controller end
     Kₚ :: Union{Int, Float64}  = 0                     # proportional gain
     Kᵢ :: Union{Int, Float64}  = 0                     # integral gain
     ref :: Array{Union{Int, Float64}}  = [0]           # reference value
+    ω_f  :: Union{Int, Float64}  = 0                    # Filter cutoff frequency
 end

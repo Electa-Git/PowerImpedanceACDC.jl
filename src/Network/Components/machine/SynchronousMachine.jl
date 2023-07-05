@@ -1,7 +1,7 @@
 export synchronousmachine
 
 include("machine.jl")
-include("controller.jl")
+# include("controller.jl") # Removed this for now, will need to think in the future how to implement controllers for SGs.
 # TODO: Right now, second pins of the SG should be connected to the ground.
 @with_kw mutable struct SynchronousMachine <: Machine
     wn :: Union{Int, Float64} = 100*π
@@ -67,7 +67,7 @@ include("controller.jl")
     θ :: Union{Int, Float64} = 0
     V :: Union{Int, Float64} = 220*sqrt(2/3)             # AC voltage, amplitude [kV]
 
-    controls :: OrderedDict{Symbol, Controller} = OrderedDict{Symbol, Controller}()
+    # controls :: OrderedDict{Symbol, Controller} = OrderedDict{Symbol, Controller}() # Disabled for now
     equilibrium :: Array{Union{Int, Float64}} = [0]
     A :: Array{Complex} = [0]
     B :: Array{Complex} = [0]
@@ -81,9 +81,7 @@ function synchronousmachine(;args...)
     gen = SynchronousMachine()
 
     for (key, val) in kwargs_pairs(args)
-        if isa(val, Controller)
-            gen.controls[key] = val
-        elseif in(key, propertynames(gen))
+        if in(key, propertynames(gen))
             setfield!(gen, key, val)
         else
             throw(ArgumentError("Machine does not have a property $(key)."))
