@@ -235,7 +235,7 @@ function power_flow(net :: Network)
     global global_dict
     global ang_min, ang_max
     global max_gen
-    global_dict = PowerModelsACDC.get_pu_bases(100, 320) # 3-PH MVA, LN-RMS
+    global_dict = PowerModelsACDC.get_pu_bases(1000, 380/sqrt(3)) # 3-PH MVA, LN-RMS, Original setting was 100,320
     global_dict["omega"] = 2π * 50
 
     ang_min = deg2rad(360)
@@ -417,8 +417,7 @@ function power_flow(net :: Network)
         # merge input and output pins in one bus
         new_i = vcat(new_i, new_o)
         !isempty(new_i) ? (push!(dict_ac, new_i); add_bus_ac(data); key_i = length(data["bus"])) :
-                            (key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac);
-                            dict_ac[key_i] = new_i)
+                            (key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac))
         key_e = length(data["shunt"])+1
         (data["shunt"])[string(key_e)] = Dict{String, Any}()
         ((data["shunt"])[string(key_e)])["source_id"] = Any["bus", key_i]
@@ -427,6 +426,27 @@ function power_flow(net :: Network)
         data["shunt"][string(key_e)]["status"] = 1
 
         make_power_flow_ac!(element.element_value, data, global_dict)
+    end
+
+    function make_shunt_ac_impedance(data :: Dict{String, Any}, element :: Element, dict_ac :: Array{Any}, new_i :: Array{Symbol}, new_o :: Array{Symbol})
+        # merge input and output pins in one bus
+        # TODO: Right now, this only works if the first pin of the load is connected to the bus, and the second pin grounded. This can be generalized.
+        new_i = vcat(new_i, new_o)
+        !isempty(new_i) ? (push!(dict_ac, new_i); add_bus_ac(data); key_i = length(data["bus"])) :
+                            (key_i = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac))
+        key_e = length(data["shunt"])+1
+        (data["shunt"])[string(key_e)] = Dict{String, Any}()
+        ((data["shunt"])[string(key_e)])["source_id"] = Any["bus", key_i]
+        ((data["shunt"])[string(key_e)])["index"] = key_e
+        ((data["shunt"])[string(key_e)])["shunt_bus"]  = key_i
+        data["shunt"][string(key_e)]["status"] = 1
+
+        abcd = eval_abcd(element.element_value, global_dict["omega"] * 1im)
+        n = 3
+        Z = (abcd[1:n,n+1:end])[1,1] / global_dict["Z"]
+        data["shunt"][string(key_e)]["gs"] = real(1/Z)
+        data["shunt"][string(key_e)]["bs"] = imag(1/Z)
+
     end
 
     !any((is_converter(element) || is_generator(element)) for element in values(net.elements)) && return
@@ -473,7 +493,11 @@ function power_flow(net :: Network)
         # TODO: DC sources are not modeled in the power flow. Check with Hakan!
         if is_passive(element)
             if is_three_phase(element)
-                make_branch_ac(data, element, dict_ac, new_i, new_o)
+                if is_impedance(element) # Assuming that impedances are only used to represent loads connected in shunt at buses. TODO: This can somehow be generalized.
+                    make_shunt_ac_impedance(data, element, dict_ac, new_i, new_o)
+                else
+                    make_branch_ac(data, element, dict_ac, new_i, new_o)
+                end
             else
                 make_branch_dc(data, element, dict_dc, new_i, new_o)
             end
@@ -497,7 +521,7 @@ function power_flow(net :: Network)
     # println("Calculating Jacobian")
     # data_for_jac = make_basic_network(data)
     jac = calc_basic_jacobian_matrix(data)
-    writedlm("power_flow_jacobian.csv",  jac, ',')
+    writedlm("./files/power_flow_jacobian.csv",  jac, ',')
     id_converter = 1
     for (key, element) in net.elements
         if is_converter(element)

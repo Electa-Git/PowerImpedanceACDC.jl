@@ -131,8 +131,16 @@ function is_converter(element :: Element)
     isa(element.element_value, MMC)
 end
 
+function is_shunt_reactor(element :: Element)
+    isa(element.element_value, Shunt_reactor)
+end
+
 function is_generator(element :: Element)
     isa(element.element_value, SynchronousMachine)
+end
+
+function is_impedance(element :: Element)
+    isa(element.element_value, Impedance)
 end
 
 function is_three_phase(element :: Element)

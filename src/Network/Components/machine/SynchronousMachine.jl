@@ -416,10 +416,10 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
     gen.C *= I_base * 1e3
     gen.D *= I_base 
 
-    writedlm( "A.csv",  gen.A, ',')
-    writedlm( "B.csv",  gen.B, ',')
-    writedlm( "C.csv",  gen.C, ',')
-    writedlm( "D.csv",  gen.D, ',')
+    # writedlm( "A.csv",  gen.A, ',')
+    # writedlm( "B.csv",  gen.B, ',')
+    # writedlm( "C.csv",  gen.C, ',')
+    # writedlm( "D.csv",  gen.D, ',')
 end
 
 

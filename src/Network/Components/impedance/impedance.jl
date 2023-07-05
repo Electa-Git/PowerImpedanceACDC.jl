@@ -53,7 +53,7 @@ function impedance(;z :: Union{Int, Float64, Basic, Array{Basic}} = 0, pins :: I
             z = reshape(z,pins,pins) #construct a square matrix with the value in z with dimension pins*pins
         end
         imp = Impedance(value = z) #put in the function impedance in value the Z obtained in these passages
-
+        
         # determine ABCD
         m1 = zeros(Basic, 2pins, 2pins) #create square matrix m1 with dimension 2pins*2pins data type Basic
         m2 = zeros(Basic, 2pins, 2pins) #same as above
