@@ -77,11 +77,10 @@ qC4 = 100
         # l5 = impedance(z = 960 + s, pins = 3, transformation = true) 
         # l6 = impedance(z = 960 + s, pins = 3, transformation = true) 
         # l8 = impedance(z = 960 + s, pins = 3, transformation = true)
-        l5 = impedance(z = (192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true) 
-        l6 = impedance(z = (192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
-        # l8 = impedance(z = 192.5, pins = 3, transformation = true)   
-        l8 = impedance(z = (192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)  
-                
+        l5 = impedance(z = 2*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true) 
+        l6 = impedance(z = 2*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
+        l8 = impedance(z = 2*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
+                                
         # SI gains
         # c2 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
         #         P_max = 1000, P_min = -1000, P = pHVDC1, Q = qC2, Q_max = 1000, Q_min = -1000,
@@ -138,7 +137,9 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+                vac_supp = PI_control(Kₚ = 20, ω_f = 2),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                # vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -192,7 +193,9 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+                vac_supp = PI_control(Kₚ = 20, ω_f = 2),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                # vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
         
         
@@ -281,11 +284,31 @@ end
 # MMC = net.elements[:c1]
 # plot_data(MMC, omega_range = (0, 4, 1000), scale = :log)
 
-@time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
-output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
+# @time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
+# output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
 
-writedlm("imp_dq_MMC_SG.csv",  imp_ac1, ',')
-writedlm("w_dq_MMC_SG.csv",  omega_ac1, ',')
+# writedlm("./files/imp_dq_MMC_SG.csv",  imp_ac1, ',')
+# writedlm("./files/w_dq_MMC_SG.csv",  omega_ac1, ',')
+
+# Stability analysis at HVDC1 terminals
+
+@time Z_MMC_AC_1, omega = determine_impedance(net, elim_elements=[:tl78,:tl75], input_pins=Any[:Bus7d,:Bus7q], output_pins=Any[:gndd,:gndq], omega_range = (-2,2,1000))
+@time Z_BUS_AC_1, omega = determine_impedance(net, elim_elements=[:c2], input_pins=Any[:Bus7d,:Bus7q], output_pins=Any[:gndd,:gndq], omega_range = (-2,2,1000))
+
+L_AC_1 = Z_BUS_AC_1 ./ Z_MMC_AC_1
+
+@time nyquist_P2P_AC_1 = nyquistplot(L_AC_1, omega, zoom = "yes", SM = "PM", title = "HVDC 1 terminals, AC voltage droop")
+display(nyquist_P2P_AC_1)
+
+# Stability analysis at HVDC2 terminals
+
+@time Z_MMC_AC_2, omega = determine_impedance(net, elim_elements=[:tl75,:tl54,:l5], input_pins=Any[:Bus5d,:Bus5q], output_pins=Any[:gndd,:gndq], omega_range = (-2,2,1000))
+@time Z_BUS_AC_2, omega = determine_impedance(net, elim_elements=[:c4], input_pins=Any[:Bus5d,:Bus5q], output_pins=Any[:gndd,:gndq], omega_range = (-2,2,1000))
+
+L_AC_2 = Z_BUS_AC_2 ./ Z_MMC_AC_2
+
+@time nyquist_P2P_AC_2 = nyquistplot(L_AC_2, omega, zoom = "yes", SM = "PM", title = "HVDC 2 terminals, AC voltage droop")
+display(nyquist_P2P_AC_2)
 
 # @time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:g3,:c1,:c2,:dc_line,:g4], input_pins=Any[:Bus3d,:Bus3q], 
 # output_pins=Any[:Bus7d,:Bus7q], omega_range = (-2,4,2000))
