@@ -37,9 +37,11 @@ include("controller.jl")
     padeOrderNum :: Int = 0
     padeOrderDen :: Int = 0
 
-    vACbase_LL_RMS :: Float64 = 380 # Voltage base in kV
-    Sbase :: Float64 = 1000 # Power base in MW
-    vDCbase :: Float64 = 640 # DC voltage base in kV
+    vACbase_LL_RMS :: Union{Int, Float64} = 380 # Voltage base in kV
+    Sbase :: Union{Int, Float64} = 1000 # Power base in MW
+    vDCbase :: Union{Int, Float64} = 640 # DC voltage base in kV
+
+    vPCC_scaling :: Union{Int, Float64} = 1 # Inverse of the transformer turns ratio between the AC converter terminals and the PCC
 
     vACbase :: Float64 = 0 # AC voltage base for impedance/admittance calculation
     iACbase :: Float64 = 0 # AC current base for impedance/admittance calculation
@@ -137,6 +139,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     converter.P = Pac
     converter.Q = Qac
     converter.P_dc = Pdc # Has the same sign as Pac
+
+    Vm *= converter.vPCC_scaling # Scale the converter AC voltage, as the transformers have to be defined inside the MMC.
 
     Vm /= vAC_base
     Vdc /= vDC_base

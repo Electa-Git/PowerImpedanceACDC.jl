@@ -77,9 +77,9 @@ qC4 = 100
         # l5 = impedance(z = 960 + s, pins = 3, transformation = true) 
         # l6 = impedance(z = 960 + s, pins = 3, transformation = true) 
         # l8 = impedance(z = 960 + s, pins = 3, transformation = true)
-        l5 = impedance(z = 2*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true) 
-        l6 = impedance(z = 2*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
-        l8 = impedance(z = 2*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
+        l5 = impedance(z = 1*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true) 
+        l6 = impedance(z = 1*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
+        l8 = impedance(z = 1*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
                                 
         # SI gains
         # c2 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
@@ -122,7 +122,7 @@ qC4 = 100
         # HVDC link 1
         # PU gains
         # MMC1 controls the DC voltage, and is situated at the remote end.
-        c1 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
+        c1 = mmc(Vᵈᶜ = 800, vDCbase = 800, vACbase_LL_RMS = 380, vPCC_scaling = 380/380, Vₘ = transmissionVoltage, Lᵣ = 60e-3, Rᵣ = 0.535,
                 P_max = 1500, P_min = -1500, P = -pHVDC1, Q = qC1, Q_max = 500, Q_min = -500,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
@@ -131,13 +131,13 @@ qC4 = 100
                 dc = PI_control(Kₚ = 5, Kᵢ = 15)
                 )
         # MMC2 controls P&Q. It is connected to bus 7.
-        c2 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
+        c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, vACbase_LL_RMS = 380, vPCC_scaling = 380/380, Vₘ = transmissionVoltage, Lᵣ = 60e-3, Rᵣ = 0.535,
                 P_max = 1000, P_min = -1000, P = pHVDC1, Q = qC2, Q_max = 1000, Q_min = -1000,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                vac_supp = PI_control(Kₚ = 100, ω_f = 100),
+                # vac_supp = PI_control(Kₚ = 100, ω_f = 100),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
                 # vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
@@ -178,7 +178,7 @@ qC4 = 100
         # HVDC link 2
         # MMC3 controls the DC voltage, and is situated at the remote end.
         # # PU gains
-        c3 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
+        c3 = mmc(Vᵈᶜ = 800, vDCbase = 800, vACbase_LL_RMS = 380, vPCC_scaling = 380/380, Vₘ = transmissionVoltage, Lᵣ = 60e-3, Rᵣ = 0.535,
                 P_max = 1500, P_min = -1500, P = -pHVDC2, Q = qC3, Q_max = 500, Q_min = -500,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
@@ -187,13 +187,13 @@ qC4 = 100
                 dc = PI_control(Kₚ = 5, Kᵢ = 15)
                 )
         # MMC4 controls P&Q. It is connected to bus 5.
-        c4 = mmc(Vᵈᶜ = 640, Vₘ = transmissionVoltage,
+        c4 = mmc(Vᵈᶜ = 800, vDCbase = 800, vACbase_LL_RMS = 380, vPCC_scaling = 380/380, Vₘ = transmissionVoltage, Lᵣ = 60e-3, Rᵣ = 0.535,
                 P_max = 1000, P_min = -1000, P = pHVDC2, Q = qC4, Q_max = 1000, Q_min = -1000,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                vac_supp = PI_control(Kₚ = 20, ω_f = 100),
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
                 # vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
@@ -284,45 +284,10 @@ end
 # MMC = net.elements[:c1]
 # plot_data(MMC, omega_range = (0, 4, 1000), scale = :log)
 
-# @time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
-# output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
+@time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
+output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
 
-# writedlm("./files/imp_dq_MMC_SG.csv",  imp_ac1, ',')
-# writedlm("./files/w_dq_MMC_SG.csv",  omega_ac1, ',')
+writedlm("./files/imp_dq_MMC_SG.csv",  imp_ac1, ',')
+writedlm("./files/w_dq_MMC_SG.csv",  omega_ac1, ',')
 
-# Stability analysis at HVDC1 terminals
 
-@time Z_MMC_AC_1, omega = determine_impedance(net, elim_elements=[:tl78,:tl75], input_pins=Any[:Bus7d,:Bus7q], output_pins=Any[:gndd,:gndq], omega_range = (-2,2,1000))
-@time Z_BUS_AC_1, omega = determine_impedance(net, elim_elements=[:c2], input_pins=Any[:Bus7d,:Bus7q], output_pins=Any[:gndd,:gndq], omega_range = (-2,2,1000))
-
-L_AC_1 = Z_BUS_AC_1 ./ Z_MMC_AC_1
-
-@time nyquist_P2P_AC_1 = nyquistplot(L_AC_1, omega, zoom = "yes", SM = "PM", title = "HVDC 1 terminals, AC voltage droop")
-display(nyquist_P2P_AC_1)
-
-# Stability analysis at HVDC2 terminals
-
-@time Z_MMC_AC_2, omega = determine_impedance(net, elim_elements=[:tl75,:tl54,:l5], input_pins=Any[:Bus5d,:Bus5q], output_pins=Any[:gndd,:gndq], omega_range = (-2,2,1000))
-@time Z_BUS_AC_2, omega = determine_impedance(net, elim_elements=[:c4], input_pins=Any[:Bus5d,:Bus5q], output_pins=Any[:gndd,:gndq], omega_range = (-2,2,1000))
-
-L_AC_2 = Z_BUS_AC_2 ./ Z_MMC_AC_2
-
-@time nyquist_P2P_AC_2 = nyquistplot(L_AC_2, omega, zoom = "yes", SM = "PM", title = "HVDC 2 terminals, AC voltage droop")
-display(nyquist_P2P_AC_2)
-
-# @time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:g3,:c1,:c2,:dc_line,:g4], input_pins=Any[:Bus3d,:Bus3q], 
-# output_pins=Any[:Bus7d,:Bus7q], omega_range = (-2,4,2000))
-
-# writedlm("imp_Z12.csv",  imp_ac2, ',')
-# writedlm("w_Z12.csv",  omega_ac2, ',')
-
-# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
-# output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
-
-# writedlm("imp_dq_MMC_SG.csv",  imp_ac, ',')
-# writedlm("w_dq_MMC_SG.csv",  omega_ac, ',')
-
-# @time imp_c1, omega_c1 = check_stability(net, net.elements[:c1], direction = :ac, omega_range = (0,4,1000))
-# @time imp_sg1, omega_sg1 = check_stability(net, net.elements[:sg1], direction = :ac, omega_range = (0,4,1000))
-
-# p = bode(imp_sg1, omega = omega_sg1)

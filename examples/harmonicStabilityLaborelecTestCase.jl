@@ -134,18 +134,18 @@ end
 
 # p = bode(imp_c2, omega = omega_c2)
 
-# @time Z_MMC_AC, omega = determine_impedance(net, elim_elements=[:tl2], input_pins=Any[:Bus5d,:Bus5q], output_pins=Any[:gndd,:gndq], omega_range = (3,4,1000))
-# @time Z_BUS_AC, omega = determine_impedance(net, elim_elements=[:c2], input_pins=Any[:Bus5d,:Bus5q], output_pins=Any[:gndd,:gndq], omega_range = (3,4,1000))
+@time Z_MMC_AC, omega = determine_impedance(net, elim_elements=[:tl2], input_pins=Any[:Bus5d,:Bus5q], output_pins=Any[:gndd,:gndq], omega_range = (3,4,1000))
+@time Z_BUS_AC, omega = determine_impedance(net, elim_elements=[:c2], input_pins=Any[:Bus5d,:Bus5q], output_pins=Any[:gndd,:gndq], omega_range = (3,4,1000))
 
-# L_AC = Z_BUS_AC ./ Z_MMC_AC
+L_AC = Z_BUS_AC ./ Z_MMC_AC
 
-# @time nyquist_P2P_AC = nyquistplot(L_AC, zoom = "yes")
-# display(nyquist_P2P_AC)
+@time nyquist_P2P_AC = nyquistplot(L_AC, omega, zoom = "yes", SM = "PM")
+display(nyquist_P2P_AC)
 
-@time Z_MMC_DC, omega = determine_impedance(net, elim_elements=[:dc_line], input_pins=Any[:BusDC2], output_pins=Any[:gndd], omega_range = (-1,4,1000))
-@time Z_BUS_DC, omega = determine_impedance(net, elim_elements=[:c1], input_pins=Any[:BusDC2], output_pins=Any[:gndd], omega_range = (-1,4,1000))
+# @time Z_MMC_DC, omega = determine_impedance(net, elim_elements=[:dc_line], input_pins=Any[:BusDC2], output_pins=Any[:gndd], omega_range = (-1,4,1000))
+# @time Z_BUS_DC, omega = determine_impedance(net, elim_elements=[:c1], input_pins=Any[:BusDC2], output_pins=Any[:gndd], omega_range = (-1,4,1000))
 
-L_DC = Z_BUS_DC ./ Z_MMC_DC
+# L_DC = Z_BUS_DC ./ Z_MMC_DC
 
-@time nyquist_P2P_DC = nyquistplot(L_DC, zoom = "yes")
-display(nyquist_P2P_DC)
+# @time nyquist_P2P_DC = nyquistplot(L_DC, zoom = "yes")
+# display(nyquist_P2P_DC)
