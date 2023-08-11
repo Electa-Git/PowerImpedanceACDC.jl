@@ -48,9 +48,9 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                 n = findfirst(p -> p == node_name, dict[:node_list])  # position of the node in dict
                 i = parse(Int,string(pin)[1])
                 yi = (i-1) + parse(Int,string(pin)[3:end])
-                if (n == nothing)
+                if (n === nothing)
                     n = findfirst(p -> p == node_name, dict[:output_list])
-                    (n == nothing) && continue
+                    (n === nothing) && continue
                     matrix[nᵥ+n,  nₑₛ+yi] = -(-1)^i # Current direction (1.1, 2.1, 2.2)
                     output[nᵥ+n, 2n] = -(-1)^i
                     output[nₑₚ+1:nₑₚ+pₚ, 2(n-1)+1] += -Y[1:end, yi]               # -Y[:, yi]
@@ -92,9 +92,9 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                 i = findfirst(p -> p == node_name, dict[:node_list])                # position of the node in dict
                 j = parse(Int,string(pin)[3:end])
                 if (occursin("1.", string(pin)))   # input pin
-                    if (i == nothing)
+                    if (i === nothing)
                         i = findfirst(p -> p == node_name, dict[:output_list])
-                        if (i == nothing)
+                        if (i === nothing)
                             push!(elim_rows, nₑₚ+j)                                 # eliminate Vₚ[j] row
                             push!(elim_rows, nₑₚ+pₚ+j)                               # eliminate Iₚ[j] row
                             push!(elim_cols, nₑₛ+j)                                 # eliminate Iₚ[j] column
@@ -109,9 +109,9 @@ function make_abcd(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                         matrix[nₑₚ+j, i] = -1                                       # -Vₚ[j] in element eq
                     end
                 else    # output pin
-                    if (i == nothing)
+                    if (i === nothing)
                         i = findfirst(p -> p == node_name, dict[:output_list])
-                        (i == nothing) && continue
+                        (i === nothing) && continue
                         output[nᵥ+i, 2i] = 1                                        # current value in node
                         matrix[nᵥ+i,  nₑₛ+pₚ+j] = -1                                 # -Iₛ[j] in node
                         output[nₑₚ+1:nₑₚ+pₚ, 2(i-1)+1] += -a[1:end, j]               # -AVₛ[j] in element eq

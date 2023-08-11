@@ -11,9 +11,9 @@ function make_y(net :: Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
             i = parse(Int, string(key₁)[1]) - 1 + parse(Int, string(key₁)[3])
             j = parse(Int, string(key₂)[1]) - 1 + parse(Int, string(key₂)[3])
             iₚ = findfirst(p -> p == val₁, dict[:node_list])
-            (iₚ == nothing) ? continue : nothing
+            (iₚ === nothing) ? continue : nothing
             jₚ = findfirst(p -> p == val₂, dict[:node_list])
-            (jₚ == nothing) ? continue : nothing
+            (jₚ === nothing) ? continue : nothing
             Y_matrix[iₚ, jₚ] += Y[i,j]
         end
     end

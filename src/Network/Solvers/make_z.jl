@@ -42,9 +42,9 @@ function make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                 n = findfirst(p -> p == node_name, dict[:node_list])  # position of the node in dict
                 i = parse(Int,string(pin)[1])
                 yi = (i-1) + parse(Int,string(pin)[3:end])
-                if (n == nothing)
+                if (n === nothing)
                     n = findfirst(p -> p == node_name, dict[:output_list])
-                    (n == nothing) && continue
+                    (n === nothing) && continue
                     sysmatrix[nᵥ+n,  nₑₛ+yi] = -(-1)^i                  # Current direction (1.1, 2.1, 2.2)
                     sysmatrix[nᵥ+n, nᵥ+n] = (-1)^i
                     # inmatrix[nₑₚ+1:nₑₚ+pₚ, 2(n-1)+1] += -Y[1:end, yi] # All outputs are assumed to be grounded. This can be implemented in a future work.               # -Y[:, yi]
@@ -86,9 +86,9 @@ function make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                 i = findfirst(p -> p == node_name, dict[:node_list])                # position of the node in dict
                 j = parse(Int,string(pin)[3:end])
                 if (occursin("1.", string(pin)))   # input pin
-                    if (i == nothing)
+                    if (i === nothing)
                         i = findfirst(p -> p == node_name, dict[:output_list])
-                        if (i == nothing)
+                        if (i === nothing)
                             continue
                         end
                         sysmatrix[nᵥ+i, nₑₛ+j] = 1                                     # +Iₚ[j] in node
@@ -99,9 +99,9 @@ function make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                         sysmatrix[nₑₚ+j, i] = -1                                       # -Vₚ[j] in element eq
                     end
                 else    # component output pin
-                    if (i == nothing) # output node or input node
+                    if (i === nothing) # output node or input node
                         i = findfirst(p -> p == node_name, dict[:output_list])
-                        (i == nothing) && continue
+                        (i === nothing) && continue
                         sysmatrix[nᵥ+i, nᵥ+i] = -1                                        # current value in node
                         sysmatrix[nᵥ+i,  nₑₛ+pₚ+j] = -1                                 # -Iₛ[j] in node
                         # The equations below are removed because the output nodes are grounded.

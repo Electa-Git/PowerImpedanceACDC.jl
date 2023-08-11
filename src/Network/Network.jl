@@ -316,7 +316,7 @@ function power_flow(net :: Network)
         !isempty(new_o) ? (!any(occursin("gnd", string(x)) for x in new_o) && (push!(dict_ac, new_o); add_bus_ac(data))) : nothing
         key_o = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
 
-        (key_i == nothing) ? key_b = key_o : key_b = key_i
+        (key_i === nothing) ? key_b = key_o : key_b = key_i
 
         key = length(data["gen"])+1
         (data["gen"])[string(key)] = Dict{String, Any}()
@@ -342,7 +342,7 @@ function power_flow(net :: Network)
         !isempty(new_o) ? (!any(occursin("gnd", string(x)) for x in new_o) && (push!(dict_ac, new_o); add_bus_ac(data))) : nothing
         key_o = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
 
-        (key_i == nothing) ? key_b = key_o : key_b = key_i
+        (key_i === nothing) ? key_b = key_o : key_b = key_i
 
         # !isempty(new_i) ? (push!(dict_ac, new_i); add_bus_ac(data); key_i = length(data["bus"])) :
         #                     key_i_br = findfirst(p -> in(element.pins[Symbol(1.1)], p), dict_ac)
@@ -430,6 +430,7 @@ function power_flow(net :: Network)
 
     function make_shunt_ac_impedance(data :: Dict{String, Any}, element :: Element, dict_ac :: Array{Any}, new_i :: Array{Symbol}, new_o :: Array{Symbol})
         # merge input and output pins in one bus
+        # TODO: Consider representing as a load instead of a shunt.
         # TODO: Right now, this only works if the first pin of the load is connected to the bus, and the second pin grounded. This can be generalized.
         new_i = vcat(new_i, new_o)
         !isempty(new_i) ? (push!(dict_ac, new_i); add_bus_ac(data); key_i = length(data["bus"])) :
@@ -514,7 +515,7 @@ function power_flow(net :: Network)
     ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
-    # println(result["termination_status"])
+    println(result["termination_status"])
     # println(result["solution"]["bus"])
     # println("Power flow solution:")
     # println(result["solution"])
@@ -551,6 +552,7 @@ function power_flow(net :: Network)
     end
     id_gen = 1
     for (key, element) in net.elements
+        # TODO: Generalize this method to find the correct branch.
         # Instead of taking the voltage and power from the generator bus, we need to check the bus of the branch.
         # Here there is a mismatch between id_gen and the id of the SG. We need to find another way to get to the network element that is a SG
         if is_generator(element) || is_source(element)

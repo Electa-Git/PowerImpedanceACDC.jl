@@ -46,7 +46,7 @@ function check_stability(net :: Network, mmc :: Element; direction :: Symbol = :
                 push!(dict[:element_list], element) # add element's symbol to the list
                 other_nodes = get_nodes(net.elements[element], pin) # get the pins from the other side of element
                 gnd = make_lists(net, dict, elim_elements, other_nodes)
-                (gnd != nothing) && return gnd
+                (gnd !== nothing) && return gnd
             end
         end
     end

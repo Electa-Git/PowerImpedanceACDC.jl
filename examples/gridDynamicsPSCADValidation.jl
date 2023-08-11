@@ -71,8 +71,6 @@ qC4 = 100
                                 Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
                 groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
                 earth_parameters = (1,1,100), transformation = true)                
-        
-        
 
         # l5 = impedance(z = 960 + s, pins = 3, transformation = true) 
         # l6 = impedance(z = 960 + s, pins = 3, transformation = true) 

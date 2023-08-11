@@ -290,7 +290,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                 Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
                 Δq_unf = $(converter.controls[:vac_supp].Kₚ)*($(converter.controls[:vac_supp].ref[1])-Vᴳ_mag);
                 F[$index+1] = $(converter.controls[:vac_supp].ω_f) *(Δq_unf - x[$index+1]);
-                q_ref = x[$index+1]))
+                q_ref = $(converter.controls[:q].ref[1]) - x[$index+1]))
             index +=1
         else
             push!(exp.args, :(
