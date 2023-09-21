@@ -14,7 +14,9 @@ function make_power_flow_ac!(tl :: Transmission_line , dict :: Dict{String, Any}
 
     abcd = eval_abcd(tl, global_dict["omega"] * 1im)
     n = Int(size(abcd, 1)/2)
-    Z = (abcd[1:n,n+1:end])[1,1] / global_dict["Z"]
+    Z_ph = (abcd[1:n,n+1:end]) / global_dict["Z"] # Phase domain impedance data
+    T_seq = [1 1 1;1 exp(2*pi/3im) exp(4*pi/3im);1 exp(4*pi/3im) exp(2*pi/3im)]/sqrt(3) # Transformation matrix for sequence domain
+    Z = (inv(T_seq) * Z_ph * T_seq)[2,2] # Taking the positive sequence impedance
     Y = (abcd[n+1:end,1:n] * inv(abcd[n+1:end,n+1:end]))[1,1] * global_dict["Z"]
 
     ((dict["branch"])[string(key)])["br_r"] = real(Z)

@@ -20,6 +20,7 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
 
     if in(:vac, keys(converter.controls)) || in(:vac_supp, keys(converter.controls)) 
         ((dict["convdc"])[string(key)])["type_ac"] = 2  # PV ac bus
+        dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["bus_type"] = 2 # Not entirely sure if this is necessary.
     else
         ((dict["convdc"])[string(key)])["type_ac"] = 1  # PQ ac bus TODO: Check if this makes sense.
     end
@@ -57,7 +58,7 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     # default values
     ((dict["convdc"])[string(key)])["Vmmax"] = 1.1 * converter.Vₘ * 1e3 / global_dict["V"]
     ((dict["convdc"])[string(key)])["Vmmin"] = 0.9 * converter.Vₘ * 1e3 / global_dict["V"]
-    ((dict["convdc"])[string(key)])["Imax"] = 1.1 * converter.P / converter.Vₘ
+    ((dict["convdc"])[string(key)])["Imax"] = 1.1 * abs(converter.P) / converter.Vₘ
 
     ((dict["convdc"])[string(key)])["P_g"] = converter.P
     ((dict["convdc"])[string(key)])["Q_g"] = converter.Q

@@ -1,7 +1,7 @@
 using DelimitedFiles,SymEngine, HVDCstability
 s = symbols("s")
 transmissionVoltage = 380 / sqrt(3)
-pHVDC1 = 600
+pHVDC1 = -900
 pHVDC2 = 600
 qC1 = 0
 qC2 = 100
@@ -49,20 +49,20 @@ qC4 = 100
                 earth_parameters = (1,1,100), transformation = true)  
     
         # Horta - Avelgem OHL
-        # tl75 = overhead_line(length = 50e3,
-        #         conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-        #                         Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-        #         groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-        #         earth_parameters = (1,1,100), transformation = true)
+        tl75 = overhead_line(length = 50e3,
+                conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+                                Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+                groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+                earth_parameters = (1,1,100), transformation = true)
 
         # Horta - Avelgem cable
-        tl75 = cable(length = 50e3, positions = [(-0.5,1.9), (0,1.9), (0.5,1.9)],
-                C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
-                I1 = Insulator(rᵢ = 24.25e-3, rₒ = 41.75e-3, ϵᵣ = 2.3),
-                C2 = Conductor(rᵢ = 41.75e-3, rₒ = 46.25e-3, ρ = 22e-8),
-                I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
-                C3 = Conductor(rᵢ = 49.75e-3, rₒ = 60.55e-3, ρ = 18e-8, μᵣ = 10),
-                I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true, earth_parameters = (1,1,100))
+        # tl75 = cable(length = 50e3, positions = [(-0.5,1.9), (0,1.9), (0.5,1.9)],
+        #         C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
+        #         I1 = Insulator(rᵢ = 24.25e-3, rₒ = 41.75e-3, ϵᵣ = 2.3),
+        #         C2 = Conductor(rᵢ = 41.75e-3, rₒ = 46.25e-3, ρ = 22e-8),
+        #         I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
+        #         C3 = Conductor(rᵢ = 49.75e-3, rₒ = 60.55e-3, ρ = 18e-8, μᵣ = 10),
+        #         I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true, earth_parameters = (1,1,100))
 
         # tl75_p = overhead_line(length = 50e3,
         #         conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
@@ -116,7 +116,8 @@ qC4 = 100
         c1 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
                 P_max = 1500, P_min = -1500, P = -pHVDC1, Q = qC1, Q_max = 500, Q_min = -500,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
-                ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                # ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
                 dc = PI_control(Kₚ = 5, Kᵢ = 15)
@@ -125,12 +126,13 @@ qC4 = 100
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
                 P_max = 1000, P_min = -1000, P = pHVDC1, Q = qC2, Q_max = 1000, Q_min = -1000,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
-                ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                # ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
                 # vac_supp = PI_control(Kₚ = 20, ω_f = 100),
-                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
-                vac = PI_control(Kₚ = 0, Kᵢ = 100)
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                # vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -140,8 +142,6 @@ qC4 = 100
             I1 = Insulator(rᵢ = 24.25e-3, rₒ = 41.75e-3, ϵᵣ = 2.3),
             I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
             I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)
-
-        # dc_line = impedance(z=2+0.2s, pins = 1)
 
         g4 = ac_source(V = transmissionVoltage, P = pHVDC1, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
 
@@ -172,7 +172,8 @@ qC4 = 100
         c3 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
                 P_max = 1500, P_min = -1500, P = -pHVDC2, Q = qC3, Q_max = 500, Q_min = -500,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
-                ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                # ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
                 dc = PI_control(Kₚ = 5, Kᵢ = 15)
@@ -181,13 +182,14 @@ qC4 = 100
         c4 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
                 P_max = 1000, P_min = -1000, P = pHVDC2, Q = qC4, Q_max = 1000, Q_min = -1000,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
-                ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                # ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+                ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 # pll = PI_control(Kₚ = 1.4, Kᵢ = 314.1593), # 50 Hz BW
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664), # 10 Hz BW
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
                 # vac_supp = PI_control(Kₚ = 20, ω_f = 100),
-                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
-                vac = PI_control(Kₚ = 0, Kᵢ = 100)
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                # vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
         
         
@@ -326,9 +328,9 @@ end
 
 L_AC_1 = Z_BUS_AC_1 ./ Z_MMC_AC_1
 
-nyquist_P2P_AC_1 = nyquistplot(L_AC_1, omega, zoom = "no", SM = "PM", 
-title = "Nyquist plots at bus 7 (HVDC 1 terminals), HVDC 1 AC voltage support")
-# savefig("HVDC1_HVDC2_vACSupp_bus7_TL75cable.pdf")
+nyquist_P2P_AC_1 = nyquistplot(L_AC_1, omega, zoom = "yes", SM = "PM", 
+title = "Nyquist plots at bus 7 (HVDC 1 terminals), both links in PQ control")
+# savefig("baseCase_HVDC1_HVDC2_droop_bus7.pdf")
 
 Ycon = inv.(Z_MMC_AC_1)
 Ybus = inv.(Z_BUS_AC_1)
@@ -346,9 +348,9 @@ EVD(Zcl_bus, omega, fmin, fmax)
 
 L_AC_2 = Z_BUS_AC_2 ./ Z_MMC_AC_2
 
-nyquist_P2P_AC_2 = nyquistplot(L_AC_2, omega, zoom = "no", SM = "VM", 
-title = "Nyquist plots at bus 5 (HVDC 2 terminals), HVDC 1 & 2 AC voltage support")
-# savefig("HVDC1_HVDC2_vACSupp_bus5_TL75cable.pdf")
+nyquist_P2P_AC_2 = nyquistplot(L_AC_2, omega, zoom = "yes", SM = "PM", 
+title = "Nyquist plots at bus 5 (HVDC 2 terminals), both links in PQ control")
+# savefig("baseCase_HVDC1_HVDC2_droop_bus5.pdf")
 
 Ycon = inv.(Z_MMC_AC_2)
 Ybus = inv.(Z_BUS_AC_2)

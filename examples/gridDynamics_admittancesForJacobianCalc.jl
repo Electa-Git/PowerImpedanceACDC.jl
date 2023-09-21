@@ -40,19 +40,19 @@ qC4 = 100
                 earth_parameters = (1,1,100), transformation = true)  
     
         # Horta - Avelgem OHL
-        # tl75 = overhead_line(length = 50e3,
-        #         conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-        #                         Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-        #         groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-        #         earth_parameters = (1,1,100), transformation = true)
+        tl75 = overhead_line(length = 50e3,
+                conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+                                Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+                groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+                earth_parameters = (1,1,100), transformation = true)
         # Horta - Avelgem cable
-        tl75 = cable(length = 50e3, positions = [(-0.5,1.9), (0,1.9), (0.5,1.9)],
-                C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
-                I1 = Insulator(rᵢ = 24.25e-3, rₒ = 41.75e-3, ϵᵣ = 2.3),
-                C2 = Conductor(rᵢ = 41.75e-3, rₒ = 46.25e-3, ρ = 22e-8),
-                I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
-                C3 = Conductor(rᵢ = 49.75e-3, rₒ = 60.55e-3, ρ = 18e-8, μᵣ = 10),
-                I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true, earth_parameters = (1,1,100))
+        # tl75 = cable(length = 50e3, positions = [(-0.5,1.9), (0,1.9), (0.5,1.9)],
+        #         C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
+        #         I1 = Insulator(rᵢ = 24.25e-3, rₒ = 41.75e-3, ϵᵣ = 2.3),
+        #         C2 = Conductor(rᵢ = 41.75e-3, rₒ = 46.25e-3, ρ = 22e-8),
+        #         I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
+        #         C3 = Conductor(rᵢ = 49.75e-3, rₒ = 60.55e-3, ρ = 18e-8, μᵣ = 10),
+        #         I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true, earth_parameters = (1,1,100))
     
         # Mercator - Van Eyck
         tl96 = overhead_line(length = 90e3,
@@ -75,9 +75,9 @@ qC4 = 100
                 groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
                 earth_parameters = (1,1,100), transformation = true)                
 
-        l5 = impedance(z = 1*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true) 
-        l6 = impedance(z = 1*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
-        l8 = impedance(z = 1*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
+        l5 = impedance(z = 1.0*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true) 
+        l6 = impedance(z = 1.0*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
+        l8 = impedance(z = 1.0*(192.5 * 4.6s)/(192.5 + 4.6s), pins = 3, transformation = true)
 
         # HVDC link 1
         # PU gains
@@ -97,9 +97,9 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                vac_supp = PI_control(Kₚ = 20, ω_f = 100),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
-                # vac = PI_control(Kₚ = 1e-2, Kᵢ = 100)
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100),
+                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -149,7 +149,7 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                vac_supp = PI_control(Kₚ = 20, ω_f = 100),
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
                 # vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
@@ -237,20 +237,12 @@ qC4 = 100
 
 end
 
-# MMC = net.elements[:c1]
-# plot_data(MMC, omega_range = (0, 4, 1000), scale = :log)
 
 @time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:tl75,:tl78], input_pins=Any[:Bus7d,:Bus7q], 
-output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
+output_pins=Any[:gndd,:gndq], omega_range = (-3,3,1000))
 
 @time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:c2], input_pins=Any[:Bus7d,:Bus7q], 
-output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
-
-@time imp_ac3, omega_ac3 = determine_impedance(net, elim_elements=[:tl75,:tl54,:l5], input_pins=Any[:Bus5d,:Bus5q], 
-output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
-
-@time imp_ac4, omega_ac4 = determine_impedance(net, elim_elements=[:c4], input_pins=Any[:Bus5d,:Bus5q], 
-output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
+output_pins=Any[:gndd,:gndq], omega_range = (-3,3,1000))
 
 MMC2_Vm = net.elements[:c2].element_value.Vₘ / net.elements[:c2].element_value.vACbase
 MMC2_θ = net.elements[:c2].element_value.θ
@@ -260,7 +252,20 @@ MMC2_Q = net.elements[:c2].element_value.Q / net.elements[:c2].element_value.Sba
 MMC2_vd0 = MMC2_Vm * cos(MMC2_θ) 
 MMC2_vq0 = -MMC2_Vm * sin(MMC2_θ)
 MMC2_id0 = ((MMC2_vd0 * MMC2_P + MMC2_vq0 * MMC2_Q) / (MMC2_vd0^2 + MMC2_vq0^2)) 
-MMC2_iq0 = ((MMC2_vq0 * MMC2_P - MMC2_vd0 * MMC2_Q) / (MMC2_vd0^2 + MMC2_vq0^2)) 
+MMC2_iq0 = ((MMC2_vq0 * MMC2_P - MMC2_vd0 * MMC2_Q) / (MMC2_vd0^2 + MMC2_vq0^2))
+
+writedlm("./files/imp_HVDC1.csv",  imp_ac1, ',')
+writedlm("./files/w_HVDC1.csv",  omega_ac1, ',')
+writedlm("./files/op_HVDC1.csv", [MMC2_vd0 MMC2_vq0 MMC2_id0 MMC2_iq0], ',')
+writedlm("./files/op_HVDC1_rest.csv", [MMC2_vd0 MMC2_vq0 -MMC2_id0 -MMC2_iq0], ',')
+writedlm("./files/imp_HVDC1_rest.csv",  imp_ac2, ',')
+writedlm("./files/w_HVDC1_rest.csv",  omega_ac2, ',')
+
+@time imp_ac3, omega_ac3 = determine_impedance(net, elim_elements=[:tl75,:tl54,:l5], input_pins=Any[:Bus5d,:Bus5q], 
+output_pins=Any[:gndd,:gndq], omega_range = (-3,3,1000))
+
+@time imp_ac4, omega_ac4 = determine_impedance(net, elim_elements=[:c4], input_pins=Any[:Bus5d,:Bus5q], 
+output_pins=Any[:gndd,:gndq], omega_range = (-3,3,1000))
 
 MMC4_Vm = net.elements[:c4].element_value.Vₘ / net.elements[:c4].element_value.vACbase
 MMC4_θ = net.elements[:c4].element_value.θ
@@ -273,12 +278,7 @@ MMC4_id0 = ((MMC4_vd0 * MMC4_P + MMC4_vq0 * MMC4_Q) / (MMC4_vd0^2 + MMC4_vq0^2))
 MMC4_iq0 = ((MMC4_vq0 * MMC4_P - MMC4_vd0 * MMC4_Q) / (MMC4_vd0^2 + MMC4_vq0^2)) 
 
 
-writedlm("./files/imp_HVDC1.csv",  imp_ac1, ',')
-writedlm("./files/w_HVDC1.csv",  omega_ac1, ',')
-writedlm("./files/op_HVDC1.csv", [MMC2_vd0 MMC2_vq0 MMC2_id0 MMC2_iq0], ',')
-writedlm("./files/op_HVDC1_rest.csv", [MMC2_vd0 MMC2_vq0 -MMC2_id0 -MMC2_iq0], ',')
-writedlm("./files/imp_HVDC1_rest.csv",  imp_ac2, ',')
-writedlm("./files/w_HVDC1_rest.csv",  omega_ac2, ',')
+
 writedlm("./files/imp_HVDC2.csv",  imp_ac3, ',')
 writedlm("./files/w_HVDC2.csv",  omega_ac3, ',')
 writedlm("./files/op_HVDC2.csv", [MMC4_vd0 MMC4_vq0 MMC4_id0 MMC4_iq0], ',')

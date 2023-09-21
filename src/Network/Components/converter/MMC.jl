@@ -520,7 +520,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     init_x = [init_x; zeros(index-12,1)]
 
     g!(F,x) = f!(exp, F, x, vector_inputs)
-    k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, ftol = 1e-6, xtol = 1e-3, method = :newton)
+    k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
     converter.equilibrium = k.zero
 
     h(F,x) = f!(exp, F, x[1:end-3], x[end-2:end])
