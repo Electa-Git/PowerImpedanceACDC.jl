@@ -148,8 +148,10 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Qac /= Sbase
     Pdc /= Sbase
     
-    Vᴳd = Vm * cos(θ)
-    Vᴳq = -Vm * sin(θ)
+    # Vᴳd = Vm * cos(θ)
+    # Vᴳq = -Vm * sin(θ)
+    Vᴳd = Vm
+    Vᴳq = 0
 
     Id = ((Vᴳd * Pac + Vᴳq * Qac) / (Vᴳd^2 + Vᴳq^2)) 
     Iq = ((Vᴳq * Pac - Vᴳd * Qac) / (Vᴳd^2 + Vᴳq^2)) 

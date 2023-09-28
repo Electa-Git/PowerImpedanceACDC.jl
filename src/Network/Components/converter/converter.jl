@@ -20,7 +20,8 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
 
     if in(:vac, keys(converter.controls)) || in(:vac_supp, keys(converter.controls)) 
         ((dict["convdc"])[string(key)])["type_ac"] = 2  # PV ac bus
-        dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["bus_type"] = 2 # Not entirely sure if this is necessary.
+        # TODO: The line below sometimes gives errors during power flow (NUMERICAL_ERROR)
+        # dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["bus_type"] = 2 # Not entirely sure if this is necessary.
     else
         ((dict["convdc"])[string(key)])["type_ac"] = 1  # PQ ac bus TODO: Check if this makes sense.
     end

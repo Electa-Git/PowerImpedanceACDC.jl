@@ -521,8 +521,8 @@ function power_flow(net :: Network)
     # println(result["solution"])
     # println("Calculating Jacobian")
     # data_for_jac = make_basic_network(data)
-    jac = calc_basic_jacobian_matrix(data)
-    writedlm("./files/power_flow_jacobian.csv",  jac, ',')
+    # jac = calc_basic_jacobian_matrix(data)
+    # writedlm("./files/power_flow_jacobian.csv",  jac, ',')
     id_converter = 1
     for (key, element) in net.elements
         if is_converter(element)
@@ -536,17 +536,23 @@ function power_flow(net :: Network)
                     global_dict["V"] / 1e3
             Pac = -conv_dict["pgrid"] * global_dict["S"] / 1e6
             Qac = conv_dict["qgrid"] * global_dict["S"] / 1e6 # Think about this!
-            print("MMC #" * string(id_converter) * " Active Power [MW]: ")
+            if isa(element.element_value, MMC)
+                update_string = "MMC #"
+                update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
+            else
+                update_string = "TLC #"
+                update_tlc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
+            end
+            print(update_string * string(id_converter) * " Active Power [MW]: ")
             println(Pac)
-            print("MMC #" * string(id_converter) * " Reactive Power [MVar]: ")
+            print(update_string * string(id_converter) * " Reactive Power [MVar]: ")
             println(Qac)
-            print("MMC #" * string(id_converter) * " AC Voltage Magnitude [kV]: ")
+            print(update_string * string(id_converter) * " AC Voltage Magnitude [kV]: ")
             println(Vm)
-            print("MMC #" * string(id_converter) * " AC Voltage Angle [rad]: ")
+            print(update_string * string(id_converter) * " AC Voltage Angle [rad]: ")
             println(θ)
-            print("MMC #" * string(id_converter) * " DC Voltage [kV]: ")
+            print(update_string * string(id_converter) * " DC Voltage [kV]: ")
             println(Vdc)
-            update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
             id_converter += 1
         end
     end

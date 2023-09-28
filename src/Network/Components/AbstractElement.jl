@@ -90,7 +90,7 @@ function get_abcd(element::Element, s::Complex)
 end
 
 function nip_abcd(e::Element)
-    if isa(e.element_value, MMC)
+    if isa(e.element_value, MMC) || isa(e.element_value, TLC)
         return 3
     else
         return 2nip(e)
@@ -99,7 +99,7 @@ function nip_abcd(e::Element)
 end
 
 function nop_abcd(e::Element)
-    if isa(e.element_value, MMC)
+    if isa(e.element_value, MMC) || isa(e.element_value, TLC)
         return 3
     else
         return 2nop(e)
@@ -119,7 +119,7 @@ end
 
 ######################### Element type #############################
 function is_passive(element :: Element)
-    (isa(element.element_value, MMC) || isa(element.element_value, Source) || isa(element.element_value, SynchronousMachine)) && return false
+    (isa(element.element_value, MMC) || isa(element.element_value, TLC) || isa(element.element_value, Source) || isa(element.element_value, SynchronousMachine)) && return false
     true
 end
 
@@ -128,7 +128,7 @@ function is_source(element :: Element)
 end
 
 function is_converter(element :: Element)
-    isa(element.element_value, MMC)
+    (isa(element.element_value, MMC) || isa(element.element_value, TLC) )
 end
 
 function is_shunt_reactor(element :: Element)
