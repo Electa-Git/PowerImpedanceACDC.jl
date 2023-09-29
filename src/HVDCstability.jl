@@ -26,6 +26,7 @@ module HVDCstability
     # New Nyquist plots from Thomas
     using Plots
     using Combinatorics
+    using Munkres
 
     # file includes
     include("Network/globals.jl")

@@ -12,7 +12,7 @@ qC4 = 100
 # The setpoint of the reactive power controller is minus the value set here. This is adjusted internally, no action here needed.
 @time net = @network begin
     
-        sg1 = synchronousmachine(V = 1* transmissionVoltage, Vᵃᶜ_base = 380.0, P_min = -2000, P_max = 2000, Q_max = 2000, Q_min = -2000, P = 900)
+        sg1 = synchronousmachine(V = 1* transmissionVoltage, Vᵃᶜ_base = 380.0, P_min = -2000, P_max = 2000, Q_max = 2000, Q_min = -2000, P = 900, Q = -100)
         # New definition with a 1:1 trafo
         g3 = ac_source(V = 380/sqrt(3), P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
         t3 = transformer(n = 380/380 , Lₚ = 0.0269/2, Rₚ = 0, Rₛ = 0, Lₛ = 0.0269/2, Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = true)

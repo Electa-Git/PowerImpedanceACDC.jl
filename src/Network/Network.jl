@@ -387,6 +387,7 @@ function power_flow(net :: Network)
 
         make_power_flow_ac!(element.element_value, data, global_dict)
 
+        # TODO: Apply a reactive power based saturation instead.
         if isapprox(element.element_value.P_max, element.element_value.P)
             ((data["bus"])[string(key_b)])["bus_type"] = 1
         else
@@ -494,7 +495,7 @@ function power_flow(net :: Network)
         # TODO: DC sources are not modeled in the power flow. Check with Hakan!
         if is_passive(element)
             if is_three_phase(element)
-                if is_impedance(element) # Assuming that impedances are only used to represent loads connected in shunt at buses. TODO: This can somehow be generalized.
+                if is_load(element) # TODO: Check this generalization in detail.
                     make_shunt_ac_impedance(data, element, dict_ac, new_i, new_o)
                 else
                     make_branch_ac(data, element, dict_ac, new_i, new_o)
