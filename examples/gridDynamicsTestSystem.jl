@@ -1,7 +1,7 @@
-using DelimitedFiles,SymEngine, HVDCstability
+using DelimitedFiles,SymEngine, HVDCstability, Plots
 s = symbols("s")
 transmissionVoltage = 380 / sqrt(3)
-pHVDC1 = -900
+pHVDC1 = 600
 pHVDC2 = 600
 qC1 = 0
 qC2 = 100
@@ -131,8 +131,8 @@ qC4 = 100
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
                 # vac_supp = PI_control(Kₚ = 20, ω_f = 100),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
-                # vac = PI_control(Kₚ = 0, Kᵢ = 100)
+                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -188,8 +188,8 @@ qC4 = 100
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664), # 10 Hz BW
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
                 # vac_supp = PI_control(Kₚ = 20, ω_f = 100),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
-                # vac = PI_control(Kₚ = 0, Kᵢ = 100)
+                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                vac = PI_control(Kₚ = 0, Kᵢ = 100)
                 )
         
         
@@ -328,9 +328,12 @@ end
 
 L_AC_1 = Z_BUS_AC_1 ./ Z_MMC_AC_1
 
-nyquist_P2P_AC_1 = nyquistplot(L_AC_1, omega, zoom = "yes", SM = "PM", 
-title = "Nyquist plots at bus 7 (HVDC 1 terminals), both links in PQ control")
-# savefig("baseCase_HVDC1_HVDC2_droop_bus7.pdf")
+nyquist_P2P_AC_1 = HVDCstability.nyquistplot(L_AC_1, omega, zoom = "yes", SM = "PM", 
+# title = "Nyquist plots at bus 7 (HVDC 1 terminals), HVDC1 in vAC droop, HVDC2 in PQ")
+# title = "Nyquist plots at bus 7 (HVDC 1 terminals), both links in vAC droop")
+# savefig("./files/baseCase_HVDC1_HVDC2_droop_bus7.pdf")
+title = "Nyquist plots at bus 7 (HVDC 1 terminals), both links in vAC control")
+# savefig("./files/baseCase_HVDC1_HVDC2_PI_bus7.pdf")
 
 Ycon = inv.(Z_MMC_AC_1)
 Ybus = inv.(Z_BUS_AC_1)
@@ -348,18 +351,21 @@ EVD(Zcl_bus, omega, fmin, fmax)
 
 L_AC_2 = Z_BUS_AC_2 ./ Z_MMC_AC_2
 
-nyquist_P2P_AC_2 = nyquistplot(L_AC_2, omega, zoom = "yes", SM = "PM", 
-title = "Nyquist plots at bus 5 (HVDC 2 terminals), both links in PQ control")
-# savefig("baseCase_HVDC1_HVDC2_droop_bus5.pdf")
+nyquist_P2P_AC_2 = HVDCstability.nyquistplot(L_AC_2, omega, zoom = "yes", SM = "PM", 
+# title = "Nyquist plots at bus 5 (HVDC 2 terminals), HVDC1 in vAC droop, HVDC2 in PQ")
+# title = "Nyquist plots at bus 5 (HVDC 2 terminals), both links in vAC droop")
+# savefig("./files/baseCase_HVDC1_HVDC2_droop_bus5.pdf")
+title = "Nyquist plots at bus 5 (HVDC 2 terminals), both links in vAC control")
+# savefig("./files/baseCase_HVDC1_HVDC2_PI_bus5.pdf")
 
-Ycon = inv.(Z_MMC_AC_2)
-Ybus = inv.(Z_BUS_AC_2)
-Zcl_bus = inv.(Ybus + Ycon)
+# Ycon = inv.(Z_MMC_AC_2)
+# Ybus = inv.(Z_BUS_AC_2)
+# Zcl_bus = inv.(Ybus + Ycon)
 
-fmin = 1e-2
-fmax = 1e3
+# fmin = 1e-2
+# fmax = 1e3
 
-EVD(Zcl_bus, omega, fmin, fmax)
+# EVD(Zcl_bus, omega, fmin, fmax)
 
 
 # @time imp_ac2, omega_ac2 = determine_impedance(net, elim_elements=[:g3,:c1,:c2,:dc_line,:g4], input_pins=Any[:Bus3d,:Bus3q], 

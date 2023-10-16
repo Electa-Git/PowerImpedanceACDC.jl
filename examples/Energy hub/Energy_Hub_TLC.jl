@@ -12,49 +12,39 @@ using LinearAlgebra
 s = symbols("s")
 
 Powf = 700
-Pmmc1 = 300
-Pmmc2 = -500
+Qowf = -150
+Pmmc1 = (1/3)*700
+Pmmc2 = -(2/3)*700
 Qref = 0
 Vm = 380 / sqrt(3) #Vln,rms
 Vdc = 800
+
+#Reactive power compensation
+Qcomp = 220 #MVar
+Lcomp = (3*Vm^2)/(2*pi*50*Qcomp)
 
 net = @network begin
 
     Zg1 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
     Zg3 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
 
+    Q2 = impedance(z = Lcomp*s, pins = 3, transformation = true)
+    Q3 = impedance(z = Lcomp*s, pins = 3, transformation = true)
+
     G1 = ac_source(pins = 3, V = Vm, transformation = true)
     G3 = ac_source(pins = 3, V = Vm, transformation = true)
 
     OWF = tlc(Vᵈᶜ = Vdc, Vₘ = Vm, Lᵣ = 0.024649917586073, Rᵣ = 0.07744,  
-        P_max = 1500, P_min = -1500, P = Powf, Q = 0, Q_max = 500, Q_min = -500,
+        P_max = 1500, P_min = -1500, P = Powf, Q = Qowf, Q_max = 500, Q_min = -500,
         occ = PI_control(Kₚ = 0.254647908947033, Kᵢ = 0.8),
         pll = PI_control(Kₚ = 0.795774715459477, Kᵢ = 31.830988618379067, ω_f = 2*pi*80),
         v_meas_filt = PI_control(ω_f = 1e4),
         i_meas_filt = PI_control(ω_f = 1e4),
-        # vac_supp = PI_control(ω_f = 1/0.5, Kₚ =10),
-        # f_supp = PI_control(ω_f = 1/0.5, Kₚ =10),
+        #vac_supp = PI_control(ω_f = 1/0.5, Kₚ =10),
+        #f_supp = PI_control(ω_f = 1/0.5, Kₚ =10),
         p = PI_control(Kₚ = 0.01, Kᵢ = 10),
         q = PI_control(Kₚ = 0.01, Kᵢ = 10)
         )
-
-    c2 = mmc(Vᵈᶜ = Vdc, vDCbase = 800, Vₘ = Vm, 
-        P_max = 1000, P_min = -1000, P = -Powf, Q = 0, Q_max = 1000, Q_min = -1000,
-        occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
-        ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
-        pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-        dc = PI_control(Kₚ = 5, Kᵢ = 15),
-        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
-        )
-
-    g2 = ac_source(V = Vm, P = -Powf, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
-
-    # TL at the remote end
-    tl1 = overhead_line(length = 50e3,
-        conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-                        Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-        groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-        earth_parameters = (1,1,100), transformation = true)
 
     MMC1 = mmc(Vᵈᶜ = Vdc, vDCbase = 800, vACbase_LL_RMS = 380, vPCC_scaling = 380/380, Vₘ = Vm, Lᵣ = 60e-3, Rᵣ = 0.535,
         P_max = 1500, P_min = -1500, P = Pmmc1, Q = Qref, Q_max = 500, Q_min = -500,
@@ -127,6 +117,26 @@ net = @network begin
         groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
         earth_parameters = (1,1,100), transformation = true)
 
+    ######
+    # Extra AC/DC converter to represent DC voltage and get power flow converged 
+    c2 = mmc(Vᵈᶜ = Vdc, vDCbase = 800, Vₘ = Vm, 
+        P_max = 1000, P_min = -1000, P = -Powf, Q = 0, Q_max = 1000, Q_min = -1000,
+        occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
+        ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+        pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
+        dc = PI_control(Kₚ = 5, Kᵢ = 15),
+        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+        )
+
+    g2 = ac_source(V = Vm, P = -Powf, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
+
+    # TL at the remote end
+    tl1 = overhead_line(length = 50e3,
+        conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+                        Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+        groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+        earth_parameters = (1,1,100), transformation = true)
+    #####
 
     c2[2.1] ⟷ tl1[2.1]
     c2[2.2] ⟷ tl1[2.2]
@@ -144,6 +154,11 @@ net = @network begin
     G3[2.1] ⟷ gndD
     G3[2.2] ⟷ gndQ
 
+    Q2[2.1] ⟷ gndD
+    Q2[2.2] ⟷ gndQ
+    Q3[2.1] ⟷ gndD
+    Q3[2.2] ⟷ gndQ
+
     G1[1.1] ⟷ Zg1[1.1]
     G1[1.2] ⟷ Zg1[1.2]
     Zg1[2.1] ⟷ OHLAC1g1[1.1] ⟷ NodeDq1
@@ -156,11 +171,11 @@ net = @network begin
     MMC2[1.1] ⟷ CableDC12[2.1] ⟷ CableDC23[1.1] ⟷ NodeDC2
     MMC3[1.1] ⟷ CableDC23[2.1] ⟷ NodeDC3
 
-    MMC2[2.1] ⟷ CableAC23[1.1] ⟷ CableAC2g2[1.1] ⟷ NodeD2
-    MMC2[2.2] ⟷ CableAC23[1.2] ⟷ CableAC2g2[1.2] ⟷ NodeQ2
+    MMC2[2.1] ⟷ CableAC23[1.1] ⟷ CableAC2g2[1.1] ⟷ Q2[1.1] ⟷ NodeD2
+    MMC2[2.2] ⟷ CableAC23[1.2] ⟷ CableAC2g2[1.2] ⟷ Q2[1.2] ⟷ NodeQ2
 
-    MMC3[2.1] ⟷ CableAC23[2.1] ⟷ OHLAC3g3[1.1] ⟷ NodeD3
-    MMC3[2.2] ⟷ CableAC23[2.2] ⟷ OHLAC3g3[1.2] ⟷ NodeQ3
+    MMC3[2.1] ⟷ CableAC23[2.1] ⟷ OHLAC3g3[1.1] ⟷ Q3[1.1] ⟷ NodeD3
+    MMC3[2.2] ⟷ CableAC23[2.2] ⟷ OHLAC3g3[1.2] ⟷ Q3[1.2] ⟷ NodeQ3
 
     OWF[2.1] ⟷ CableAC2g2[2.1] ⟷ NodeDg2
     OWF[2.2] ⟷ CableAC2g2[2.2] ⟷ NodeQg2
@@ -171,6 +186,7 @@ net = @network begin
     Zg3[2.2] ⟷ OHLAC3g3[2.2] ⟷ NodeQg3
     
 end
+
 
 #=
 ##### ----- STABILITY ANALYSIS WITH DETERMINE_IMPEDANCE ----- #####
@@ -240,9 +256,26 @@ Zg1DQ, omega = determine_impedance(net, elim_elements = [:OHLAC1g1], input_pins 
 Yg1DQ = inv.(Zg1DQ)
 f = omega/(2*pi)
 
-Zg2DQ, omega = determine_impedance(net, elim_elements = [:CableAC2g2], input_pins = Any[:NodeDg2, :NodeQg2], output_pins = Any[:gndD, :gndQ], omega_range = (omega_min, omega_max, omegaₙ)) 
-Yg2DQ = inv.(Zg2DQ) 
-f = omega/(2*pi)
+#Zg2DQ, omega = determine_impedance(net, elim_elements = [:CableAC2g2], input_pins = Any[:NodeDg2, :NodeQg2], output_pins = Any[:gndD, :gndQ], omega_range = (omega_min, omega_max, omegaₙ)) 
+#Yg2DQ = inv.(Zg2DQ) 
+#f = omega/(2*pi)
+
+Yg2DQ_Data = readdlm("Y_TLC.txt", ',', ComplexF64)
+#f = real(Yg2DQ_Data[:,1])
+dim = size(Yg2DQ_Data[1,:])[1]-1
+Yg2DQ_Data = Yg2DQ_Data[:,2:dim+1]
+Yg2DQ = []
+dim = Int(sqrt(dim))
+for i in 1:length(f)
+    push!(Yg2DQ, transpose(reshape(Yg2DQ_Data[i,:],dim,dim)))
+end
+
+θₒ = -net.elements[:OWF].element_value.θ
+
+Tdq_co = [cos(θₒ) -sin(θₒ); sin(θₒ) cos(θₒ)]
+for i in 1:length(f)
+    Yg2DQ[i] = inv(Tdq_co)*Yg2DQ[i]*Tdq_co
+end
 
 Zg3DQ, omega = determine_impedance(net, elim_elements = [:OHLAC3g3], input_pins = Any[:NodeDg3, :NodeQg3], output_pins = Any[:gndD, :gndQ], omega_range = (omega_min, omega_max, omegaₙ)) 
 Yg3DQ = inv.(Zg3DQ)
@@ -287,9 +320,9 @@ end
 
 omega = 2*pi*f
 
-θ₁ = net.elements[:MMC1].element_value.θ
-θ₂ = net.elements[:MMC2].element_value.θ
-θ₃ = net.elements[:MMC3].element_value.θ
+θ₁ = -net.elements[:MMC1].element_value.θ
+θ₂ = -net.elements[:MMC2].element_value.θ
+θ₃ = -net.elements[:MMC3].element_value.θ
 
 Tdq_c1 = [1 0 0; 0 cos(θ₁) -sin(θ₁); 0 sin(θ₁) cos(θ₁)]
 for i in 1:length(f)
@@ -479,7 +512,11 @@ for i in 1:length(omega)
 
     M0 = zeros(Complex{Float64},2,2)
 
-    push!(Y_BUS_AC2, [inv(b23)*a23+inv(b2g2)*a2g2 -inv(b23) -inv(b2g2) M0; -inv(b23) inv(b23)*a23+inv(b3g3)*a3g3 M0 -inv(b3g3); -inv(b2g2) M0 inv(b2g2)*a2g2 M0; M0 -inv(b3g3) M0 inv(b3g3)*a3g3])
+    #push!(Y_BUS_AC2, [inv(b23)*a23+inv(b2g2)*a2g2 -inv(b23) -inv(b2g2) M0; -inv(b23) inv(b23)*a23+inv(b3g3)*a3g3 M0 -inv(b3g3); -inv(b2g2) M0 inv(b2g2)*a2g2 M0; M0 -inv(b3g3) M0 inv(b3g3)*a3g3])
+    # Additon of compensation
+    omega0 = 2*pi*50 
+    Ycomp_DQ = 1/((Lcomp*omega[i]*im)^2+(Lcomp*omega0)^2) * [Lcomp*omega[i]*im -Lcomp*omega0; Lcomp*omega0 Lcomp*omega[i]*im]
+    push!(Y_BUS_AC2, [inv(b23)*a23+inv(b2g2)*a2g2+Ycomp_DQ -inv(b23) -inv(b2g2) M0; -inv(b23) inv(b23)*a23+inv(b3g3)*a3g3+Ycomp_DQ M0 -inv(b3g3); -inv(b2g2) M0 inv(b2g2)*a2g2 M0; M0 -inv(b3g3) M0 inv(b3g3)*a3g3])
 end
 
 # AC/DC bus admittance matrix

@@ -23,8 +23,8 @@ include("controller.jl")
     Cₐᵣₘ :: Union{Int, Float64}  = 10e-3        # capacitance per submodule [F]
     N :: Int = 400                              # number of submodules per arm
 
-    Lᵣ :: Union{Int, Float64}  = 60e-3          # inductance of the phase reactor [H]
-    Rᵣ :: Union{Int, Float64}  = 0.535          # resistance of the phase reactor [Ω]
+    Lᵣ :: Union{Int, Float64}  = 60e-3          # inductance of the converter transformer at the converter side [H]
+    Rᵣ :: Union{Int, Float64}  = 0.535          # resistance of the converter transformer at the converter side [Ω]
 
     controls :: OrderedDict{Symbol, Controller} = OrderedDict{Symbol, Controller}()
     equilibrium :: Array{Union{Int, Float64}} = [0]
@@ -41,7 +41,7 @@ include("controller.jl")
     Sbase :: Union{Int, Float64} = 1000 # Power base in MW
     vDCbase :: Union{Int, Float64} = 640 # DC voltage base in kV
 
-    vPCC_scaling :: Union{Int, Float64} = 1 # Inverse of the transformer turns ratio between the AC converter terminals and the PCC
+    turnsRatio :: Union{Int, Float64} = 1 # Turns ratio of the converter transformer, converter side/AC side
 
     vACbase :: Float64 = 0 # AC voltage base for impedance/admittance calculation
     iACbase :: Float64 = 0 # AC current base for impedance/admittance calculation
@@ -140,8 +140,6 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     converter.Q = Qac
     converter.P_dc = Pdc # Has the same sign as Pac
 
-    Vm *= converter.vPCC_scaling # Scale the converter AC voltage, as the transformers have to be defined inside the MMC.
-
     Vm /= vAC_base
     Vdc /= vDC_base
     Pac /= Sbase
@@ -227,7 +225,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         I_θ = [cos(x[14]) sin(x[14]); -sin(x[14]) cos(x[14])];
                         T_2θ = [cos(-2x[14]) -sin(-2x[14]); sin(-2x[14]) cos(-2x[14])];
                         I_2θ = [cos(-2x[14]) sin(-2x[14]); -sin(-2x[14]) cos(-2x[14])];
-                        (Vᴳd, Vᴳq) = T_θ * [inputs[2]; inputs[3]];
+                        (Vᴳd, Vᴳq) = T_θ * [inputs[2] * $converter.turnsRatio; inputs[3] * $converter.turnsRatio];
                         F[13] = -Vᴳq*$(converter.controls[:pll].Kᵢ);
                         Δω = $(converter.controls[:pll].Kₚ) * (-Vᴳq) + x[13];
                         ω = $(converter.ω₀)/$wbase + Δω;
@@ -240,8 +238,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         I_θ = [1 0; 0 1];
                         T_2θ = [1 0; 0 1];
                         I_2θ = [1 0; 0 1];
-                        Vᴳd = inputs[2];
-                        Vᴳq = inputs[3];
+                        Vᴳd = inputs[2] * $converter.turnsRatio;
+                        Vᴳq = inputs[3] * $converter.turnsRatio;
                         ω = $(converter.ω₀)))
         index = 12
     end
@@ -483,8 +481,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     # vMΣz = (mΔd*vCΔd)/4 + (mΔq*vCΔq)/4 + (mΔZd*vCΔZd)/4 + (mΔZq*vCΔZq)/4 + (mΣd*vCΣd)/4 + (mΣq*vCΣq)/4 + (mΣz*vCΣz)/2;
     vMΣz = mΔd*x[6]/4 + mΔq*x[7]/4 + mΔZd*x[8]/4 + mΔZq*x[9]/4 + mΣd*x[10]/4 + mΣq*x[11]/4 + mΣz*x[12]/2;
 
-    F[1] = -(inputs[2] - vMΔd + $Rₑ*x[1] + $Lₑ*x[2])/$Lₑ;                 # diΔd_dt =-(Vgd - vMΔd + Rₑ*iΔd + Lₑ*iΔq*w)/Lₑ
-    F[2] = -(inputs[3] - vMΔq + $Rₑ*x[2] - $Lₑ*x[1])/$Lₑ;                 # diΔq_dt =-(Vgq - vMΔq + Rₑ*iΔq - Lₑ*iΔd*w)/Lₑ
+    F[1] = -(inputs[2] * $converter.turnsRatio - vMΔd + $Rₑ*x[1] + $Lₑ*x[2])/$Lₑ;                 # diΔd_dt =-(Vgd - vMΔd + Rₑ*iΔd + Lₑ*iΔq*w)/Lₑ
+    F[2] = -(inputs[3] * $converter.turnsRatio - vMΔq + $Rₑ*x[2] - $Lₑ*x[1])/$Lₑ;                 # diΔq_dt =-(Vgq - vMΔq + Rₑ*iΔq - Lₑ*iΔd*w)/Lₑ
     F[3] = -(vMΣd + $Rₐᵣₘ*x[3] - 2*$Lₐᵣₘ*x[4])/$Lₐᵣₘ;                                  # diΣd_dt =-(vMΣd + Rₐᵣₘ*iΣd - 2*Lₐᵣₘ*iΣq*w)/Lₐᵣₘ
     F[4] = -(vMΣq + $Rₐᵣₘ*x[4] + 2*$Lₐᵣₘ*x[3])/$Lₐᵣₘ;                                  # diΣq_dt =-(vMΣq + Rₐᵣₘ*iΣq + 2*Lₐᵣₘ*iΣd*w)/Lₐᵣₘ
     F[5] = -(vMΣz - Vdc/2 + $Rₐᵣₘ*x[5])/$Lₐᵣₘ;                                     # diΣz_dt =-(vMΣz - Vᵈᶜ/2 + Rₐᵣₘ*iΣz)/Lₐᵣₘ
@@ -538,18 +536,23 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     # !in(:dc, keys(converter.controls)) ? converter.C[1,5] = 3 : converter.C[1, vdc_position] = 1
     converter.C[1,5] = 3
     converter.D = zeros(3,3)
+
+    # converter.B[:,2:3] *= converter.turnsRatio
+    # converter.D[:,2:3] *= converter.turnsRatio
 end
 
 function eval_parameters(converter :: MMC, s :: Complex)
     # numerical
     I = Matrix{Complex}(Diagonal([1 for dummy in 1:size(converter.A,1)]))
-    # Y = (converter.C*inv(s*I-converter.A))*converter.B + converter.D # This matrix is in pu
+    # Y = (converter.C*inv(s*I-converter.A))*converter.D + converter.D # This matrix is in pu
     Y = converter.C * ((s*I-converter.A) \ converter.B) + converter.D # This matrix is in pu
     Y[1,:] *= converter.iDCbase
     Y[:,1] /= converter.vDCbase
     Y[2:3,:] *= converter.iACbase
-    Y[:,2:3] /= converter.vACbase
-
+    # Multiplication with the AC voltage base converts the pu admittance to SI.
+    # The double division with the turns ratio is actually a multiplication,
+    # and is needed to bring the grid-side voltage to the converter side.
+    Y[:,2:3] /= (converter.vACbase / converter.turnsRatio)
     # if in(:dc, keys(converter.controls))
     #     (m11, m12, m21, m22) = (Y[1,1], Y[1,2:3], Y[2:3,1], Y[2:3,2:3])
     #     m11 = 1/m11
@@ -619,10 +622,17 @@ function timeDelayPadeMatrices(padeOrderNum,padeOrderDen,t_delay,numberVars)
             end
         end
     end
-    T=inv(T_inv);
-    Ad=T*Ad*T_inv;
-    Bd=T*Bd;
-    Cd=Cd*T_inv;
+    # Original implementation, resulting in a SingularException for Pade orders larger than 3.
+    # T=inv(T_inv);
+    # Ad=T*Ad*T_inv;
+    # Bd=T*Bd;
+    # Cd=Cd*T_inv;
+    # Alternative
+    sys = ss(Ad,Bd,Cd,Dd)
+    sys_modal = modal_form(sys)
+    Ad = sys_modal[1].A
+    Bd = sys_modal[1].B
+    Cd = sys_modal[1].C
     # Concatenate the Pade matrices: nDelta_d, nDelta_q, nSigma_d, nSigma_q, nSigma_z
     # A_Pade=cat(Ad,Ad,Ad,Ad,Ad;dims=[1,2]);
     # B_Pade=cat(Bd,Bd,Bd,Bd,Bd;dims=[1,2]);

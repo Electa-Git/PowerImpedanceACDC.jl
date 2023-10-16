@@ -9,6 +9,9 @@ module HVDCstability
     # files manipulation
     using FileIO, DelimitedFiles
 
+    # time delays
+    using ControlSystemsBase, RobustAndOptimalControl
+
     # plotting
     using PGFPlotsX
     using Compat, Dates # compatibility across Julia

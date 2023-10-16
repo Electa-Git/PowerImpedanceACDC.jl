@@ -1,6 +1,6 @@
 export nyquistplot
 
-function nyquistplot(L, omega; zoom :: String = "", SM :: String = "")
+function nyquistplot(L, omega; zoom :: String = "", SM :: String = "", title :: String = "Nyquist plot")
 
     # Determine eigenvalues of the loop gain matrix at each frequency point 
     Λ = eigvals.(L)
@@ -80,7 +80,7 @@ function nyquistplot(L, omega; zoom :: String = "", SM :: String = "")
     # Indicating unity circle in red 
     θ = 0:0.01:2*π
     np = plot(cos.(θ), sin.(θ), c = :red, linewidth = 3, line = :dash, label = :none)
-    plot!(xlabel = "Real axis", ylabel = "Imaginary axis", xlims = xlims, ylims = ylims, framestyle = :box, legend=:topleft) 
+    plot!(xlabel = "Real axis", ylabel = "Imaginary axis", title = title, xlims = xlims, ylims = ylims, framestyle = :box, legend=:topleft) 
     vline!([0], c = :black, line = :dash, label = :none)
     hline!([0], c = :black, line = :dash, label = :none)
     # Indicating (-1, 0j) point with red cross 

@@ -26,9 +26,11 @@ qC4 = 100
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
                 dc = PI_control(Kₚ = 5, Kᵢ = 15)
                 )
-        # MMC2 controls P&Q. It is connected to bus 7.
+        # MMC2 controls P&Q. It is connected to bus 7. Define the transformer impedance parameters at the converter side!
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
                 P_max = 1000, P_min = -1000, P = pHVDC1, Q = qC2, Q_max = 1000, Q_min = -1000,
+                # timeDelay = 150e-6, padeOrderNum = 5, padeOrderDen = 5,
+                vACbase_LL_RMS = 333, turnsRatio = 333/380, Lᵣ = 0.0461, Rᵣ = 0.4103,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 # ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
