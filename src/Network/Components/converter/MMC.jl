@@ -146,13 +146,13 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Qac /= Sbase
     Pdc /= Sbase
     
-    # Vᴳd = Vm * cos(θ)
-    # Vᴳq = -Vm * sin(θ)
-    Vᴳd = Vm
-    Vᴳq = 0
+    Vᴳd = Vm * cos(θ)
+    Vᴳq = -Vm * sin(θ)
+    # Vᴳd = Vm
+    # Vᴳq = 0
 
-    Id = ((Vᴳd * Pac + Vᴳq * Qac) / (Vᴳd^2 + Vᴳq^2)) 
-    Iq = ((Vᴳq * Pac - Vᴳd * Qac) / (Vᴳd^2 + Vᴳq^2)) 
+    Id = ((Vᴳd*converter.turnsRatio * Pac + Vᴳq*converter.turnsRatio * Qac) / ((Vᴳd*converter.turnsRatio)^2 + (Vᴳq*converter.turnsRatio)^2)) 
+    Iq = ((Vᴳq*converter.turnsRatio * Pac - Vᴳd*converter.turnsRatio * Qac) / ((Vᴳd*converter.turnsRatio)^2 + (Vᴳq*converter.turnsRatio)^2)) 
 
     # setup control parameters and equations
     init_x = zeros(12, 1)
@@ -194,11 +194,11 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             init_x[4] = val.ref[2]
         elseif (key == :p)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref = [Pac]
+                val.ref = [Pac*Sbase]
             end
         elseif (key == :q)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref = [Qac]
+                val.ref = [Qac*Sbase]
             end
         elseif (key == :dc)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
@@ -206,13 +206,15 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             end
         elseif (key == :vac) || (key == :vac_supp)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref = [Vm]
+                # TODO: Decide what the default reference has to be
+                # val.ref = [Vm*converter.turnsRatio]
+                # val.ref = [1.0]
             end
         end
     end
-
+    Rdc = 1e-15
     init_x[5] = Pdc/3/Vdc
-    init_x[12] = Vdc
+    init_x[12] = Vdc-3*init_x[5]*Rdc
 
     vdc_position = 12
 
@@ -244,34 +246,12 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
         index = 12
     end
     push!(exp.args, :((iΔd, iΔq) = T_θ * [x[1]; x[2]];
-                      (iΣd, iΣq) = T_2θ * [x[3]; x[4]];))
-    if in(:dc, keys(converter.controls))
-        push!(exp.args, :(
-
-                    Vdc = inputs[1];
-                    F[$index+1] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - Vdc);
-
-                    iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - Vdc) +
-                                 x[$index+1])))
-        vdc_position = index + 1
-        # index += 2
-        index += 1
-    else
-        push!(exp.args, :(Vdc = inputs[1]))
-    end
-
-    if in(:vac, keys(converter.controls))
-        push!(exp.args, :(
-            Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
-            iΔq_ref = ($(converter.controls[:vac].Kₚ) * ($(converter.controls[:vac].ref[1]) - Vᴳ_mag) +
-                         x[$index+1]);
-            F[$index+1] = $(converter.controls[:vac].Kᵢ) *($(converter.controls[:vac].ref[1]) - Vᴳ_mag)
-        ))
-        index +=1
-    end
+                      (iΣd, iΣq) = T_2θ * [x[3]; x[4]];
+                      Vdc = inputs[1]-3*x[5]*$Rdc;))
 
     if in(:p, keys(converter.controls))
         # active power control
+        converter.controls[:p].ref[1] /= Sbase
         push!(exp.args, :(
             # Pac = (3/2)*(Vgd*iΔd + Vgq*iΔq)
             P_ac = (Vᴳd * iΔd + Vᴳq * iΔq);
@@ -280,11 +260,26 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                          x[$index+1]);
             F[$index+1] = $(converter.controls[:p].Kᵢ) *($(converter.controls[:p].ref[1]) - P_ac)))
         index += 1
-    elseif !in(:dc, keys(converter.controls))
+    elseif in(:dc, keys(converter.controls))
+        push!(exp.args, :(
+                F[$index+1] = $(converter.controls[:dc].ω_f) *(Vdc - x[$index+1]);
+                F[$index+2] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - x[$index+1]);
+                    iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - x[$index+1]) +
+                                 x[$index+2])))
+        vdc_position = index + 1
+        index += 2
+        # push!(exp.args, :(
+        #         F[$index+1] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - Vdc);
+        #             iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - Vdc) +
+        #                          x[$index+1])))
+        # vdc_position = index + 1
+        # index += 1
+    else
         push!(exp.args, :(
             iΔd_ref = $Pac))
     end
     if in(:q, keys(converter.controls))
+        converter.controls[:q].ref[1] /= -Sbase # The minus sign corrects for the Q convention used in the model.
         if in(:vac_supp, keys(converter.controls))
             push!(exp.args, :(
                 Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
@@ -306,7 +301,15 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                          x[$index+1]);
             F[$index+1] = $(converter.controls[:q].Kᵢ) *(q_ref - Q_ac)))
         index += 1
-    elseif !in(:vac, keys(converter.controls))
+    elseif in(:vac, keys(converter.controls))
+        push!(exp.args, :(
+            Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
+            iΔq_ref = ($(converter.controls[:vac].Kₚ) * ($(converter.controls[:vac].ref[1]) - Vᴳ_mag) +
+                         x[$index+1]);
+            F[$index+1] = $(converter.controls[:vac].Kᵢ) *($(converter.controls[:vac].ref[1]) - Vᴳ_mag)
+        ))
+        index +=1
+    else 
         push!(exp.args, :(
             iΔq_ref = $Qac))
     end
@@ -520,7 +523,13 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     init_x = [init_x; zeros(index-12,1)]
 
     g!(F,x) = f!(exp, F, x, vector_inputs)
+    # TODO: Check if it makes sense to use newton or trust_region
+    # Newton seems to give really bad estimates for control-related states, while trust_region cannot even get id and iq correct.
+    # k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, method = :newton)
     k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
+    if converged(k)
+        println("MMC steady-state solution found!")
+    end
     converter.equilibrium = k.zero
 
     h(F,x) = f!(exp, F, x[1:end-3], x[end-2:end])

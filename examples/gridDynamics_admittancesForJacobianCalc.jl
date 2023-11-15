@@ -87,7 +87,7 @@ qC4 = 100
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC1]),
                 dc = PI_control(Kₚ = 5, Kᵢ = 15)
                 )
         # MMC2 controls P&Q. It is connected to bus 7.
@@ -96,10 +96,10 @@ qC4 = 100
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                # vac_supp = PI_control(Kₚ = 20, ω_f = 100),
-                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
-                vac = PI_control(Kₚ = 0, Kᵢ = 100)
+                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC1]),
+                vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
+                # vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -139,7 +139,7 @@ qC4 = 100
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC3]),
                 dc = PI_control(Kₚ = 5, Kᵢ = 15)
                 )
         # MMC4 controls P&Q. It is connected to bus 5.
@@ -148,10 +148,10 @@ qC4 = 100
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                # vac_supp = PI_control(Kₚ = 20, ω_f = 100),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
-                # vac = PI_control(Kₚ = 0, Kᵢ = 100)
+                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC2]),
+                vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC4])
+                # vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
                 )
         
         

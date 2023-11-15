@@ -21,9 +21,16 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     if in(:vac, keys(converter.controls)) || in(:vac_supp, keys(converter.controls)) 
         ((dict["convdc"])[string(key)])["type_ac"] = 2  # PV ac bus
         # TODO: The line below sometimes gives errors during power flow (NUMERICAL_ERROR)
-        # dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["bus_type"] = 2 # Not entirely sure if this is necessary.
+        dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["bus_type"] = 2 # Not entirely sure if this is necessary.
+        if in(:vac, keys(converter.controls))
+            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac].ref[1]
+        else
+            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac_supp].ref[1]
+        end
+        dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["vm"] = ((dict["convdc"])[string(key)])["Vtar"]
     else
         ((dict["convdc"])[string(key)])["type_ac"] = 1  # PQ ac bus TODO: Check if this makes sense.
+        ((dict["convdc"])[string(key)])["Vtar"] = converter.Vₘ * 1e3 / global_dict["V"]
     end
     if in(:p, keys(converter.controls))
         ((dict["convdc"])[string(key)])["type_dc"] = 1  # constant AC active power        
@@ -33,6 +40,11 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
         ((dict["convdc"])[string(key)])["type_dc"] = 3  # DC voltage droop
     end
 
+    if in(:vac_supp, keys(converter.controls))
+        ((dict["convdc"])[string(key)])["q_droop"] = converter.controls[:vac_supp].Kₚ
+    else
+        ((dict["convdc"])[string(key)])["q_droop"] = 0
+    end
 
     # droop control - not implemented
     ((dict["convdc"])[string(key)])["droop"] = 0
@@ -63,7 +75,7 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
 
     ((dict["convdc"])[string(key)])["P_g"] = converter.P
     ((dict["convdc"])[string(key)])["Q_g"] = converter.Q
-    ((dict["convdc"])[string(key)])["Vtar"] = converter.Vₘ * 1e3 / global_dict["V"]
+    
 
     ((dict["convdc"])[string(key)])["LossA"] = 0
     ((dict["convdc"])[string(key)])["LossB"] = 0
