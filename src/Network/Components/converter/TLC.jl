@@ -74,6 +74,8 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
 
     ω₀ = converter.ω₀
 
+    Qac *=-1 # Correction for reactive power sign
+
     converter.Vₘ = Vm
     converter.θ = θ
     converter.Vᵈᶜ = Vdc
@@ -285,7 +287,7 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
                       mq = 0;))
     end
 
-
+    # TODO: Not yet finalized
     # add time delays here, if there are controllers implemented
     if (converter.timeDelay != 0.0) && (in(:occ, keys(converter.controls)))
         push!(exp.args,

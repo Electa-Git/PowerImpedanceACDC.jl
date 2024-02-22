@@ -1,5 +1,5 @@
 const Parameters_types = Union{Array{Basic}, Array{Complex},
-        Array{Int}, Array{Float64}}
+        Array{Int}, Array{Float64}, Array{ComplexF64}}
 
 function connect_series!(a::Parameters_types, b::Parameters_types)
     return a*b

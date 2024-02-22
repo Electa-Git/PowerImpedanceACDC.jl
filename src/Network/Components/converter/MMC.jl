@@ -28,10 +28,11 @@ include("controller.jl")
 
     controls :: OrderedDict{Symbol, Controller} = OrderedDict{Symbol, Controller}()
     equilibrium :: Array{Union{Int, Float64}} = [0]
-    A :: Array{Complex} = [0]
-    B :: Array{Complex} = [0]
-    C :: Array{Complex} = [0]
-    D :: Array{Complex} = [0]
+    # TODO: The state-space matrices were previously of type Complex. See if this will create any incompatibility issues.
+    A :: Array{Float64} = [0]
+    B :: Array{Float64} = [0]
+    C :: Array{Float64} = [0]
+    D :: Array{Float64} = [0]
 
     timeDelay :: Float64 = 0
     padeOrderNum :: Int = 0
@@ -126,7 +127,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Lₐᵣₘ = converter.Lₐᵣₘ / lDC_base
     Rₐᵣₘ = converter.Rₐᵣₘ / zDC_base
     Cₐᵣₘ = converter.Cₐᵣₘ / cbase
-    # Cₑ = 6*Cₐᵣₘ / N
+    Cₑ = 1e-6/ cbase
     ω₀ = converter.ω₀
 
     baseConv1 = vAC_base/vDC_base;# AC to DC voltage
@@ -212,9 +213,9 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             end
         end
     end
-    Rdc = 1e-15
+    Idc_in = Pdc/Vdc
     init_x[5] = Pdc/3/Vdc
-    init_x[12] = Vdc-3*init_x[5]*Rdc
+    init_x[12] = Vdc
 
     vdc_position = 12
 
@@ -247,7 +248,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     end
     push!(exp.args, :((iΔd, iΔq) = T_θ * [x[1]; x[2]];
                       (iΣd, iΣq) = T_2θ * [x[3]; x[4]];
-                      Vdc = inputs[1]-3*x[5]*$Rdc;))
+                      Vdc = inputs[1]))
 
     if in(:p, keys(converter.controls))
         # active power control
@@ -261,19 +262,32 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             F[$index+1] = $(converter.controls[:p].Kᵢ) *($(converter.controls[:p].ref[1]) - P_ac)))
         index += 1
     elseif in(:dc, keys(converter.controls))
-        push!(exp.args, :(
-                F[$index+1] = $(converter.controls[:dc].ω_f) *(Vdc - x[$index+1]);
-                F[$index+2] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - x[$index+1]);
-                    iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - x[$index+1]) +
-                                 x[$index+2])))
-        vdc_position = index + 1
-        index += 2
+        # With a DC voltage filter
         # push!(exp.args, :(
-        #         F[$index+1] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - Vdc);
-        #             iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - Vdc) +
-        #                          x[$index+1])))
+        #         F[$index+1] = $(converter.controls[:dc].ω_f) *(Vdc - x[$index+1]);
+        #         F[$index+2] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - x[$index+1]);
+        #             iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - x[$index+1]) +
+        #                          x[$index+2])))
         # vdc_position = index + 1
-        # index += 1
+        # epsilon_vdc_index = index + 2
+        # index += 2
+
+        push!(exp.args, :(
+                F[$index+1] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - Vdc);
+                    iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - Vdc) +
+                                 x[$index+1])))
+        vdc_position = index + 1
+        epsilon_vdc_index = index + 1
+        index += 1
+        # Additional state variable to represent the DC voltage
+        # push!(exp.args, :(
+        #         Vdc = x[$index+1]; Idc = inputs[1];
+        #         F[$index+1] = $wbase * (Idc - 3*x[5]) / $Cₑ;
+        #         F[$index+2] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - Vdc);
+        #             iΔd_ref = -($(converter.controls[:dc].Kₚ) * ($(converter.controls[:dc].ref[1]) - Vdc) +
+        #                          x[$index+2])))
+        # vdc_position = index + 1
+        # index += 2
     else
         push!(exp.args, :(
             iΔd_ref = $Pac))
@@ -309,6 +323,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             F[$index+1] = $(converter.controls[:vac].Kᵢ) *($(converter.controls[:vac].ref[1]) - Vᴳ_mag)
         ))
         index +=1
+        # epsilon_vac_index = index + 1
     else 
         push!(exp.args, :(
             iΔq_ref = $Qac))
@@ -522,7 +537,28 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     vector_inputs = [Vdc, Vᴳd, Vᴳq]
     init_x = [init_x; zeros(index-12,1)]
 
-    g!(F,x) = f!(exp, F, x, vector_inputs)
+    # If there is a dc voltage controller, add an additional equation to represent the dc voltage, only for the steady-state solution
+    exp_steadyState = copy(exp)
+    if in(:dc, keys(converter.controls))
+        init_x =[init_x;Vdc]
+        push!(exp_steadyState.args,
+        :(
+            F[$index+1] = $wbase * ($Idc_in - 3*x[5]) / $Cₑ;
+            F[$epsilon_vdc_index] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - x[end]);
+        ))
+    end
+    # if in(:vac, keys(converter.controls))
+    #     init_x =[init_x;Vm;0]
+    #     push!(exp_steadyState.args,
+    #     :(
+    #         F[$index+1] = $wbase * ($Id - x[1]) / 1e-9;
+    #         F[$index+2] = $wbase * ($Iq - x[2]) / 1e-9;
+    #         Vᴳ_mag_SS = sqrt(x[end-1]^2 + x[end]^2);
+    #         F[$epsilon_vac_index] = $(converter.controls[:vac].Kᵢ) *($(converter.controls[:vac].ref[1]) - Vᴳ_mag_SS);
+    #     ))
+    # end
+
+    g!(F,x) = f!(exp_steadyState, F, x, vector_inputs)
     # TODO: Check if it makes sense to use newton or trust_region
     # Newton seems to give really bad estimates for control-related states, while trust_region cannot even get id and iq correct.
     # k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, method = :newton)
@@ -531,20 +567,32 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
         println("MMC steady-state solution found!")
     end
     converter.equilibrium = k.zero
+    # if in(:dc, keys(converter.controls))
+    #     converter.equilibrium = converter.equilibrium[1:end-1]
+    # end
+    # if in(:vac, keys(converter.controls))
+    #     converter.equilibrium = converter.equilibrium[1:end-2]
+    # end
+    if in(:dc, keys(converter.controls))
+        converter.equilibrium = k.zero[1:end-1]
+    else
+        converter.equilibrium = k.zero
+    end
+    
 
     h(F,x) = f!(exp, F, x[1:end-3], x[end-2:end])
     ha = x -> (F = fill(zero(promote_type(eltype(x), Float64)), index+3); h(F, x); return F)
     A = zeros(index+3,index+3)
-    ForwardDiff.jacobian!(A, ha, [k.zero' vector_inputs'])
-    converter.A = A[1:end-3, 1:end-3]
-    converter.B = A[1:end-3, end-2:end]
+    ForwardDiff.jacobian!(A, ha, [converter.equilibrium' vector_inputs'])
+    converter.A = real(A[1:end-3, 1:end-3])
+    converter.B = real(A[1:end-3, end-2:end])
 
-    converter.C = zeros(3, size(converter.A,1))
+    converter.C = real(zeros(3, size(converter.A,1)))
     converter.C[2,1] = 1
     converter.C[3,2] = 1
     # !in(:dc, keys(converter.controls)) ? converter.C[1,5] = 3 : converter.C[1, vdc_position] = 1
     converter.C[1,5] = 3
-    converter.D = zeros(3,3)
+    converter.D = real(zeros(3,3))
 
     # converter.B[:,2:3] *= converter.turnsRatio
     # converter.D[:,2:3] *= converter.turnsRatio
@@ -555,6 +603,13 @@ function eval_parameters(converter :: MMC, s :: Complex)
     I = Matrix{Complex}(Diagonal([1 for dummy in 1:size(converter.A,1)]))
     # Y = (converter.C*inv(s*I-converter.A))*converter.D + converter.D # This matrix is in pu
     Y = converter.C * ((s*I-converter.A) \ converter.B) + converter.D # This matrix is in pu
+
+    # if in(:dc, keys(converter.controls))
+    #     (m11, m12, m21, m22) = (Y[1,1], Y[1,2:3], Y[2:3,1], Y[2:3,2:3])
+    #     m11 = 1/m11
+    #     Y = [m11 -transpose(m12)*m11; m21*m11 m22-m21*m11*transpose(m12)]
+    # end
+
     Y[1,:] *= converter.iDCbase
     Y[:,1] /= converter.vDCbase
     Y[2:3,:] *= converter.iACbase
@@ -562,11 +617,7 @@ function eval_parameters(converter :: MMC, s :: Complex)
     # The double division with the turns ratio is actually a multiplication,
     # and is needed to bring the grid-side voltage to the converter side.
     Y[:,2:3] /= (converter.vACbase / converter.turnsRatio)
-    # if in(:dc, keys(converter.controls))
-    #     (m11, m12, m21, m22) = (Y[1,1], Y[1,2:3], Y[2:3,1], Y[2:3,2:3])
-    #     m11 = 1/m11
-    #     Y = [m11 -transpose(m12)*m11; m21*m11 m22-m21*m11*transpose(m12)]
-    # end
+    
 
     return Y
 end

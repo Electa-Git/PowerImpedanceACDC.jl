@@ -144,11 +144,11 @@ function nyquistplot(L, omega; zoom :: String = "", SM :: String = "", title :: 
 
     println("")
     if N > 0
-        println("Result stability assessement: Unstable system \n")
+        println("Result stability assessment: Unstable system \n")
     elseif N < 0
-        println("Result stability assessement: Unstable subsystem \n")
+        println("Result stability assessment: Unstable subsystem \n")
     else
-        println("Result stability assessement: Stable system if subsystems are stable \n")
+        println("Result stability assessment: Stable system if subsystems are stable \n")
     end
 
     ##### ----- STABILITY MARGINS ----- #####
