@@ -74,10 +74,10 @@ end
 
 ################### ABCD functions ################################
 function get_abcd(element::Element, s::Complex)
-    abcd = eval_abcd(element.element_value, s)
-
+    
     if (element.transformation)
         if np(element) == 2
+            abcd = eval_abcd(element.element_value, s)
             return transformation_dc(abcd)
         elseif is_three_phase(element)
             ω₀ = 100*π
@@ -85,6 +85,8 @@ function get_abcd(element::Element, s::Complex)
             abcd₂ = eval_abcd(element.element_value, s - 1im*ω₀)
             return transformation_dq(abcd₁, abcd₂)
         end
+    else
+        abcd = eval_abcd(element.element_value, s)
     end
     return abcd
 end
@@ -110,11 +112,8 @@ np_abcd(e::Element) = Int((nip_abcd(e) + nop_abcd(e))/2) # number pins
 
 ########################## Y functions #############################
 function get_y(element :: Element, s :: Complex)
-    y = eval_y(element.element_value, s)
-    # if (element.transformation)
-    #     return transformation_dc(abcd)
-    # end
-    return y
+    abcd = get_abcd(element, s)
+    return abcd_to_y(abcd)
 end
 
 ######################### Element type #############################
