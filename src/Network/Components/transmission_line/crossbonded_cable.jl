@@ -68,7 +68,7 @@ function eval_abcd(m :: Crossbonded_cable, s :: Complex)
     Mᶜᵇ = convert(Array{Complex}, Diagonal([1 for i in 1:(2n*nₗ)])) #for n=3 nₗ=2 Mᶜᵇ= [12x12] matrix
     isa(m.Zᶜᵇ, Basic) ? Z = N(subs(m.Zᶜᵇ, symbols(:s), s)) : Z = m.Zᶜᵇ
     isa(m.Zₛ, Basic) ? Zₛ = N(subs(m.Zₛ, symbols(:s), s)) : Zₛ = m.Zₛ
-    Mᶜᵇ[n+1:2n, n*nₗ+n+1:n*nₗ+2n] = Diagonal([2Z for i in 1:n])
+    Mᶜᵇ[n+1:2n, n*nₗ+n+1:n*nₗ+2n] = Diagonal([2N(Z) for i in 1:n])
 
     M = eval_abcd(m.section, s)
     M = R * M * R_inv
@@ -85,7 +85,7 @@ function eval_abcd(m :: Crossbonded_cable, s :: Complex)
     abcd = convert(Array{Complex}, abcd)
 
     no_eliminate = [i for i in 1:n]
-    abcd = kron_abcd(abcd, Zₛ, no_eliminate)#Reduction of the ABCD matrix explained in section 2.6??
+    abcd = kron_abcd(abcd, N(Zₛ), no_eliminate)#Reduction of the ABCD matrix explained in section 2.6??
     total_abcd = convert(Array{Complex}, Diagonal([1 for dummy in 1:2n]))
     for i in 1:m.mₛ #i that goes from 1 to mₛ. Where mₛ is the number of major sections
         total_abcd = total_abcd * abcd #Computation of the equivalent cable ABCD parameters -> bottom part page 25 simulator_tutorial

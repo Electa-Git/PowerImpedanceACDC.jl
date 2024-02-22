@@ -101,6 +101,7 @@ function cable(;args...) # in parenthesis the input of the function julia uses "
 
     # conversion procedure #not FP
     # core outer radius    #not FP
+    # TODO: Add a check for positions to see if the cable positions make sense (when compared to the radii)
     (c.conductors[:C1].A != 0 && c.conductors[:C1].A != 0.0) ? c.conductors[:C1].ρ = c.conductors[:C1].ρ * π *
                         c.conductors[:C1].rₒ^2 / c.conductors[:C1].A : nothing #If the equivalent area of C1 is different from 0 -> "conversion" operation, othewise do nothing.
     # add metalic screen conversions, equivalent sheat layer
@@ -129,8 +130,9 @@ function cable(;args...) # in parenthesis the input of the function julia uses "
     if in(:I1, keys(c.insulators)) && (c.insulators[:I1].a != 0) && (c.insulators[:I1].a != 0.0) #If in the keys of the variable c is defined I₁ AND I₁ has a semiconductor section (outer radius, inner semiconductor different from 0) -> enter
         x = log(c.insulators[:I1].rₒ / c.insulators[:I1].rᵢ) / log(c.insulators[:I1].b / c.insulators[:I1].a) # x = log(rₒI₁/rᵢI₁)/log(bI₁/aI₁)
         c.insulators[:I1].ϵᵣ *=  x #Same as c.insulators[:I₁].ϵᵣ =  c.insulators[:I₁].ϵᵣ*x ->  ϵᵣI1 = ϵᵣI₁ * x
-        N = 1.4
-        c.insulators[:I1].μᵣ = c.insulators[:I1].μᵣ * (1 + 2π^2 * N^2 * (c.insulators[:I1].rₒ^2 - c.insulators[:I1].rᵢ^2) / log(c.insulators[:I1].rₒ / c.insulators[:I1].rᵢ)) # μᵣI₁ = μᵣI₁ * (1+2π²N² * (rₒI₁²-rᵢI₁²) / log(rₒI₁-rᵢI₁))
+        #TODO: The impact of the semiconducting layers on permeability is disabled, as it is not represented in PSCAD.
+        # N = 1.4
+        # c.insulators[:I1].μᵣ = c.insulators[:I1].μᵣ * (1 + 2*π^2 * N^2 * (c.insulators[:I1].rₒ^2 - c.insulators[:I1].rᵢ^2) / log(c.insulators[:I1].rₒ / c.insulators[:I1].rᵢ)) # μᵣI₁ = μᵣI₁ * (1+2π²N² * (rₒI₁²-rᵢI₁²) / log(rₒI₁-rᵢI₁))
     end
 
     (μᵣᵍ, ϵᵣᵍ, ρᵍ) = c.earth_parameters
