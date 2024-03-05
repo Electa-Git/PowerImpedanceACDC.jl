@@ -1,12 +1,30 @@
 function kron(matrix :: Array{Complex}, no_eliminate :: Array{Int})
+    # Old approach
+    # n = size(matrix, 1)
+    # eliminate = setdiff(1:n, no_eliminate)
+    # matrix = matrix[[no_eliminate; eliminate],:]
+    # matrix = matrix[:,[no_eliminate; eliminate]]
+
+    # n_noElim = length(no_eliminate)
+    # return matrix[1:n_noElim,1:n_noElim] - matrix[1:n_noElim,1+n_noElim:end]*
+    #         (matrix[1+n_noElim:end,1+n_noElim:end]\matrix[1+n_noElim:end,1:n_noElim])
+
+    # matrix = matrix[1:n_noElim,1:n_noElim] - matrix[1:n_noElim,1+n_noElim:end]*
+    #         inv(matrix[1+n_noElim:end,1+n_noElim:end])*matrix[1+n_noElim:end,1:n_noElim]
+    # return matrix[1:n_noElim,1:n_noElim] - matrix[1:n_noElim,1+n_noElim:end]*
+    #         inv(matrix[1+n_noElim:end,1+n_noElim:end])*matrix[1+n_noElim:end,1:n_noElim]
+    # New approach
     n = size(matrix, 1)
     eliminate = setdiff(1:n, no_eliminate)
-    matrix = matrix[[no_eliminate; eliminate],:]
-    matrix = matrix[:,[no_eliminate; eliminate]]
 
-    n_noElim = length(no_eliminate)
-    matrix = matrix[1:n_noElim,1:n_noElim] - matrix[1:n_noElim,1+n_noElim:end]*
-            inv(matrix[1+n_noElim:end,1+n_noElim:end])*matrix[1+n_noElim:end,1:n_noElim]
+    Y11 = matrix[no_eliminate, no_eliminate]
+    Y12 = matrix[no_eliminate, eliminate]
+    Y21 = matrix[eliminate, no_eliminate]
+    Y22 = matrix[eliminate,eliminate]
+
+    return Y11 - (Y12*inv(Y22))*Y21
+
+            
 end
 
 function kron_abcd(matrix :: Array{Complex}, Zₛ :: Union{Int, Float64, Basic, Complex},

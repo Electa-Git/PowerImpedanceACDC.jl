@@ -1,4 +1,4 @@
-# Old function from the initial version, not used in the current version.
+# Old function from the initial version, not used in the current version. Not sure if this works properly.
 function make_y(net :: Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                     start_pins::Array{Symbol}, end_pins::Array{Symbol}, s :: Complex)
 
@@ -39,8 +39,7 @@ function make_y(net :: Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
 end
 
 # New version, only being used to generate the admittance matrix of the entire network.
-function make_y(net :: Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
-    start_pins::Array{Symbol}, s :: Complex)
+function make_y(net :: Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}}, s :: Complex)
 
     n = length(dict[:node_list])
     Y_matrix = zeros(Complex, n, n)

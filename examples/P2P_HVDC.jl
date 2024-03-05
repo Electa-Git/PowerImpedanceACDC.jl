@@ -7,7 +7,7 @@ using DelimitedFiles,SymEngine
 s = symbols("s")
 transmissionVoltage = 380 / sqrt(3)
 pHVDC1 = 600
-qC1 = 0
+qC1 = -100
 qC2 = 100
 qC3 = 0
 qC4 = 100
@@ -29,8 +29,10 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 # ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC1]),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15, ω_f = 100, ref = [1.0])
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC1]),
+                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0]),
+                dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
                 )
         # MMC2 controls P&Q. It is connected to bus 7. Define the transformer impedance parameters at the converter side!
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
@@ -42,9 +44,9 @@ qC4 = 100
                 # ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC1]),
-                # vac_supp = PI_control(Kₚ = 5, ω_f = 100, ref = [1.0]),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
-                # vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
+                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -58,7 +60,7 @@ qC4 = 100
         g4 = ac_source(V = transmissionVoltage, P = pHVDC1, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
 
         # TL at the remote end
-        tl1 = overhead_line(length = 50e3,
+        tl1 = overhead_line(length = 25e3,
                 conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
                                 Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
                 groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
@@ -84,6 +86,9 @@ qC4 = 100
         g4[1.1] ⟷ tl1[1.1] ⟷ BusRd
         g4[1.2] ⟷ tl1[1.2] ⟷ BusRq
 
+        # g4[1.1] ⟷ c1[2.1] ⟷ BusRd
+        # g4[1.2] ⟷ c1[2.2] ⟷ BusRq
+
         g4[2.1] ⟷ gndd
         g4[2.2] ⟷ gndq
         
@@ -105,10 +110,16 @@ qC4 = 100
 
 end
 
-# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus7d,:Bus7q], 
-# output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
-@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g4], input_pins=Any[:BusRd,:BusRq], 
+@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus7d,:Bus7q], 
 output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
+# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g4], input_pins=Any[:BusRd,:BusRq], 
+# output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
 
 writedlm("./files/imp_P2P.csv",  imp_ac, ',')
 writedlm("./files/w_P2P.csv",  omega_ac, ',')
+
+
+writedlm("./files/A_p2p.csv",  net.elements[:c1].element_value.A, ',')
+writedlm("./files/B_p2p.csv",  net.elements[:c1].element_value.B, ',')
+writedlm("./files/C_p2p.csv",  net.elements[:c1].element_value.C, ',')
+writedlm("./files/D_p2p.csv",  net.elements[:c1].element_value.D, ',')

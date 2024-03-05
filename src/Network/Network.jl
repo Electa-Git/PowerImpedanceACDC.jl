@@ -235,7 +235,8 @@ function power_flow(net :: Network)
     global global_dict
     global ang_min, ang_max
     global max_gen
-    global_dict = PowerModelsACDC.get_pu_bases(1000, 380/sqrt(3)) # 3-PH MVA, LN-RMS, Original setting was 100,320
+    #TODO: Check if this has to be LN-RMS or LL-RMS. Do the necessary changes internally after validations against PSCAD.
+    global_dict = PowerModelsACDC.get_pu_bases(1000, 380) # 3-PH MVA, LL-RMS, Original setting was 100,320
     global_dict["omega"] = 2π * 50
 
     ang_min = deg2rad(360)

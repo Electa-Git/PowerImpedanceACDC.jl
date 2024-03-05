@@ -139,7 +139,7 @@ end
 
 L_AC = Z_BUS_AC ./ Z_MMC_AC
 
-@time nyquist_P2P_AC = nyquistplot(L_AC, omega, zoom = "yes", SM = "PM")
+@time nyquist_P2P_AC = nyquistplot(L_AC, omega, zoom = "yes", SM = "VM")
 display(nyquist_P2P_AC)
 
 # @time Z_MMC_DC, omega = determine_impedance(net, elim_elements=[:dc_line], input_pins=Any[:BusDC2], output_pins=Any[:gndd], omega_range = (-1,4,1000))
