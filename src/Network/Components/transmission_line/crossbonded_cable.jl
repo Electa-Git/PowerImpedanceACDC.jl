@@ -57,19 +57,21 @@ function eval_abcd(m :: Crossbonded_cable, s :: Complex)
     n = length(m.section.positions)       # number of cables, it should be 3
     nₗ = length(m.section.conductors)      # number of conducting layers, normally 2
 
-    R1 = [1 0 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 1 0; 0 1 0 0 0 0; 0 0 0 1 0 0; 0 0 0 0 0 1] # rotate matrix between core and sheet currents/voltages
+    R1 = [1 0 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 1 0; 0 1 0 0 0 0; 0 0 0 1 0 0; 0 0 0 0 0 1] # rotate matrix between core and sheath currents/voltages
     R = [R1 zeros(6,6); zeros(6,6) R1] # zeros(6,6)
     R1_inv = inv(R1)
     R_inv = [R1_inv zeros(6,6); zeros(6,6) R1_inv]
-    T1 = [1 0 0 0 0 0; 0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 0 1; 0 0 0 1 0 0; 0 0 0 0 1 0]
+    # T1 = [1 0 0 0 0 0; 0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 0 1; 0 0 0 1 0 0; 0 0 0 0 1 0] # Transposition sheaths from ABC - CAB
+    T1 = [1 0 0 0 0 0; 0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 1 0; 0 0 0 0 0 1; 0 0 0 1 0 0] # Transposition sheaths from ABC - BCA
     T1_inv = inv(T1)
     T = [T1 zeros(6,6); zeros(6,6) T1]
     T_inv = [T1_inv zeros(6,6); zeros(6,6) T1_inv]
     Mᶜᵇ = convert(Array{Complex}, Diagonal([1 for i in 1:(2n*nₗ)])) #for n=3 nₗ=2 Mᶜᵇ= [12x12] matrix
-    isa(m.Zᶜᵇ, Basic) ? Z = N(subs(m.Zᶜᵇ, symbols(:s), s)) : Z = m.Zᶜᵇ
-    isa(m.Zₛ, Basic) ? Zₛ = N(subs(m.Zₛ, symbols(:s), s)) : Zₛ = m.Zₛ
-    Mᶜᵇ[n+1:2n, n*nₗ+n+1:n*nₗ+2n] = Diagonal([2N(Z) for i in 1:n])
+    isa(m.Zᶜᵇ, Basic) ? Z = convert(ComplexF64,subs(m.Zᶜᵇ, symbols(:s), s)) : Z = m.Zᶜᵇ
+    isa(m.Zₛ, Basic) ? Zₛ = convert(ComplexF64,subs(m.Zₛ, symbols(:s), s)) : Zₛ = m.Zₛ
+    Mᶜᵇ[n+1:2n, n*nₗ+n+1:n*nₗ+2n] = Diagonal([2*Z for i in 1:n])
 
+    # Original
     M = eval_abcd(m.section, s)
     M = R * M * R_inv
     abcd = M
@@ -81,12 +83,26 @@ function eval_abcd(m :: Crossbonded_cable, s :: Complex)
         end
         abcd = abcd * Mᶜᵇ * abcd_new
     end
+    # New trial
+    # M = eval_abcd(m.section, s)
+    # M = R * M * R_inv
+    # abcd = M
+    # for dummy in 2:m.nₛ # iterate through minor sections
+    #     if iseven(dummy)
+    #         abcd_new = T_inv * M * T
+    #     else
+    #         abcd_new = T * M * T_inv
+    #     end
+    #     abcd = abcd * Mᶜᵇ * abcd_new
+    # end
 
     abcd = convert(Array{Complex}, abcd)
 
     no_eliminate = [i for i in 1:n]
-    abcd = kron_abcd(abcd, N(Zₛ), no_eliminate)#Reduction of the ABCD matrix explained in section 2.6??
+    # abcd = kron_abcd(abcd, N(Zₛ), no_eliminate)#Reduction of the ABCD matrix explained in section 2.6??
+    abcd = kron_abcd(abcd, Zₛ, no_eliminate)  #Reduction of the ABCD matrix explained in section 2.6??
     total_abcd = convert(Array{Complex}, Diagonal([1 for dummy in 1:2n]))
+    # Assuming all major sections have the same configuration
     for i in 1:m.mₛ #i that goes from 1 to mₛ. Where mₛ is the number of major sections
         total_abcd = total_abcd * abcd #Computation of the equivalent cable ABCD parameters -> bottom part page 25 simulator_tutorial
     end

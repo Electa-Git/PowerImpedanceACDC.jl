@@ -44,8 +44,9 @@ net = @network begin
         Sbase = 1000, vACbase_LL_RMS = 220, 
         P = Powf, Q = Qowf,
         occ = PI_control(Kₚ = 0.254647908947033, Kᵢ = 0.8),
-        # pll = PI_control(Kₚ = 0.8754, Kᵢ = 38.5155, ω_f = 2*pi*80), #110 rad/s
-        pll = PI_control(Kₚ = 0.795774715459477, Kᵢ = 31.830988618379067, ω_f = 2*pi*80), # These PLL gains result in an instability in PSCAD. 
+        pll = PI_control(Kₚ = 0.8754, Kᵢ = 38.5155, ω_f = 2*pi*80), #110 rad/s
+        # pll = PI_control(Kₚ = 0.8356, Kᵢ = 35.0937, ω_f = 2*pi*80), #  wPLL=105 rad/s, unstable system.
+        # pll = PI_control(Kₚ = 0.795774715459477, Kᵢ = 31.830988618379067, ω_f = 2*pi*80), # These PLL gains result in an instability in PSCAD., wPLL=100 rad/s 
         # This instability can be detected (negative phase margin and a very low vector margin at around 59 Hz, which is close to the oscillation frequency in PSCAD) here if single terminal analysis is used.
         # As of 14/02/24 multi-terminal analysis cannot detect this instability.
         # pll = PI_control(Kₚ = 0.397887357729738, Kᵢ = 7.957747154594767, ω_f = 2*pi*80), # These gains are fine.
@@ -108,14 +109,14 @@ net = @network begin
         
     CableAC23 = cable(length = 60e3, positions = [(0,1.33562), (-0.0575,1.4322), (0.0575,1.4322)],
         C1 = Conductor(rₒ = 25.45e-3, ρ = 2.63e-8, μᵣ = 1),
-        I1 = Insulator(rᵢ = 25.45e-3, rₒ = 50.65e-3, a = 25.45e-3 + 2e-3, b = 50.65e-3 - 1.5e-3, ϵᵣ = 2.3),
+        I1 = Insulator(rᵢ = 25.45e-3, rₒ = 50.65e-3, a = 2e-3, b = 1.5e-3, ϵᵣ = 2.3),
         C2 = Conductor(rᵢ = 50.65e-3, rₒ = 52.35e-3, ρ = 22e-8, μᵣ = 1),
         I2 = Insulator(rᵢ = 52.35e-3, rₒ = 55.75e-3, ϵᵣ = 100),
         earth_parameters = (1,1,1), transformation = true)
 
     CableAC2g2 = cable(length = 10e3, positions = [(0,1.33562), (-0.0575,1.4322), (0.0575,1.4322)],
         C1 = Conductor(rₒ = 25.45e-3, ρ = 2.63e-8, μᵣ = 1),
-        I1 = Insulator(rᵢ = 25.45e-3, rₒ = 50.65e-3, a = 25.45e-3 + 2e-3, b = 50.65e-3 - 1.5e-3, ϵᵣ = 2.3),
+        I1 = Insulator(rᵢ = 25.45e-3, rₒ = 50.65e-3, a = 2e-3, b = 1.5e-3, ϵᵣ = 2.3),
         C2 = Conductor(rᵢ = 50.65e-3, rₒ = 52.35e-3, ρ = 22e-8, μᵣ = 1),
         I2 = Insulator(rᵢ = 52.35e-3, rₒ = 55.75e-3, ϵᵣ = 100),
         earth_parameters = (1,1,1), transformation = true)
@@ -505,7 +506,7 @@ end
     fmin = 1
     fmax = 10000
 
-    EVD_Energy_Hu1b = EVD(Zcl_bus, omega, fmin, fmax)
+    EVD_Energy_Hub = EVD(Zcl_bus, omega, fmin, fmax)
     # savefig("EVD_Energy_Hub.png")
 
     #=

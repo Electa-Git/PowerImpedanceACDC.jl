@@ -1,5 +1,7 @@
 using SymEngine
 s = symbols("s")
+#TODO: Not updated after a change in the way semiconducting layers are modeled. Insulator data not accurate.
+
 net = @network begin
     vs = ac_source(V = 380, pins = 3)
     cb = crossbonded_cable(section = cable(length = 866.7, positions = [(0,1.9), (0.5,1.9), (1,1.9)],

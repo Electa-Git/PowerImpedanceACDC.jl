@@ -10,6 +10,8 @@ using SymEngine
 
 # cross-bonded cables from MAERL380 to GEZEL380-> generic notation: cMGn where n: cable number
 s = symbols(:s)
+#TODO: Not updated after a change in the way semiconducting layers are modeled. Insulator data not accurate.
+
 net = @network begin
     # Equivalent Grid FR_EQ380 380kV
     acFR_EQ380 = ac_source(V = 380, pins = 3)

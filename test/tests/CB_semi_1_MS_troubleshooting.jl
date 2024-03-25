@@ -5,6 +5,8 @@ using SymEngine
 ## cross-bonding cable test
 s = symbols(:s)
 #ω=2*π*50
+#TODO: Not updated after a change in the way semiconducting layers are modeled. Insulator data not accurate.
+
 net = @network begin
     ac = ac_source(V = 380, pins = 3)
     cb = crossbonded_cable(section = cable(length = 834, positions = [(-0.5,1.9), (0,1.9), (0.5,1.9)],

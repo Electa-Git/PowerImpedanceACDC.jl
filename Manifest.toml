@@ -2,7 +2,7 @@
 
 julia_version = "1.9.1"
 manifest_format = "2.0"
-project_hash = "132d73b688f5c185f0f288082f663520de58987f"
+project_hash = "e75c0910a48bf3d1cccde9e091c02417771a2826"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -1200,6 +1200,12 @@ deps = ["InfrastructureModels", "JuMP", "Memento", "PowerModels"]
 path = "C:\\Users\\osakinci\\.julia\\dev\\PowerModelsACDC"
 uuid = "ff45984e-d068-5f4c-9e32-c4133509d236"
 version = "0.6.3"
+
+[[deps.PowerModelsMCDC]]
+deps = ["InfrastructureModels", "JuMP", "Memento", "PowerModels"]
+git-tree-sha1 = "e3bf3ff0044c1e527ce1e881585fdf43e2df1189"
+uuid = "05d58fe5-e6ff-58ad-86d6-05dcc0b74504"
+version = "0.1.1"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]

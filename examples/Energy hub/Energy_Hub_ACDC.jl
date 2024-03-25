@@ -84,14 +84,14 @@ net = @network begin
         
     CableAC23 = cable(length = 60e3, positions = [(0,1.33562), (-0.0575,1.4322), (0.0575,1.4322)],
         C1 = Conductor(rₒ = 25.45e-3, ρ = 2.63e-8, μᵣ = 1),
-        I1 = Insulator(rᵢ = 25.45e-3, rₒ = 50.65e-3, a = 25.45e-3 + 2e-3, b = 50.65e-3 - 1.5e-3, ϵᵣ = 2.3),
+        I1 = Insulator(rᵢ = 25.45e-3, rₒ = 50.65e-3, a = 2e-3, b = 1.5e-3, ϵᵣ = 2.3),
         C2 = Conductor(rᵢ = 50.65e-3, rₒ = 52.35e-3, ρ = 22e-8, μᵣ = 1),
         I2 = Insulator(rᵢ = 52.35e-3, rₒ = 55.75e-3, ϵᵣ = 100),
         earth_parameters = (1,1,1), transformation = true)
 
     CableAC2g2 = cable(length = 10e3, positions = [(0,1.33562), (-0.0575,1.4322), (0.0575,1.4322)],
         C1 = Conductor(rₒ = 25.45e-3, ρ = 2.63e-8, μᵣ = 1),
-        I1 = Insulator(rᵢ = 25.45e-3, rₒ = 50.65e-3, a = 25.45e-3 + 2e-3, b = 50.65e-3 - 1.5e-3, ϵᵣ = 2.3),
+        I1 = Insulator(rᵢ = 25.45e-3, rₒ = 50.65e-3, a = 2e-3, b = 1.5e-3, ϵᵣ = 2.3),
         C2 = Conductor(rᵢ = 50.65e-3, rₒ = 52.35e-3, ρ = 22e-8, μᵣ = 1),
         I2 = Insulator(rᵢ = 52.35e-3, rₒ = 55.75e-3, ϵᵣ = 100),
         earth_parameters = (1,1,1), transformation = true)

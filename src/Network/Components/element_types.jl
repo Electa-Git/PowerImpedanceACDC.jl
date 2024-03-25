@@ -25,6 +25,7 @@ include("source/ac_source.jl")
 
 # Converter
 include("converter/MMC.jl")
+include("converter/MMC_bipolar.jl")
 include("converter/TLC.jl")
 
 # Machines

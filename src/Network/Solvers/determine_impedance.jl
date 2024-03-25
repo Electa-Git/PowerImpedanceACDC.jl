@@ -131,6 +131,7 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
     (min_ω, max_ω, n_ω) = omega_range
     n = (max_ω - min_ω) / n_ω
     omegas= 2*pi* 10 .^range(min_ω, max_ω, length= n_ω) 
+    # omegas= 2*pi* [1e0:20:1e5;] # Only for debugging
 
     # make closing impedance
     p = length(unique(output_pins))

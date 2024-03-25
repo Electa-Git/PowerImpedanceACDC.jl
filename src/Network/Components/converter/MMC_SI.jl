@@ -2,7 +2,7 @@ export mmc
 
 include("converter.jl")
 include("controller.jl")
-
+# This is the original code, it hasn't been updated for quite some time.
 @with_kw mutable struct MMC <: Converter
     ω₀ :: Union{Int, Float64} = 100*π
 

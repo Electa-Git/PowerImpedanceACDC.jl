@@ -1,6 +1,7 @@
 # include("../../src/HVDCstability.jl")
 # using .HVDCstability
 using SymEngine
+#TODO: Not updated after a change in the way semiconducting layers are modeled. Insulator data not accurate.
 
 # semiconducting layers test
 net = @network begin

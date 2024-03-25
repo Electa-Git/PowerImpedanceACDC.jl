@@ -22,7 +22,7 @@ module HVDCstability
     using NLsolve, ForwardDiff  # solve diffs and nonlinear equations
 
     # Power flow
-    using PowerModels, PowerModelsACDC
+    using PowerModels, PowerModelsACDC, PowerModelsMCDC
     using Ipopt
     using JuMP
 

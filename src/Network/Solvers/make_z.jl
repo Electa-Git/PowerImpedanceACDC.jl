@@ -32,7 +32,8 @@ function make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
     nₑₛ = nᵥ + nₒ   # element output positions
     for element in dict[:element_list]
 
-        if isa(net.elements[element].element_value, MMC) || isa(net.elements[element].element_value, TLC) #TODO: This check can be generalized for converters.
+        # if isa(net.elements[element].element_value, MMC) || isa(net.elements[element].element_value, TLC) #TODO: This check can be generalized for converters.
+        if is_converter(net.elements[element]) #TODO: Check if this generalization works.
             Y = get_abcd(net.elements[element], s)
             pₚ = nip_abcd(net.elements[element])  # element input pins
             I = convert(Array{ComplexF64}, Diagonal([1 for dummy in 1:pₚ]))

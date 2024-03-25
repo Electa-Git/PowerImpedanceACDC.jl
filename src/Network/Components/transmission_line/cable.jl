@@ -16,8 +16,13 @@ end
     ϵᵣ :: Union{Int, Float64} = 1               # relative permittivity
     μᵣ :: Union{Int, Float64} = 1               # relative permeability
                                                 # If a semiconductor is present, in an insulator, we have: rᵢ < semiconductor < a + a < insulator < b + b < semiconductor < rₒ
-    a :: Union{Int, Float64} = 0                # inner semiconductor outer radius -> Inner semiconductor rᵢ < r < a
-    b :: Union{Int, Float64} = 0                # outer semiconductor inner radius -> Outer semiconductor b < r < rₒ
+    a :: Union{Int, Float64} = 0                # inner semiconductor thickness
+    b :: Union{Int, Float64} = 0                # outer semiconductor thickness
+    # From PSCAD manual:
+    # A = outer radius of inner conductor + thickness of inner semiconducting screen
+    # B = outer radius of inner conductor + thickness of inner semiconducting screen + thickness of insulator layer
+    # rₒ = outer radius of inner conductor + thickness of inner semiconducting screen + thickness of insulator layer + thickness of outer semiconducting screen
+    # rᵢ = outer radius of inner conductor
 end
 
 @with_kw mutable struct Cable <: Transmission_line #indicates that the mutable struct Cable is a subtype (<:) of abstract type Transmission_line
@@ -70,8 +75,8 @@ struct Insulator
     ϵᵣ :: Union{Int, Float64} = 1               # relative permittivity
     μᵣ :: Union{Int, Float64} = 1               # relative permeability
 
-    a :: Union{Int, Float64} = 0                # inner semiconductor outer radius
-    b :: Union{Int, Float64} = 0                # outer semiconductor inner radius
+    a :: Union{Int, Float64} = 0                # inner semiconductor thickness
+    b :: Union{Int, Float64} = 0                # outer semiconductor thickness
 end
 ```
 - positions - given as an array in (x,y) format
@@ -128,7 +133,9 @@ function cable(;args...) # in parenthesis the input of the function julia uses "
     end
     # semiconductor configuration
     if in(:I1, keys(c.insulators)) && (c.insulators[:I1].a != 0) && (c.insulators[:I1].a != 0.0) #If in the keys of the variable c is defined I₁ AND I₁ has a semiconductor section (outer radius, inner semiconductor different from 0) -> enter
-        x = log(c.insulators[:I1].rₒ / c.insulators[:I1].rᵢ) / log(c.insulators[:I1].b / c.insulators[:I1].a) # x = log(rₒI₁/rᵢI₁)/log(bI₁/aI₁)
+        A = c.insulators[:I1].rᵢ + c.insulators[:I1].a
+        B = c.insulators[:I1].rₒ - c.insulators[:I1].b
+        x = log(c.insulators[:I1].rₒ / c.insulators[:I1].rᵢ) / log(B / A) # x = log(rₒI₁/rᵢI₁)/log(bI₁/aI₁)
         c.insulators[:I1].ϵᵣ *=  x #Same as c.insulators[:I₁].ϵᵣ =  c.insulators[:I₁].ϵᵣ*x ->  ϵᵣI1 = ϵᵣI₁ * x
         #TODO: The impact of the semiconducting layers on permeability is disabled, as it is not represented in PSCAD.
         # N = 1.4
@@ -138,7 +145,7 @@ function cable(;args...) # in parenthesis the input of the function julia uses "
     (μᵣᵍ, ϵᵣᵍ, ρᵍ) = c.earth_parameters
 
     μ₀ = 4π*1e-7 #vacuum permeability
-    ϵ₀ = 8.85e-12 #vacuum permittibity
+    ϵ₀ = 8.85e-12 #vacuum permittivity
     μᵍ = μᵣᵍ*μ₀ #ground permittivity  μᵍ = relative ground permittivity μᵣᵍ * vacuum permittivity μ₀
     ϵᵍ = ϵᵣᵍ*ϵ₀ #ground permeability ϵᵍ = relative ground permeability ϵᵣᵍ * vacuum permeability ϵ₀
     σᵍ = 1/ρᵍ #ground conductivity σᵍ = 1/ground resistivity ρᵍ
@@ -186,6 +193,9 @@ function cable(;args...) # in parenthesis the input of the function julia uses "
     i = 1 #re-assign the value 1 to i
     for key in keys(c.insulators) #As described at row 154 for the conductors-> depending on how many keys are present in the variable insulators -> it makes the same process for all the insulating layers present in the variable c
         (rᵢ, rₒ, μ, ϵ) = (c.insulators[key].rᵢ, c.insulators[key].rₒ, c.insulators[key].μᵣ*μ₀, c.insulators[key].ϵᵣ*ϵ₀)
+        if (c.insulators[key].b != 0) && (c.insulators[key].b != 0.0)
+            rₒ -= c.insulators[key].b 
+        end
         Zⁱ = s*μ/(2π) * log(rₒ/rᵢ) #insulator layer impedance -> eq 41 pag 24
         Pⁱ = log(rₒ/rᵢ) / (2π*ϵ) #p expression pag25 2nd row simulator_tutorial
 
@@ -260,12 +270,13 @@ end
 function eval_abcd(c :: Cable, s :: Complex)
     (Z, Y) = eval_parameters(c, s) #function eval_parameters receives in input variables c and s and gives in output the series impedance matrix Z and the shunt admittance matrix Y
     γ = sqrt(convert(Array{Complex}, Z*Y)) # conversion of arrays product Z*Y and then Γ=sqrt(Z*Y) -> Simulator tutorial pag 19, bottom page (Calculations same as transmission line case)
-    Yc = inv(Z) * γ #Always ottom page 19 simulator_tutorial
+    # γ = sqrt(Z*Y) #TODO: This line is added to replace the one on the top, which was giving problems for single DC cables (no transformation). Need to see if this will cause any issue with other components, but so far so good.
+    Yc = Z \ γ #Always ottom page 19 simulator_tutorial
     n = Int(size(Yc,1)) #Saves in n the number of rows present in the vector Yc
     abcd = zeros(Complex, 2n, 2n) #Creation of the ABCD matrix-> zeros matrix with dimension 2n*2n
 
     abcd[1:n, 1:n] = cosh(γ*c.length) #Eq 33 pag 19 simulator_tutorial. Matrix A[n*n]=cosh(Γl)
-    abcd[1:n,n+1:end] = inv(Yc) * sinh(γ*c.length) #Eq 33 pag 19 simulator_tutorial. Matrix B[n*n]=Yc^-1sinh(Γl)
+    abcd[1:n,n+1:end] = Yc \ sinh(γ*c.length) #Eq 33 pag 19 simulator_tutorial. Matrix B[n*n]=Yc^-1sinh(Γl)
     abcd[n+1:end,1:n] = Yc * sinh(γ*c.length) #Eq 33 pag 19 simulator_tutorial. Matrix C[n*n]=Ycsinh(Γl)
     abcd[n+1:end, n+1:end] = cosh(γ*c.length) #Eq 33 pag 19 simulator_tutorial. Matrix D[n*n]=cosh(Γl)
     return abcd

@@ -2,7 +2,7 @@
 # using .HVDCstability
 using DelimitedFiles
 using SymEngine
-
+#TODO: Not updated after a change in the way semiconducting layers are modeled. Insulator data not accurate.
 # semiconducting layers test
 net = @network begin
     #ac = "3-phase ac voltage source with V amplitude 380kV
