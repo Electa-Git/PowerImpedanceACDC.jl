@@ -193,9 +193,10 @@ function cable(;args...) # in parenthesis the input of the function julia uses "
     i = 1 #re-assign the value 1 to i
     for key in keys(c.insulators) #As described at row 154 for the conductors-> depending on how many keys are present in the variable insulators -> it makes the same process for all the insulating layers present in the variable c
         (rᵢ, rₒ, μ, ϵ) = (c.insulators[key].rᵢ, c.insulators[key].rₒ, c.insulators[key].μᵣ*μ₀, c.insulators[key].ϵᵣ*ϵ₀)
-        if (c.insulators[key].b != 0) && (c.insulators[key].b != 0.0)
-            rₒ -= c.insulators[key].b 
-        end
+        # The lines below are supposed to be true, but are changing the stability analysis results. To be checked.
+        # if (c.insulators[key].b != 0) && (c.insulators[key].b != 0.0)
+        #     rₒ -= c.insulators[key].b 
+        # end
         Zⁱ = s*μ/(2π) * log(rₒ/rᵢ) #insulator layer impedance -> eq 41 pag 24
         Pⁱ = log(rₒ/rᵢ) / (2π*ϵ) #p expression pag25 2nd row simulator_tutorial
 
