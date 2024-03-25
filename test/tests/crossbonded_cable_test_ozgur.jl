@@ -74,10 +74,10 @@ imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:N
 writedlm("./files/imp_abc_CB.csv",  imp, ',')
 writedlm("./files/w_abc_CB.csv",  omega, ',')
 
-imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1,:Node2, ],
-                                        output_pins= Any[:gnd1,:gnd2], omega_range = (0, 4, 1000))
-writedlm("./files/imp_dq_CB.csv",  imp, ',')
-writedlm("./files/w_dq_CB.csv",  omega, ',')
+# imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1,:Node2, ],
+#                                         output_pins= Any[:gnd1,:gnd2], omega_range = (0, 4, 1000))
+# writedlm("./files/imp_dq_CB.csv",  imp, ',')
+# writedlm("./files/w_dq_CB.csv",  omega, ',')
 
 
 # min_ω = 0
