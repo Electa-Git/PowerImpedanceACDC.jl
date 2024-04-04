@@ -8,6 +8,7 @@ qC2 = 100
 qC3 = 0
 qC4 = 100
 
+analysis = false
 # The P and Q defined here are what is injected into the network. 
 # The setpoint of the reactive power controller is minus the value set here. This is adjusted internally, no action here needed.
 @time net = @network begin
@@ -130,9 +131,9 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC1]),
-                vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
-                # vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
+                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -188,7 +189,7 @@ qC4 = 100
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664), # 10 Hz BW
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC2]),
                 vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qc4])
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC4])
                 # vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
                 )
         
@@ -308,6 +309,7 @@ qC4 = 100
 
 end
 
+if analysis
 # MMC = net.elements[:c1]
 # plot_data(MMC, omega_range = (0, 4, 1000), scale = :log)
 
@@ -432,3 +434,4 @@ title = "Nyquist plots at bus 5 (HVDC 2 terminals), both links in vAC control")
                 # l5 = impedance(z = 960 + s, pins = 3, transformation = true) 
         # l6 = impedance(z = 960 + s, pins = 3, transformation = true) 
         # l8 = impedance(z = 960 + s, pins = 3, transformation = true)
+end

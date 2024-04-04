@@ -273,6 +273,9 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
     init_init = zeros(8,1)
     init_init[4] = 1
     k_init = nlsolve(k!, init_init , autodiff = :forward, iterations = 200, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
+    if converged(k_init)
+        println("SG steady-state solution found!")
+    end
     equilibrium_init= k_init.zero #debug here
     # println("Inputs for the steady state solution")
     # println(inputs_init)

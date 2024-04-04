@@ -236,7 +236,7 @@ function power_flow(net :: Network)
     global ang_min, ang_max
     global max_gen
     #TODO: Check if this has to be LN-RMS or LL-RMS. Do the necessary changes internally after validations against PSCAD.
-    global_dict = PowerModelsMCDC.get_pu_bases(1000, 380) # 3-PH MVA, LL-RMS, Original setting was 100,320
+    global_dict = PowerModelsMCDC.get_pu_bases(1000, 380/sqrt(3)) # 3-PH MVA, LL-RMS, Original setting was 100,320
     global_dict["omega"] = 2π * 50
 
     ang_min = deg2rad(360)
@@ -553,9 +553,9 @@ function power_flow(net :: Network)
             print(update_string * string(id_converter) * " Reactive Power [MVar]: ")
             println(Qac)
             print(update_string * string(id_converter) * " AC Voltage Magnitude [kV]: ")
-            println(Vm)
+            println(Vm / (380*sqrt(2/3)))
             print(update_string * string(id_converter) * " AC Voltage Angle [rad]: ")
-            println(θ)
+            println(θ + pi/2)
             print(update_string * string(id_converter) * " DC Voltage [kV]: ")
             println(Vdc)
             id_converter += 1
@@ -587,15 +587,15 @@ function power_flow(net :: Network)
                 Vm = (result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["vm"] *
                         global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
                 θ = result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["va"]
+                update_gen(element.element_value, Pgen, Qgen, Vm, θ)
                 print("SG #" * string(id_gen) * " Active Power [MW]: ")
                 println(Pgen)
                 print("SG #" * string(id_gen) * " Reactive Power [MVar]: ")
                 println(Qgen)
                 print("SG #" * string(id_gen) * " AC Voltage Magnitude [kV]: ")
-                println(Vm)
+                println(Vm / (380*sqrt(2/3)))
                 print("SG #" * string(id_gen) * " AC Voltage Angle [rad]: ")
-                println(θ)
-                update_gen(element.element_value, Pgen, Qgen, Vm, θ)
+                println(θ + pi/2)
             end
             id_gen += 1
         end

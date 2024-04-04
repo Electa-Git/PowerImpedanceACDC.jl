@@ -41,9 +41,11 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     end
 
     if in(:vac_supp, keys(converter.controls))
-        ((dict["convdc"])[string(key)])["q_droop"] = converter.controls[:vac_supp].Kₚ
+        ((dict["convdc"])[string(key)])["acq_droop"] = 1
+        ((dict["convdc"])[string(key)])["kq_droop"] = converter.controls[:vac_supp].Kₚ
     else
-        ((dict["convdc"])[string(key)])["q_droop"] = 0
+        ((dict["convdc"])[string(key)])["acq_droop"] = 0
+        ((dict["convdc"])[string(key)])["kq_droop"] = 0
     end
 
     # droop control - not implemented

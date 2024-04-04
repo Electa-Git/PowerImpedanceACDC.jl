@@ -143,7 +143,7 @@ qC4 = 100
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC1]),
                 # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
                 # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
-                vac = PI_control(Kₚ = 0, Kᵢ = 100)
+                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -288,10 +288,10 @@ end
 # MMC = net.elements[:c1]
 # plot_data(MMC, omega_range = (0, 4, 1000), scale = :log)
 
-@time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
-output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
+# @time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
+# output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
 
-writedlm("./files/imp_dq_MMC_SG.csv",  imp_ac1, ',')
-writedlm("./files/w_dq_MMC_SG.csv",  omega_ac1, ',')
+# writedlm("./files/imp_dq_MMC_SG.csv",  imp_ac1, ',')
+# writedlm("./files/w_dq_MMC_SG.csv",  omega_ac1, ',')
 
 
