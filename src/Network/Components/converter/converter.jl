@@ -23,13 +23,13 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
         # TODO: The line below sometimes gives errors during power flow (NUMERICAL_ERROR)
         dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["bus_type"] = 2 # Not entirely sure if this is necessary.
         if in(:vac, keys(converter.controls))
-            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac].ref[1]
+            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac].ref[1] * 1e3 / (global_dict["V"] * sqrt(2))
         else
-            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac_supp].ref[1]
+            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac_supp].ref[1] * 1e3 / (global_dict["V"] * sqrt(2))
         end
         dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["vm"] = ((dict["convdc"])[string(key)])["Vtar"]
     else
-        ((dict["convdc"])[string(key)])["type_ac"] = 1  # PQ ac bus TODO: Check if this makes sense.
+        ((dict["convdc"])[string(key)])["type_ac"] = 1  # PQ ac bus TODO: Check if this makes sense in the presence of GFM
         ((dict["convdc"])[string(key)])["Vtar"] = converter.Vₘ * 1e3 / global_dict["V"]
     end
     if in(:p, keys(converter.controls))

@@ -16,6 +16,8 @@ qC4 = 100
 # The setpoint of the reactive power controller is minus the value set here. This is adjusted internally, no action here needed.
 # For voltage controlling converters the voltage references have to be defined inside the corresponding voltage controller!!
 @time net = @network begin
+
+        voltageBase = transmissionVoltage
     
         g1 = ac_source(V = transmissionVoltage, P = pHVDC1, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
 
@@ -29,9 +31,9 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 # ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [transmissionVoltage*sqrt(2)]),
                 # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC1]),
-                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0]),
+                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [transmissionVoltage*sqrt(2)]),
                 dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
                 )
         # MMC2 controls P&Q. It is connected to bus 7. Define the transformer impedance parameters at the converter side!
@@ -44,9 +46,9 @@ qC4 = 100
                 # ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC1]),
-                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [transmissionVoltage*sqrt(2)]),
                 # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
-                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
+                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [transmissionVoltage*sqrt(2)])
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],

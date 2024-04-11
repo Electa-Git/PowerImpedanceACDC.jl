@@ -1,5 +1,6 @@
 using DelimitedFiles,SymEngine,HVDCstability
 s = symbols("s")
+# Old file, not updated. Contains an MMC with SI controller gains.
 @time net = @network begin
     
         

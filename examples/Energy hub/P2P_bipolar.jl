@@ -33,6 +33,8 @@ Rtrafo_onshore = 0.005 * Ztrafo_base_onshore
 
 net = @network begin
 
+    voltageBase = Vm_onshore
+
     Zg1 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
     Zg2 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
 

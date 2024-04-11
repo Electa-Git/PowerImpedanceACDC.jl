@@ -295,6 +295,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     if in(:q, keys(converter.controls))
         converter.controls[:q].ref[1] /= -Sbase # The minus sign corrects for the Q convention used in the model.
         if in(:vac_supp, keys(converter.controls))
+            converter.controls[:vac_supp].ref[1] /= (vAC_base / converter.turnsRatio)
             push!(exp.args, :(
                 Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
                 Δq_unf = $(converter.controls[:vac_supp].Kₚ)*($(converter.controls[:vac_supp].ref[1])-Vᴳ_mag);
@@ -316,6 +317,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             F[$index+1] = $(converter.controls[:q].Kᵢ) *(q_ref - Q_ac)))
         index += 1
     elseif in(:vac, keys(converter.controls))
+        converter.controls[:vac].ref[1] /= (vAC_base / converter.turnsRatio)
         push!(exp.args, :(
             Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
             iΔq_ref = ($(converter.controls[:vac].Kₚ) * ($(converter.controls[:vac].ref[1]) - Vᴳ_mag) +
@@ -323,7 +325,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             F[$index+1] = $(converter.controls[:vac].Kᵢ) *($(converter.controls[:vac].ref[1]) - Vᴳ_mag)
         ))
         index +=1
-        # epsilon_vac_index = index + 1
+        epsilon_vac_index = index + 1
     else 
         push!(exp.args, :(
             iΔq_ref = $Qac))
@@ -547,16 +549,17 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             F[$epsilon_vdc_index] = $(converter.controls[:dc].Kᵢ) * ($(converter.controls[:dc].ref[1]) - x[end]);
         ))
     end
-    # if in(:vac, keys(converter.controls))
-    #     init_x =[init_x;Vm;0]
-    #     push!(exp_steadyState.args,
-    #     :(
-    #         F[$index+1] = $wbase * ($Id - x[1]) / 1e-9;
-    #         F[$index+2] = $wbase * ($Iq - x[2]) / 1e-9;
-    #         Vᴳ_mag_SS = sqrt(x[end-1]^2 + x[end]^2);
-    #         F[$epsilon_vac_index] = $(converter.controls[:vac].Kᵢ) *($(converter.controls[:vac].ref[1]) - Vᴳ_mag_SS);
-    #     ))
-    # end
+    if in(:vac, keys(converter.controls))
+        init_x[epsilon_vac_index] = Iq
+        # init_x =[init_x;Vm;0]
+        # push!(exp_steadyState.args,
+        # :(
+        #     F[$index+1] = $wbase * ($Id - x[1]) / 1e-9;
+        #     F[$index+2] = $wbase * ($Iq - x[2]) / 1e-9;
+        #     Vᴳ_mag_SS = sqrt(x[end-1]^2 + x[end]^2);
+        #     F[$epsilon_vac_index] = $(converter.controls[:vac].Kᵢ) *($(converter.controls[:vac].ref[1]) - Vᴳ_mag_SS);
+        # ))
+    end
 
     g!(F,x) = f!(exp_steadyState, F, x, vector_inputs)
     # TODO: Check if it makes sense to use newton or trust_region
@@ -566,7 +569,6 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     if converged(k)
         println("MMC steady-state solution found!")
     end
-    converter.equilibrium = k.zero
     # if in(:dc, keys(converter.controls))
     #     converter.equilibrium = converter.equilibrium[1:end-1]
     # end

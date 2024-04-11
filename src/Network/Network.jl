@@ -22,7 +22,8 @@ struct Network
     elements::OrderedDict{Symbol, Element}
     nets :: Dict{Symbol, Net}
     connections :: Dict{Symbol, Net}
-    Network() = new(OrderedDict{Symbol, Element}(), Dict{Symbol, Net}(), Dict{Symbol, Vector{Int}}())
+    voltageBase :: Array{Float64,1} # Network line-ground RMS voltage base used in the power flow. This is necessary to get a matching power flow result in the presence of voltage controlling converters.
+    Network() = new(OrderedDict{Symbol, Element}(), Dict{Symbol, Net}(), Dict{Symbol, Vector{Int}}(), [220/sqrt(3)])
 end
 
 # adding elements
@@ -236,7 +237,7 @@ function power_flow(net :: Network)
     global ang_min, ang_max
     global max_gen
     #TODO: Check if this has to be LN-RMS or LL-RMS. Do the necessary changes internally after validations against PSCAD.
-    global_dict = PowerModelsMCDC.get_pu_bases(1000, 380/sqrt(3)) # 3-PH MVA, LL-RMS, Original setting was 100,320
+    global_dict = PowerModelsMCDC.get_pu_bases(1000, net.voltageBase[1]) # 3-PH MVA, LL-RMS, Original setting was 100,320
     global_dict["omega"] = 2π * 50
 
     ang_min = deg2rad(360)
@@ -552,10 +553,10 @@ function power_flow(net :: Network)
             println(Pac)
             print(update_string * string(id_converter) * " Reactive Power [MVar]: ")
             println(Qac)
-            print(update_string * string(id_converter) * " AC Voltage Magnitude [kV]: ")
-            println(Vm / (380*sqrt(2/3)))
+            print(update_string * string(id_converter) * " AC Voltage Magnitude [pu]: ")
+            println(result["solution"]["bus"][string(data["convdc"][string(id_converter)]["busac_i"])]["vm"])
             print(update_string * string(id_converter) * " AC Voltage Angle [rad]: ")
-            println(θ + pi/2)
+            println(θ)
             print(update_string * string(id_converter) * " DC Voltage [kV]: ")
             println(Vdc)
             id_converter += 1
@@ -592,10 +593,10 @@ function power_flow(net :: Network)
                 println(Pgen)
                 print("SG #" * string(id_gen) * " Reactive Power [MVar]: ")
                 println(Qgen)
-                print("SG #" * string(id_gen) * " AC Voltage Magnitude [kV]: ")
-                println(Vm / (380*sqrt(2/3)))
+                print("SG #" * string(id_gen) * " AC Voltage Magnitude [pu]: ")
+                println(result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["vm"])
                 print("SG #" * string(id_gen) * " AC Voltage Angle [rad]: ")
-                println(θ + pi/2)
+                println(θ)
             end
             id_gen += 1
         end
@@ -670,6 +671,10 @@ macro network(cdef)
             elemspec = expr.args[2].args[1]
             conn_exprs = expr.args[2].args[2:end]
         else
+            if expr.args[1] == :voltageBase
+                push!(ccode.args, :(network.voltageBase[1] = $(esc(expr.args[2]))))
+                return
+            end
             elemspec = expr.args[2]
             conn_exprs = []
         end

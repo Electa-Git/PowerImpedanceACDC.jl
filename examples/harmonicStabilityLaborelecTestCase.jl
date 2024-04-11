@@ -7,7 +7,7 @@ reactivePower1 = 0
 reactivePower2 = 0
 @time net = @network begin
     
-        
+        voltageBase = ACvoltage
         g2 = ac_source(V = ACvoltage, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, P = -activePower, Q = reactivePower2, pins = 3, transformation = true)
         g1 = ac_source(V = ACvoltage, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, P = activePower, Q = reactivePower1, pins = 3, transformation = true)
 
@@ -55,8 +55,8 @@ reactivePower2 = 0
                 # occ = PI_control(Kₚ = 1.1178, Kᵢ = 1.012e3), # 200 Hz
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ =12.5664),
-                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [activePower]),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [reactivePower2]),
                 timeDelay = 116e-6, padeOrderNum = 3, padeOrderDen =3
                 )
 
@@ -66,8 +66,8 @@ reactivePower2 = 0
                 # occ = PI_control(Kₚ = 1.1178, Kᵢ = 1.012e3), # 200 Hz
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ =12.5664),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0]),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [reactivePower1])
                 )
         # Paper Aleksandra with a PLL
         # c2 = mmc(Vᵈᶜ = DCvoltage, Vₘ = ACvoltage, Rᵣ = 0,

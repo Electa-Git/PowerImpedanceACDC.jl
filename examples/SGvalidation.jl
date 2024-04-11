@@ -2,6 +2,8 @@ using DelimitedFiles,SymEngine
 s = symbols("s")
 @time net = @network begin
 
+        voltageBase = 380/sqrt(3)
+
         # Values used in the SG validation
     
         sg1 = synchronousmachine(V = 1.01 * 380/sqrt(3),  Vᵃᶜ_base = 380.0, P = 900, P_max = 1000)

@@ -4,6 +4,7 @@ voltage = 380/sqrt(3)
 pHVDC = 100
 @time net = @network begin
 
+        voltageBase = voltage
         g2 = ac_source(V = voltage, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
         
         # PU gains
@@ -12,8 +13,8 @@ pHVDC = 100
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC]),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [0.0])
                 )
 
         c1 = mmc(Vᵈᶜ = 640, Vₘ = voltage,
@@ -21,8 +22,8 @@ pHVDC = 100
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15)
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [0.0]),
+                dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
                 )
 
         c1[1.1] == c2[1.1] == BusDC
