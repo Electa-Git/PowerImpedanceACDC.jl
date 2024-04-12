@@ -237,7 +237,7 @@ function power_flow(net :: Network)
     global ang_min, ang_max
     global max_gen
     #TODO: Check if this has to be LN-RMS or LL-RMS. Do the necessary changes internally after validations against PSCAD.
-    global_dict = PowerModelsMCDC.get_pu_bases(1000, net.voltageBase[1]) # 3-PH MVA, LL-RMS, Original setting was 100,320
+    global_dict = PowerModelsACDC.get_pu_bases(1000, net.voltageBase[1]) # 3-PH MVA, LL-RMS, Original setting was 100,320
     global_dict["omega"] = 2π * 50
 
     ang_min = deg2rad(360)
@@ -514,7 +514,7 @@ function power_flow(net :: Network)
         end
     end
 
-    PowerModelsMCDC.process_additional_data!(data)
+    PowerModelsACDC.process_additional_data!(data)
     ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
@@ -542,9 +542,6 @@ function power_flow(net :: Network)
             if isa(element.element_value, MMC)
                 update_string = "MMC #"
                 update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
-            elseif isa(element.element_value, MMC_BI)
-                update_string = "MMC #"
-                update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc/2, -Vdc/2, Pdc)
             else
                 update_string = "TLC #"
                 update_tlc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)

@@ -33,6 +33,7 @@ net = @network begin
                 dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
                 )
         # MMC2 controls P&Q.
+        # Total energy controller not considered in the validations.
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
                 P_max = 1000, P_min = -1000, P = pHVDC1, Q = qC2, Q_max = 1000, Q_min = -1000,
                 # vACbase_LL_RMS = 333, turnsRatio = 333/380, Lᵣ = 0.0461, Rᵣ = 0.4103,
@@ -40,6 +41,8 @@ net = @network begin
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
+                energy = PI_control(Kₚ = 2.7023, Kᵢ = 121.2777, ref = [1.0]),
+                zcc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC1]),
                 # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [transmissionVoltage*sqrt(2)]),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
@@ -94,10 +97,10 @@ net = @network begin
 
 end
 
-# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus2d,:Bus2q], 
-# output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
-@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g4], input_pins=Any[:Bus1d,:Bus1q], 
+@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus2d,:Bus2q], 
 output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
+# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g4], input_pins=Any[:Bus1d,:Bus1q], 
+# output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
 
 writedlm("./files/imp_P2P_validation.csv",  imp_ac, ',')
 writedlm("./files/w_P2P_validation.csv",  omega_ac, ',')

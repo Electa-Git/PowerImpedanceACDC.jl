@@ -89,25 +89,8 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     ((dict["convdc"])[string(key)])["Pacmax"] = converter.P_max
     ((dict["convdc"])[string(key)])["Pacmin"] = converter.P_min
 
-    # Add bipolar converter data for PowerModelsMCDC
-    if typeof(converter) == MMC_BI
-        ((dict["convdc"])[string(key)])["conv_confi"] = 2
-        if converter.Vᵈᶜᵘ == 0 || converter.Vᵈᶜˡ == 0
-            if converter.Vᵈᶜᵘ > 0 || converter.Vᵈᶜˡ > 0
-                ((dict["convdc"])[string(key)])["connect_at"] = 1 # Converter is connected between positive and neutral buses
-            else
-                ((dict["convdc"])[string(key)])["connect_at"] = 2 # Converter is connected between negative and neutral buses
-            end
-        else
-            ((dict["convdc"])[string(key)])["connect_at"] = 0 # Converter is connected between positive and negative buses
-        end
-        # TODO: By default both poles are active. Check if it makes sense to  change this.  
-        ((dict["convdc"])[string(key)])["status_p"] = 1
-        ((dict["convdc"])[string(key)])["status_n"] = 1
-    else
-        ((dict["convdc"])[string(key)])["conv_confi"] = 1
-    end
-    ((dict["convdc"])[string(key)])["ground_type"] = 0 # TODO: To be updated for the MCDC case.
+    
+    
     key_o = ((dict["convdc"])[string(key)])["busac_i"]
     if (dict["bus"][string(key_o)]["bus_type"] == 1)
         dict["bus"][string(key_o)]["vm"] = ((dict["convdc"])[string(key)])["Vtar"]
