@@ -31,7 +31,7 @@ singleTerminalAnalysis = false
 
 net = @network begin
 
-    voltageBase = transmissionVoltage
+    voltageBase = Vm
 
     Zg3 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
 
