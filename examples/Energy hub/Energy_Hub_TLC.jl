@@ -8,6 +8,7 @@ using DelimitedFiles
 using SymEngine
 using Plots
 using LinearAlgebra
+using HVDCstability
 
 s = symbols("s")
 
@@ -33,7 +34,7 @@ singleTerminalAnalysis = false
 
 net = @network begin
 
-    voltageBase = transmissionVoltage
+    voltageBase = Vm
     
     Zg1 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
     Zg3 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
