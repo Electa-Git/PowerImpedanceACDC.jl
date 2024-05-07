@@ -19,7 +19,7 @@ include("controller.jl")
     Vᵈᶜ :: Union{Int, Float64} = 640            # DC-bus voltage [kV]
 
     Lₐᵣₘ :: Union{Int, Float64}  = 50e-3        # arm inductance [H]
-    Rₐᵣₘ :: Union{Int, Float64}  = 1.07         # equivalent arm resistance
+    Rₐᵣₘ :: Union{Int, Float64}  = 1.07         # equivalent arm resistance[Ω]
     Cₐᵣₘ :: Union{Int, Float64}  = 10e-3        # capacitance per submodule [F]
     N :: Int = 400                              # number of submodules per arm
 
@@ -100,7 +100,6 @@ function mmc(;args...)
         end
     end
 
-    # Check for double controller implementation. Quick and dirty so far
     # TODO: Error handling for further unreasonable controller implementations, such as....
 #=     
     if haskey(converter.controls,....) && haskey(converter.controls,....)
@@ -193,8 +192,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
 
         end
 
-
-        # fix reference values and fill init_x with the initial values for the MMC states only
+        # TODO: Decide on default reference for the grid forming controls and fill here
         if (key == :occ)
             if (length(val.ref) == 1) && (val.ref[1] == 0) # no reference existent 
                 val.ref = [Id Iq]
@@ -203,7 +201,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             init_x[2] = val.ref[2]
         elseif (key == :energy)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
-                val.ref[1] = 3 * (Cₐᵣₘ * Vdc^2)/ N #per unit
+                val.ref[1] = 1 #3 * (Cₐᵣₘ * Vdc^2)/ N #per unit
             end
         elseif (key == :zcc)
             if (length(val.ref) == 1) && (val.ref[1] == 0)
@@ -242,29 +240,56 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     vdc_position = 12
     
     exp = Expr(:block) # Start construction of the state-space equations
-    # Add init_x every time state derivative is defined ??? Nice solutions 
-    # add PLL
+
+    # TODO: Add code before to define transformation matrices generally, like in TLC.jl. Determine the statenumber based on if statements
+    index = 12;
     if in(:pll, keys(converter.controls))
-    
-        push!(exp.args, :(# θ = x[14]
-                        T_θ = [cos(x[14]) -sin(x[14]); sin(x[14]) cos(x[14])];
-                        I_θ = [cos(x[14]) sin(x[14]); -sin(x[14]) cos(x[14])];
-                        T_2θ = [cos(-2x[14]) -sin(-2x[14]); sin(-2x[14]) cos(-2x[14])];
-                        I_2θ = [cos(-2x[14]) sin(-2x[14]); -sin(-2x[14]) cos(-2x[14])];
-                        (Vᴳd, Vᴳq) = T_θ * [inputs[2] * $converter.turnsRatio; inputs[3] * $converter.turnsRatio];  # Vgd: Input 1 and Vgq: Input 2
-                        F[13] = -Vᴳq*$(converter.controls[:pll].Kᵢ);
-                        Δω = $(converter.controls[:pll].Kₚ) * (-Vᴳq) + x[13];
-                        ω = $(converter.ω₀)/$wbase + Δω;
-                        F[14] = $wbase*Δω;
+        
 
-                         
-                        ))
+        if (((converter.controls[:pll].n_f)) == 1 ) && (converter.gfm) #1st order butterworth only Francesco's model so far 
 
+            push!(exp.args, :(
+            Δθ_pll=x[14];
+            Δθᵥ = x[19];
+            T_θ_pll = [cos(Δθ_pll) -sin(Δθ_pll); sin(Δθ_pll) cos(Δθ_pll)];
+            T_θ = [cos(Δθᵥ) -sin(Δθᵥ); sin(Δθᵥ) cos(Δθᵥ)];
+            I_θ = [cos(Δθᵥ) sin(Δθᵥ); -sin(Δθᵥ) cos(Δθᵥ)];
+            T_2θ = [cos(-2Δθᵥ) -sin(-2Δθᵥ); sin(-2Δθᵥ) cos(-2Δθᵥ)];
+            I_2θ = [cos(-2Δθᵥ) sin(-2Δθᵥ); -sin(-2Δθᵥ) cos(-2Δθᵥ)];
+            (Vᴳd_pll, Vᴳq_pll) = T_θ_pll * [inputs[2] * $converter.turnsRatio; inputs[3] * $converter.turnsRatio];  # Vgd: Input 1 and Vgq: Input 2
+            F[13] = x[15]*$(converter.controls[:pll].Kᵢ);
+            Δω = ($(converter.controls[:pll].Kₚ) * x[15]) + x[13]; #Delta omega_pll [pu]
+            ω = $(converter.ω₀)/$wbase + Δω;
+            F[14] = $wbase*Δω; 
+            F[15] = -(Vᴳq_pll+ x[15])*$(converter.controls[:pll].ω_f);
+            (Vᴳd, Vᴳq) = T_θ * [inputs[2] * $converter.turnsRatio; inputs[3] * $converter.turnsRatio]; #Vd_grid input 2 and Vq_grid input 3 both expressed in the grid frame and at grid side
+            ))
+            init_x = [init_x;zeros(index-length(init_x))];
+            init_x = [init_x;0;θ;0];
+            index += 3;
+            
+        
+        
+        # TODO: Implement PLL with arbitary butterworth filtering
+        else
+            push!(exp.args, :(# θ = x[14]
+            T_θ = [cos(x[14]) -sin(x[14]); sin(x[14]) cos(x[14])];
+            I_θ = [cos(x[14]) sin(x[14]); -sin(x[14]) cos(x[14])];
+            T_2θ = [cos(-2x[14]) -sin(-2x[14]); sin(-2x[14]) cos(-2x[14])];
+            I_2θ = [cos(-2x[14]) sin(-2x[14]); -sin(-2x[14]) cos(-2x[14])];
+            (Vᴳd, Vᴳq) = T_θ * [inputs[2] * $converter.turnsRatio; inputs[3] * $converter.turnsRatio];  # Vgd: Input 1 and Vgq: Input 2
+            F[13] = -Vᴳq*$(converter.controls[:pll].Kᵢ);
+            Δω = $(converter.controls[:pll].Kₚ) * (-Vᴳq) + x[13];
+            ω = $(converter.ω₀)/$wbase + Δω;
+            F[14] = $wbase*Δω;
 
+            ))
 
+            index += 2;
+        end
 
-                        #init_x = [init_x;theta_pll] remember to increment with the number of states, even if the initial condition is zero
-        index = 14
+                        
+        
     else
         push!(exp.args, :(
                         T_θ = [1 0; 0 1];
@@ -274,24 +299,70 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         Vᴳd = inputs[2] * $converter.turnsRatio;
                         Vᴳq = inputs[3] * $converter.turnsRatio;
                         ω = $(converter.ω₀)))
-        index = 12
+        
     end
-    push!(exp.args, :((iΔd, iΔq) = T_θ * [x[1]; x[2]]; # Currents in grid dq frame defined: x1 and x2, see circuit
-                      (iΣd, iΣq) = T_2θ * [x[3]; x[4]];
-                      Vdc = inputs[1])) #Vdc voltage input 1 
 
-    if in(:p, keys(converter.controls))
-        # active power control
+    push!(exp.args, :((iΔd, iΔq) = T_θ * [x[1]; x[2]]; # Currents in grid dq frame defined: x1 and x2, see circuit equations far below 
+    (iΣd, iΣq) = T_2θ * [x[3]; x[4]];
+    Vdc = inputs[1])) #Vdc voltage input 1 
+
+
+    if in(:p, keys(converter.controls)) # P control
+    
         converter.controls[:p].ref[1] /= Sbase # conversion back to pu again
         push!(exp.args, :(
-            # Pac = (3/2)*(Vgd*iΔd + Vgq*iΔq)
-            P_ac = (Vᴳd * iΔd + Vᴳq * iΔq);
-            # iΔd_ref = (Kp_Pac * (Pac_ref - Pac) + Ki_Pac * xiPac);
-            iΔd_ref = ($(converter.controls[:p].Kₚ) * ($(converter.controls[:p].ref[1]) - P_ac) +
-                         x[$index+1]);
-            F[$index+1] = $(converter.controls[:p].Kᵢ) *($(converter.controls[:p].ref[1]) - P_ac)))
-        index += 1
-    elseif in(:dc, keys(converter.controls))
+                P_ac = (Vᴳd * iΔd + Vᴳq * iΔq);))
+
+       if isa(converter.controls[:p], VSE) && (converter.gfm) #VSE with grid-forming converter
+
+            # TODO: Implement arbitary order of butterworth filtering
+            if ((converter.controls[:p].n_f)) == 2 # 2nd order butterworth P filtering like Francesco's model
+            push!(exp.args, :(
+                F[$index+1]=x[$index+2];  #eta_1
+                F[$index+2]=-($(converter.controls[:p].ω_f))^2 *x[$index+1]-sqrt(2)*$(converter.controls[:p].ω_f)*x[$index+2]+($(converter.controls[:p].ω_f))^2 *P_ac; #eta_2
+                P_ac_f=x[$index+1]))
+                
+            init_x = [init_x;zeros(index-length(init_x))];
+            init_x = [init_x;Pac;0];
+            index += 2
+            
+            else #No P filtering
+            
+
+            end
+        # Swing equation
+        push!(exp.args, :(
+            ωᵥ= x[$index+1]; # Actually delta Omega_VSM, relative angle [pu]. With initial conditions it becomes absolute: ωᵥ = Δωᵥ + ωᵥ(0)
+            F[$index+1] =($(converter.controls[:p].ref[1]) - P_ac_f - $(converter.controls[:p].K_d)*(ωᵥ-(Δω+1)) -  $(converter.controls[:p].K_ω)*(ωᵥ - $(converter.controls[:p].ref_ω)))/(2*$(converter.controls[:p].H)) ;
+            F[$index+2] =$wbase*(x[$index+1]-1); 
+            ))
+        init_x = [init_x;zeros(index-length(init_x))];
+        init_x = [init_x;1;θ]; # Setting Delta Theta_VSM could be a problem for larger angles?
+        index += 2
+
+       elseif isa(converter.controls[:p], VSE) && !(converter.gfm) #VSE with grid-following converter
+
+
+
+       elseif isa(converter.controls[:p], PI_control) && !(converter.gfm) #P control with grid-following converter
+        
+            # active power control
+            # TODO: Implement arbitary order of butterworth filtering
+            push!(exp.args, :(
+                # Pac = (3/2)*(Vgd*iΔd + Vgq*iΔq)
+                #P_ac = (Vᴳd * iΔd + Vᴳq * iΔq);
+                # iΔd_ref = (Kp_Pac * (Pac_ref - Pac) + Ki_Pac * xiPac);
+                iΔd_ref = ($(converter.controls[:p].Kₚ) * ($(converter.controls[:p].ref[1]) - P_ac) +
+                            x[$index+1]);
+                F[$index+1] = $(converter.controls[:p].Kᵢ) *($(converter.controls[:p].ref[1]) - P_ac)))
+            index += 1
+
+       end
+
+
+       
+
+    elseif in(:dc, keys(converter.controls)) # DC voltage control
         # With a DC voltage filter
         # push!(exp.args, :(
         #         F[$index+1] = $(converter.controls[:dc].ω_f) *(Vdc - x[$index+1]);
@@ -324,6 +395,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     end
     if in(:q, keys(converter.controls))
         converter.controls[:q].ref[1] /= -Sbase # The minus sign corrects for the Q convention used in the model.
+        
+        # Voltage droop control
         if in(:vac_supp, keys(converter.controls))
             push!(exp.args, :(
                 Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
@@ -335,16 +408,49 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             push!(exp.args, :(
                 q_ref = $(converter.controls[:q].ref[1])))
         end
-        # reactive power control
         push!(exp.args, :(
+            Q_ac =  (Vᴳq * iΔd - Vᴳd * iΔq);))
+        # Reactive power control
+        if (converter.gfm) # Q control for GFM
+
+            # TODO: Implement arbitary order of butterworth filtering
+            if ((converter.controls[:q].n_f)) == 2 # Q Filtering second order butterworth
+                push!(exp.args, :(
+                    F[$index+1]=x[$index+2];  #eta_1
+                    F[$index+2]=-($(converter.controls[:q].ω_f))^2 *x[$index+1]-sqrt(2)*$(converter.controls[:q].ω_f)*x[$index+2]+($(converter.controls[:q].ω_f))^2 *Q_ac; #eta_2
+                    Q_ac_f=x[$index+1]))
+                init_x = [init_x;zeros(index-length(init_x))];
+                init_x = [init_x;Qac;0];
+                index += 2
+                
+            else #TODO: Implement without filtering
+                #Q_ac_f = Q_ac
+            end
+            push!(exp.args, :(
+                F[$index+1]=$(converter.controls[:q].Kᵢ)*(q_ref - Q_ac_f);
+                Vⱽd_ref=-($(converter.controls[:q].Kₚ)*(q_ref - Q_ac_f) + x[$index+1]);
+            ))
+            index += 1
+            
+            
+
+
+
+
+
+        else # TODO: Implement arbitary order of butterworth filtering
+            push!(exp.args, :(
 
             # Q_ac = (3/2)*(Vgq*iΔd - Vgd*iΔq)
-            Q_ac =  (Vᴳq * iΔd - Vᴳd * iΔq);
             # iΔq_ref = -(Kp_Qac * (Qac_ref - Qac) + Ki_Qac * xiQac);
             iΔq_ref = -($(converter.controls[:q].Kₚ) * (q_ref - Q_ac) +
                          x[$index+1]);
             F[$index+1] = $(converter.controls[:q].Kᵢ) *(q_ref - Q_ac)))
-        index += 1
+            index += 1
+
+        end
+        
+    
     elseif in(:vac, keys(converter.controls))
         push!(exp.args, :(
             Vᴳ_mag = sqrt(Vᴳd^2+Vᴳq^2);
@@ -358,6 +464,60 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
         push!(exp.args, :(
             iΔq_ref = $Qac))
     end
+
+    # Virtual impedance
+
+    if in(:VI, keys(converter.controls))
+
+        # TODO: Implement arbitary order of butterworth filtering
+        if ((converter.controls[:VI].n_f)) == 2 # Voltage Filtering second order butterworth
+
+            #Voltage filtering of Vᴳd
+            push!(exp.args, :(
+                F[$index+1]=x[$index+2];  #eta_1
+                F[$index+2]=-($(converter.controls[:VI].ω_f))^2 *x[$index+1]-sqrt(2)*$(converter.controls[:VI].ω_f)*x[$index+2]+($(converter.controls[:VI].ω_f))^2 *Vᴳd; #eta_2
+                Vᴳd_f=x[$index+1]))
+
+            init_x = [init_x;zeros(index-length(init_x))];
+            init_x = [init_x;Vm * cos(θ);0];
+            index += 2
+            
+
+
+            #Voltage filtering of Vᴳq
+            push!(exp.args, :(
+                F[$index+1]=x[$index+2];  #eta_1
+                F[$index+2]=-($(converter.controls[:VI].ω_f))^2 *x[$index+1]-sqrt(2)*$(converter.controls[:VI].ω_f)*x[$index+2]+($(converter.controls[:VI].ω_f))^2 *Vᴳq; #eta_2
+                Vᴳq_f=x[$index+1]))
+
+                init_x = [init_x;zeros(index-length(init_x))];
+                init_x = [init_x;-Vm * sin(θ);0];
+                index += 2
+
+        else #TODO: Implement without filtering
+                # Vᴳq_f= Vᴳq ...
+        end
+
+        
+        if isa(converter.controls[:VI], CCQSEM)
+            
+            push!(exp.args, :(
+                
+                iΔd_ref=($(converter.controls[:VI].Rᵥ)*(($(converter.controls[:VI].ref_vd)+Vⱽd_ref)-Vᴳd_f) + ωᵥ*$(converter.controls[:VI].Lᵥ)*(Vᴳq_f-$(converter.controls[:VI].ref_vq)))/(($(converter.controls[:VI].Rᵥ))^2+ωᵥ^2*($(converter.controls[:VI].Lᵥ))^2);
+                iΔq_ref=($(converter.controls[:VI].Rᵥ)*($(converter.controls[:VI].ref_vq)-Vᴳq_f) + ωᵥ*$(converter.controls[:VI].Lᵥ)*(-Vᴳd_f+($(converter.controls[:VI].ref_vd)+Vⱽd_ref)))/(($(converter.controls[:VI].Rᵥ))^2+ωᵥ^2*($(converter.controls[:VI].Lᵥ))^2)
+
+                ))
+        
+        else
+
+        end
+
+    
+
+
+
+    end
+
     # add control equations
     for (key, val) in (converter.controls)
         if (key == :ccc)
@@ -564,8 +724,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     #     init_x = [init_x; zeros(index-12,1)]
     # end
 
-    vector_inputs = [Vdc, Vᴳd, Vᴳq] # Inputs to the system for the steady state solution!
-    init_x = [init_x; zeros(index-12,1)]
+    vector_inputs = [Vdc, Vᴳd, Vᴳq] # Inputs to the system for the steady state solution and linearization
+    init_x=[init_x;zeros(index-length(init_x))]; ################################ATTENTION!!!!!#####################
 
     # If there is a dc voltage controller, add an additional equation to represent the dc voltage, only for the steady-state solution
     exp_steadyState = copy(exp) # copy the state-space formulation f 
@@ -596,7 +756,6 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     if converged(k)
         println("MMC steady-state solution found!")
     end
-    converter.equilibrium = k.zero
     # if in(:dc, keys(converter.controls))
     #     converter.equilibrium = converter.equilibrium[1:end-1]
     # end
@@ -642,11 +801,11 @@ function eval_parameters(converter :: MMC, s :: Complex)
 
     Y[1,:] *= converter.iDCbase
     Y[:,1] /= converter.vDCbase
-    Y[2:3,:] *= converter.iACbase
-    # Multiplication with the AC voltage base converts the pu admittance to SI.
-    # The double division with the turns ratio is actually a multiplication,
-    # and is needed to bring the grid-side voltage to the converter side.
-    Y[:,2:3] /= (converter.vACbase / converter.turnsRatio)
+    Y[2:3,:] *= converter.iACbase # Base current of the converter side 
+    # # # Multiplication with the AC voltage base converts the pu admittance to SI.
+    # # # The double division with the turns ratio is actually a multiplication,
+    # # # and is needed to bring the grid-side voltage to the converter side.
+    Y[:,2:3] /= (converter.vACbase / converter.turnsRatio) # Base voltage at the grid side 
     
 
     return Y
@@ -712,7 +871,7 @@ function timeDelayPadeMatrices(padeOrderNum,padeOrderDen,t_delay,numberVars)
             end
         end
     end
-    # Original implementation, resulting in a SingularException for Pade orders larger than 3.
+    #Original implementation, resulting in a SingularException for Pade orders larger than 3.
     # T=inv(T_inv);
     # Ad=T*Ad*T_inv;
     # Bd=T*Bd;
