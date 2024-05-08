@@ -97,10 +97,10 @@ net = @network begin
 
 end
 
-@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus2d,:Bus2q], 
-output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
-# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g4], input_pins=Any[:Bus1d,:Bus1q], 
+# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus2d,:Bus2q], 
 # output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
+@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g4], input_pins=Any[:Bus1d,:Bus1q], 
+output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
 
 writedlm("./files/imp_P2P_validation.csv",  imp_ac, ',')
 writedlm("./files/w_P2P_validation.csv",  omega_ac, ',')
