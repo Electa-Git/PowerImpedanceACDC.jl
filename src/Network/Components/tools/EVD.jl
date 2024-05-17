@@ -263,13 +263,15 @@ function EVD(Zcl_bus, omega, fmin, fmax,determinant=false)
 
 
     # (2) For each eigenvalue the PND criterion is applied
-    min_real_lambda = zeros(λₙ, 1)
+    min_real_lambda = zeros(λₙ, 2) # First column is the value and second the index
     for i in 1:λₙ
         # Find the zero crossing of the imaginary part (oscillatory modes)
         sign_changes = diff(signbit.(imag_lambda[index_fmin:index_fmax,i])) .!= 0
         critical_points_PND = findall(sign_changes)
         if length(critical_points_PND)>0
-            modes = []  
+            modes = []
+            real_parts = []
+            idx_reals = []
             # println("Zero-crossings of the imaginary part of eigenvalue ",i)
             for point in critical_points_PND
                 if abs(f[index_fmin+point]-50.0) > 0.5
@@ -285,13 +287,17 @@ function EVD(Zcl_bus, omega, fmin, fmax,determinant=false)
                         PND_unstable = true
                         push!(modes,f[index_fmin+point])
                     end
+                    push!(real_parts,real_lambda[index_fmin+point, i])
+                    push!(idx_reals,index_fmin+point)
                 end
             end
-            PND_modes[i] = modes # Af the oscillatory modes to the list
+            PND_modes[i] = modes # Add the oscillatory modes to the list
+            min_real_lambda[i,1] = findmin(real_parts)[1]
+            min_real_lambda[i,2] = idx_reals[findmin(real_parts)[2]]
+
         else
             PND_modes[i] = []
         end
-        min_real_lambda[i] = minimum(real_lambda[index_fmin:index_fmax, i])
     end
 
     if PND_unstable
@@ -307,12 +313,11 @@ function EVD(Zcl_bus, omega, fmin, fmax,determinant=false)
         println("Stable according to the PND criterion")
     end
 
-    min_mode_PND = minimum(min_real_lambda)
-    mode_PND = findmin(abs.(min_real_lambda .- min_mode_PND))[2][1]
-    index_mode_PND = findmin(abs.(real_lambda[:, mode_PND] .- min_mode_PND))[2]
+    min_mode_PND = findmin(min_real_lambda[:,1])[2]
+    index_mode_PND =  Int.(min_real_lambda[min_mode_PND,2])
 
     # Dominant oscillation mode is determined based on the minimum real part
-    println("The oscillation frequency based on PND is ", round(f[index_mode_PND]; digits = 1), " Hz as critical eigenvalue ", mode_PND)
+    println("The critical frequency based on PND is ", round(f[index_mode_PND]; digits = 1), " Hz as critical eigenvalue ", min_mode_PND)
 
     # Participation factors eigenvalue decomposition
     P = zeros(λₙ, λₙ);
@@ -326,7 +331,7 @@ function EVD(Zcl_bus, omega, fmin, fmax,determinant=false)
             P[k, i] = P[k, i]/Tot;   
         end  
     end
-    println("The participation factors of the buses in the critical eigenvalue based on PMD are ", round.(P[:,mode_PND]; digits = 2))
+    println("The participation factors of the buses in the critical eigenvalue based on PMD are ", round.(P[:,min_mode_PND]; digits = 2))
 
     if determinant
         d = abs.(inv.(det.(Zcl_bus)))
