@@ -8,6 +8,7 @@ using DelimitedFiles
 using SymEngine
 using Plots
 using LinearAlgebra
+using HVDCstability
 
 s = symbols("s")
 
@@ -15,10 +16,12 @@ Powf = 700
 Qowf = -150
 Pmmc1 = (1/3)*Powf
 Pmmc2 = -(2/3)*Powf
-Qref = 0
+Qmmc1 = 0
+Qmmc2 = 0
+Qmmc3 = 0
 Vm = 220 / sqrt(3) #Vln,rms
 Vdc = 640
-Ztrafo_base = 220^2/1000
+Ztrafo_base = 333^2/1000
 Ltrafo = 0.18 * Ztrafo_base /2/pi/50
 Rtrafo = 0.005 * Ztrafo_base
 
@@ -31,6 +34,8 @@ singleTerminalAnalysis = false
 
 net = @network begin
 
+    voltageBase = Vm
+    
     Zg1 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
     Zg3 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
 
@@ -44,8 +49,8 @@ net = @network begin
         Sbase = 1000, vACbase_LL_RMS = 220, 
         P = Powf, Q = Qowf,
         occ = PI_control(Kₚ = 0.254647908947033, Kᵢ = 0.8),
-        pll = PI_control(Kₚ = 0.8754, Kᵢ = 38.5155, ω_f = 2*pi*80), #110 rad/s
-        # pll = PI_control(Kₚ = 0.8356, Kᵢ = 35.0937, ω_f = 2*pi*80), #  wPLL=105 rad/s, unstable system.
+        # pll = PI_control(Kₚ = 0.8754, Kᵢ = 38.5155, ω_f = 2*pi*80), #110 rad/s
+        pll = PI_control(Kₚ = 0.8356, Kᵢ = 35.0937, ω_f = 2*pi*80), #  wPLL=105 rad/s, unstable system.
         # pll = PI_control(Kₚ = 0.795774715459477, Kᵢ = 31.830988618379067, ω_f = 2*pi*80), # These PLL gains result in an instability in PSCAD., wPLL=100 rad/s 
         # This instability can be detected (negative phase margin and a very low vector margin at around 59 Hz, which is close to the oscillation frequency in PSCAD) here if single terminal analysis is used.
         # As of 14/02/24 multi-terminal analysis cannot detect this instability.
@@ -59,30 +64,30 @@ net = @network begin
         )
 
     MMC1 = mmc(Vᵈᶜ = Vdc, vDCbase = 640, Sbase = 1000, vACbase_LL_RMS = 333, turnsRatio = 333/220, Vₘ = Vm, Lᵣ = Ltrafo, Rᵣ = Rtrafo,
-        P_max = 1500, P_min = -1500, P = Pmmc1, Q = Qref, Q_max = 500, Q_min = -500,
+        P_max = 1500, P_min = -1500, P = Pmmc1, Q = Qmmc1, Q_max = 500, Q_min = -500,
         occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
         ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
         pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-        p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+        p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [Pmmc1]),
+        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [Qmmc1])
         )
 
     MMC2 = mmc(Vᵈᶜ = Vdc, vDCbase = 640, Sbase = 1000, vACbase_LL_RMS = 333, turnsRatio = 333/220, Vₘ = Vm, Lᵣ = Ltrafo, Rᵣ = Rtrafo,
-        P_max = 1500, P_min = -1500, P = Pmmc2, Q = Qref, Q_max = 500, Q_min = -500,
+        P_max = 1500, P_min = -1500, P = Pmmc2, Q = Qmmc2, Q_max = 500, Q_min = -500,
         occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
         ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
         pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-        p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+        p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [Pmmc2]),
+        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [Qmmc2])
         )  
 
     MMC3 = mmc(Vᵈᶜ = Vdc, vDCbase = 640, Sbase = 1000, vACbase_LL_RMS = 333, turnsRatio = 333/220, Vₘ = Vm, Lᵣ = Ltrafo, Rᵣ = Rtrafo,
-        P_max = 1500, P_min = -1500, P = -(Pmmc1+Pmmc2), Q = Qref, Q_max = 500, Q_min = -500,
+        P_max = 1500, P_min = -1500, P = -(Pmmc1+Pmmc2), Q = Qmmc3, Q_max = 500, Q_min = -500,
         occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
         ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
         pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-        dc = PI_control(Kₚ = 5, Kᵢ = 15)
+        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [Qmmc3]),
+        dc = PI_control(Kₚ = 5, Kᵢ = 15, ref =[1.0])
         )        
 
     OHLAC1g1 = overhead_line(length = 50e3,
@@ -498,7 +503,7 @@ end
     end
 
     L = inv.(Ye) .* Yn
-    nyquist_Energy_Hub = nyquistplot(L, omega, zoom = "yes", SM = "PM")
+    nyquist_Energy_Hub = nyquistplot(L, omega, zoom = "yes", SM = "VM")
     # savefig("nyquist_Energy_Hub.png")
 
     Zcl_bus = inv.(Ye + Yn)

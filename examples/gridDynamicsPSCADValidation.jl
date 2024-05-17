@@ -17,6 +17,8 @@ qC4 = 100
 # The P and Q defined here are what is injected into the network. 
 # The setpoint of the reactive power controller is minus the value set here. This is adjusted internally, no action here needed.
 @time net = @network begin
+
+        voltageBase = transmissionVoltage
     
         sg1 = synchronousmachine(V = 1* transmissionVoltage, Vᵃᶜ_base = 380.0, P_min = -2000, P_max = 2000, Q_max = 2000, Q_min = -2000, P = 900)
         # Old definition with a MV ideal source and transformer
@@ -132,7 +134,7 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC1]),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15)
+                dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
                 )
         # MMC2 controls P&Q. It is connected to bus 7.
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, vACbase_LL_RMS = 380, turnsRatio = 380/380, Vₘ = transmissionVoltage, Lᵣ = 60e-3, Rᵣ = 0.535,
@@ -141,9 +143,9 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC1]),
-                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [transmissionVoltage * sqrt(2)]),
                 # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
-                vac = PI_control(Kₚ = 0, Kᵢ = 100)
+                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [transmissionVoltage * sqrt(2)])
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -188,7 +190,7 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC3]),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15)
+                dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
                 )
         # MMC4 controls P&Q. It is connected to bus 5.
         c4 = mmc(Vᵈᶜ = 800, vDCbase = 800, vACbase_LL_RMS = 380, turnsRatio = 380/380, Vₘ = transmissionVoltage, Lᵣ = 60e-3, Rᵣ = 0.535,
@@ -197,9 +199,9 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC2]),
-                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [transmissionVoltage * sqrt(2)]),
                 # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC4])
-                vac = PI_control(Kₚ = 0, Kᵢ = 7, ref = [1.0])
+                vac = PI_control(Kₚ = 0, Kᵢ = 7, ref = [transmissionVoltage * sqrt(2)])
                 )
         
         
@@ -288,10 +290,10 @@ end
 # MMC = net.elements[:c1]
 # plot_data(MMC, omega_range = (0, 4, 1000), scale = :log)
 
-@time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
-output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
+# @time imp_ac1, omega_ac1 = determine_impedance(net, elim_elements=[:g3], input_pins=Any[:Bus3d,:Bus3q], 
+# output_pins=Any[:gndd,:gndq], omega_range = (0,3,1000))
 
-writedlm("./files/imp_dq_MMC_SG.csv",  imp_ac1, ',')
-writedlm("./files/w_dq_MMC_SG.csv",  omega_ac1, ',')
+# writedlm("./files/imp_dq_MMC_SG.csv",  imp_ac1, ',')
+# writedlm("./files/w_dq_MMC_SG.csv",  omega_ac1, ',')
 
 

@@ -22,7 +22,8 @@ struct Network
     elements::OrderedDict{Symbol, Element}
     nets :: Dict{Symbol, Net}
     connections :: Dict{Symbol, Net}
-    Network() = new(OrderedDict{Symbol, Element}(), Dict{Symbol, Net}(), Dict{Symbol, Vector{Int}}())
+    voltageBase :: Array{Float64,1} # Network line-ground RMS voltage base used in the power flow. This is necessary to get a matching power flow result in the presence of voltage controlling converters.
+    Network() = new(OrderedDict{Symbol, Element}(), Dict{Symbol, Net}(), Dict{Symbol, Vector{Int}}(), [220/sqrt(3)])
 end
 
 # adding elements
@@ -236,7 +237,7 @@ function power_flow(net :: Network)
     global ang_min, ang_max
     global max_gen
     #TODO: Check if this has to be LN-RMS or LL-RMS. Do the necessary changes internally after validations against PSCAD.
-    global_dict = PowerModelsMCDC.get_pu_bases(1000, 380) # 3-PH MVA, LL-RMS, Original setting was 100,320
+    global_dict = PowerModelsACDC.get_pu_bases(1000, net.voltageBase[1]) # 3-PH MVA, LL-RMS, Original setting was 100,320
     global_dict["omega"] = 2π * 50
 
     ang_min = deg2rad(360)
@@ -513,7 +514,7 @@ function power_flow(net :: Network)
         end
     end
 
-    PowerModelsMCDC.process_additional_data!(data)
+    PowerModelsACDC.process_additional_data!(data)
     ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
@@ -541,9 +542,6 @@ function power_flow(net :: Network)
             if isa(element.element_value, MMC)
                 update_string = "MMC #"
                 update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
-            elseif isa(element.element_value, MMC_BI)
-                update_string = "MMC #"
-                update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc/2, -Vdc/2, Pdc)
             else
                 update_string = "TLC #"
                 update_tlc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
@@ -552,8 +550,8 @@ function power_flow(net :: Network)
             println(Pac)
             print(update_string * string(id_converter) * " Reactive Power [MVar]: ")
             println(Qac)
-            print(update_string * string(id_converter) * " AC Voltage Magnitude [kV]: ")
-            println(Vm)
+            print(update_string * string(id_converter) * " AC Voltage Magnitude [pu]: ")
+            println(result["solution"]["bus"][string(data["convdc"][string(id_converter)]["busac_i"])]["vm"])
             print(update_string * string(id_converter) * " AC Voltage Angle [rad]: ")
             println(θ)
             print(update_string * string(id_converter) * " DC Voltage [kV]: ")
@@ -587,15 +585,15 @@ function power_flow(net :: Network)
                 Vm = (result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["vm"] *
                         global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
                 θ = result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["va"]
+                update_gen(element.element_value, Pgen, Qgen, Vm, θ)
                 print("SG #" * string(id_gen) * " Active Power [MW]: ")
                 println(Pgen)
                 print("SG #" * string(id_gen) * " Reactive Power [MVar]: ")
                 println(Qgen)
-                print("SG #" * string(id_gen) * " AC Voltage Magnitude [kV]: ")
-                println(Vm)
+                print("SG #" * string(id_gen) * " AC Voltage Magnitude [pu]: ")
+                println(result["solution"]["bus"][string(data["branch"][string(gen_branch_id)]["t_bus"] )]["vm"])
                 print("SG #" * string(id_gen) * " AC Voltage Angle [rad]: ")
                 println(θ)
-                update_gen(element.element_value, Pgen, Qgen, Vm, θ)
             end
             id_gen += 1
         end
@@ -670,6 +668,10 @@ macro network(cdef)
             elemspec = expr.args[2].args[1]
             conn_exprs = expr.args[2].args[2:end]
         else
+            if expr.args[1] == :voltageBase
+                push!(ccode.args, :(network.voltageBase[1] = $(esc(expr.args[2]))))
+                return
+            end
             elemspec = expr.args[2]
             conn_exprs = []
         end

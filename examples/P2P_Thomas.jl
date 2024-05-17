@@ -20,6 +20,8 @@ Vdc = 800
 # Network under study: point-to-point HVDC system 
 net = @network begin
 
+    voltageBase = Vm
+
     # 3 phase AC voltage sources at both ends, transformation to dq (transformation = true)
     G1 = ac_source(pins = 3, V = Vm, transformation = true)
     G2 = ac_source(pins = 3, V = Vm, transformation = true)
@@ -34,8 +36,8 @@ net = @network begin
         occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
         ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
         pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-        dc = PI_control(Kₚ = 5, Kᵢ = 15)
+        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [Qref]),
+        dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
         )
 
     # Definition of active power controlling MMC, control parameters in PU     
@@ -44,8 +46,8 @@ net = @network begin
         occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
         ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
         pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-        p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+        p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [Pref]),
+        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [Qref])
         )
 
     # DC submarine cable (conductor, sheath, armor)    

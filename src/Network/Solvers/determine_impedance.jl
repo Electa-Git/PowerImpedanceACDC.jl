@@ -55,7 +55,8 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
         :output_list = consists of processed ground and output (end) nodes
 
     """
-    # TODO: Right now, if the components in elim_elements are not in the list, no error is given. This could be generalized.
+    # TODO: Right now, if the components in elim_elements are not in the list, no error is given. 
+    # This could be generalized.
     function make_lists(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
         elim_elements::Array{Symbol}, start_pins::Array{Symbol}, end_pins::Array{Symbol})
 

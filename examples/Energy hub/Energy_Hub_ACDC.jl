@@ -18,7 +18,7 @@ Pmmc2 = -(2/3)*Powf
 Qref = 0
 Vm = 220 / sqrt(3) #Vln,rms
 Vdc = 640
-Ztrafo_base = 220^2/1000
+Ztrafo_base = 333^2/1000
 Ltrafo = 0.18 * Ztrafo_base /2/pi/50
 Rtrafo = 0.005 * Ztrafo_base
 
@@ -30,6 +30,8 @@ multiTerminalAnalysis = true
 singleTerminalAnalysis = false
 
 net = @network begin
+
+    voltageBase = Vm
 
     Zg3 = impedance(z = 0.1 + 0.005*s, pins = 3, transformation = true)
 

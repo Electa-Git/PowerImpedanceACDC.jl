@@ -11,6 +11,8 @@ qC4 = 100
 # The P and Q defined here are what is injected into the network. 
 # The setpoint of the reactive power controller is minus the value set here. This is adjusted internally, no action here needed.
 @time net = @network begin
+
+        voltageBase = transmissionVoltage
     
         sg1 = synchronousmachine(V = 1* transmissionVoltage, Vᵃᶜ_base = 380.0, P_min = -2000, P_max = 2000, Q_max = 2000, Q_min = -2000, P = 900)
         g3 = ac_source(V = 380/sqrt(3), P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
@@ -88,7 +90,7 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC1]),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15)
+                dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
                 )
         # MMC2 controls P&Q. It is connected to bus 7.
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, vACbase_LL_RMS = 380, vPCC_scaling = 380/380, Vₘ = transmissionVoltage, Lᵣ = 60e-3, Rᵣ = 0.535,
@@ -97,9 +99,9 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC1]),
-                vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [transmissionVoltage * sqrt(2)]),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
-                # vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
+                # vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [transmissionVoltage * sqrt(2)])
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -140,7 +142,7 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC3]),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15)
+                dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
                 )
         # MMC4 controls P&Q. It is connected to bus 5.
         c4 = mmc(Vᵈᶜ = 800, vDCbase = 800, vACbase_LL_RMS = 380, vPCC_scaling = 380/380, Vₘ = transmissionVoltage, Lᵣ = 60e-3, Rᵣ = 0.535,
@@ -149,9 +151,9 @@ qC4 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC2]),
-                vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [1.0]),
+                vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [transmissionVoltage * sqrt(2)]),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC4])
-                # vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [1.0])
+                # vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [transmissionVoltage * sqrt(2)])
                 )
         
         

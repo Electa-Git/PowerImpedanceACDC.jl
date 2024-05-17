@@ -118,7 +118,7 @@ end
 
 ######################### Element type #############################
 function is_passive(element :: Element)
-    (isa(element.element_value, MMC) || isa(element.element_value, MMC_BI) || isa(element.element_value, TLC) || isa(element.element_value, Source) || isa(element.element_value, SynchronousMachine)) && return false
+    (isa(element.element_value, MMC) || isa(element.element_value, TLC) || isa(element.element_value, Source) || isa(element.element_value, SynchronousMachine)) && return false
     true
 end
 
@@ -127,7 +127,7 @@ function is_source(element :: Element)
 end
 
 function is_converter(element :: Element)
-    (isa(element.element_value, MMC) || isa(element.element_value, TLC)  || isa(element.element_value, MMC_BI))
+    (isa(element.element_value, MMC) || isa(element.element_value, TLC))
 end
 
 function is_shunt_reactor(element :: Element)

@@ -10,6 +10,7 @@ qC2 = 0
 # The setpoint of the reactive power controller is minus the value set here. This is adjusted internally, no action here needed.
 @time net = @network begin
     
+        voltageBase = transmissionVoltage
         g1 = ac_source(V = transmissionVoltage, P = pHVDC1, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
 
         c1 = tlc(Vᵈᶜ = 3.592584956081994e+02, Vₘ = transmissionVoltage, Lᵣ = 0.024649917586073, Rᵣ = 0.07744,  
@@ -28,8 +29,8 @@ qC2 = 0
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15),
-                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+                dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0]),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
                 )
 
         g2 = ac_source(V = transmissionVoltage, P = pHVDC1, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)

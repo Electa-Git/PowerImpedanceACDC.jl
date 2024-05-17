@@ -12,6 +12,7 @@ Pref = 500
 Qref = 0
 Vm = 380 / sqrt(3) 
 Vdc = 640
+# Old file, not updated. Contains an MMC with SI controller gains.
 
 net = @network begin
 

@@ -23,13 +23,13 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
         # TODO: The line below sometimes gives errors during power flow (NUMERICAL_ERROR)
         dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["bus_type"] = 2 # Not entirely sure if this is necessary.
         if in(:vac, keys(converter.controls))
-            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac].ref[1]
+            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac].ref[1] * 1e3 / (global_dict["V"] * sqrt(2))
         else
-            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac_supp].ref[1]
+            ((dict["convdc"])[string(key)])["Vtar"] = converter.controls[:vac_supp].ref[1] * 1e3 / (global_dict["V"] * sqrt(2))
         end
         dict["bus"][string(((dict["convdc"])[string(key)])["busac_i"])]["vm"] = ((dict["convdc"])[string(key)])["Vtar"]
     else
-        ((dict["convdc"])[string(key)])["type_ac"] = 1  # PQ ac bus TODO: Check if this makes sense.
+        ((dict["convdc"])[string(key)])["type_ac"] = 1  # PQ ac bus TODO: Check if this makes sense in the presence of GFM
         ((dict["convdc"])[string(key)])["Vtar"] = converter.Vₘ * 1e3 / global_dict["V"]
     end
     if in(:p, keys(converter.controls))
@@ -41,9 +41,11 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     end
 
     if in(:vac_supp, keys(converter.controls))
-        ((dict["convdc"])[string(key)])["q_droop"] = converter.controls[:vac_supp].Kₚ
+        ((dict["convdc"])[string(key)])["acq_droop"] = 1
+        ((dict["convdc"])[string(key)])["kq_droop"] = converter.controls[:vac_supp].Kₚ
     else
-        ((dict["convdc"])[string(key)])["q_droop"] = 0
+        ((dict["convdc"])[string(key)])["acq_droop"] = 0
+        ((dict["convdc"])[string(key)])["kq_droop"] = 0
     end
 
     # droop control - not implemented
@@ -87,25 +89,8 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     ((dict["convdc"])[string(key)])["Pacmax"] = converter.P_max
     ((dict["convdc"])[string(key)])["Pacmin"] = converter.P_min
 
-    # Add bipolar converter data for PowerModelsMCDC
-    if typeof(converter) == MMC_BI
-        ((dict["convdc"])[string(key)])["conv_confi"] = 2
-        if converter.Vᵈᶜᵘ == 0 || converter.Vᵈᶜˡ == 0
-            if converter.Vᵈᶜᵘ > 0 || converter.Vᵈᶜˡ > 0
-                ((dict["convdc"])[string(key)])["connect_at"] = 1 # Converter is connected between positive and neutral buses
-            else
-                ((dict["convdc"])[string(key)])["connect_at"] = 2 # Converter is connected between negative and neutral buses
-            end
-        else
-            ((dict["convdc"])[string(key)])["connect_at"] = 0 # Converter is connected between positive and negative buses
-        end
-        # TODO: By default both poles are active. Check if it makes sense to  change this.  
-        ((dict["convdc"])[string(key)])["status_p"] = 1
-        ((dict["convdc"])[string(key)])["status_n"] = 1
-    else
-        ((dict["convdc"])[string(key)])["conv_confi"] = 1
-    end
-    ((dict["convdc"])[string(key)])["ground_type"] = 0 # TODO: To be updated for the MCDC case.
+    
+    
     key_o = ((dict["convdc"])[string(key)])["busac_i"]
     if (dict["bus"][string(key_o)]["bus_type"] == 1)
         dict["bus"][string(key_o)]["vm"] = ((dict["convdc"])[string(key)])["Vtar"]
