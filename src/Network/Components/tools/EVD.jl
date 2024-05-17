@@ -1,6 +1,7 @@
 export EVD
+using Peaks
 
-function EVD(Zcl_bus, omega, fmin, fmax)
+function EVD(Zcl_bus, omega, fmin, fmax,determinant=false)
 
     f = real(omega)./(2*pi)
 
@@ -22,7 +23,6 @@ function EVD(Zcl_bus, omega, fmin, fmax)
     Λₛ[1,:] = Λ[1]
 
     for i in 2:omegaₙ
-        
         # Row of eigenvalues at previous frequency point 
         Λ₁ = Λ[i-1]
         # Row of eigenvalues at current frequency point
@@ -32,7 +32,6 @@ function EVD(Zcl_bus, omega, fmin, fmax)
         # see Munkres.jl https://juliapackages.com/p/munkres
         # see eigenshuffle.m https://nl.mathworks.com/matlabcentral/fileexchange/22885-eigenshuffle
         # Sorting eigenvalues of row i to obtain minimum distance between row i and row i-1
-
         Λ₁_Re = real(Λ₁)
         Λ₂_Re = real(Λ₂)
 
@@ -66,123 +65,99 @@ function EVD(Zcl_bus, omega, fmin, fmax)
 
     # Normalizing eigenvectors
     for i in 1:omegaₙ
-
         for j in 1:λₙ
             N = 1/sqrt(transpose(Φ[i][:,j]) * Φ[i][:,j])
             Φ[i][:,j] = N * Φ[i][:,j]
         end
-
     end
 
     Ψ = inv.(Φ)
 
     # Oscillation modes are determined based on peak value of eigenvalue magnitude 
-    λ_mag = abs.(Λ[:,1])
     λ_real = real.(Λ[:,1])
-    λ_mag_dB = 20*log10.(λ_mag)
+    λ_imag = imag.(Λ[:,1])
+    λ_mag_dB = 20*log10.(abs.(Λ[:,1]))
 
     # Determining x-axis limits 
     index_fmin = findmin(abs.(f .- fmin))[2]
     index_fmax = findmin(abs.(f .- fmax))[2]
 
-    abs_lambda = abs.(Λ)
-
     # Determining y-axis limits
     max_lambda = zeros(λₙ, 1)
     min_lambda = zeros(λₙ, 1)
 
+    abs_lambda = abs.(Λ)
     for i in 1:λₙ
         max_lambda[i] = maximum(abs_lambda[index_fmin:index_fmax, i])
         min_lambda[i] = minimum(abs_lambda[index_fmin:index_fmax, i])
     end
 
-    max_mode = maximum(max_lambda)
+    max_mode = maximum(max_lambda) # Based on the peak magnitude
     y_max = maximum(max_lambda)
     y_min = minimum(min_lambda)
 
     # Find mode/eigenvalue with highest magnitude 
     mode = findmin(abs.(max_lambda .- max_mode))[2][1]
     index_mode = findmin(abs.(abs_lambda[:, mode] .- max_mode))[2]
+    # Dominant oscillation mode is determined based on the frequency at which eigenvalue reaches highest magnitude 
+    println("The oscillation frequency is ", round(f[index_mode]; digits = 1), " Hz")
+    println("The critical eigenvalue is ", mode)
 
     #plotly() # To activate interactive plot
     # Plotting of magnitude eigenvalues 
     p_abs = plot(f, λ_mag_dB, linewidth = 3, c = :blue, label = "Lambda " * string(1))  
     plot!(xlabel = "Frequency [Hz]", ylabel = "abs(lambda) [dB]", framestyle = :box, xaxis = :log10) 
     plot!(xlims = (fmin, fmax), ylims = (20*log10(y_min)-10, 20*log10(y_max)+10), legend = :topleft) #xticks = [10^-3, 10^-2, 10^-1, 10^0, 10^1, 10^2, 10^3, 10^4, 10^5, 10^6]
-
     color = palette(:default) #palette(:tab10)
-
     for i in 2:λₙ
-
-        λ_mag = abs.(Λ[:,i])
-        λ_mag_dB = 20*log10.(λ_mag)
-
+        λ_mag_dB = 20*log10.(abs.(Λ[:,i]))
         plot!(f, λ_mag_dB, linewidth = 3, c = color[i], label = "Lambda " * string(i))  
-
     end
     plot!(size=(1000,1000))
     display(p_abs)
 
-    # Positive damping criterion 
-
-    # Determining x-axis limits 
-    index_fmin = findmin(abs.(f .- fmin))[2]
-    index_fmax = findmin(abs.(f .- fmax))[2]
-    
-    real_lambda = real.(Λ)
-
-    # Determining y-axis limits
-    max_lambda = zeros(λₙ, 1)
-    min_lambda = zeros(λₙ, 1)
-
-    for i in 1:λₙ
-        max_lambda[i] = maximum(real_lambda[index_fmin:index_fmax, i])
-        min_lambda[i] = minimum(real_lambda[index_fmin:index_fmax, i])
+    p_im = plot(f, λ_imag, linewidth = 3, c = :blue, label = "Lambda " * string(1))  
+    plot!(xlabel = "Frequency [Hz]", ylabel = "Im(lambda)", framestyle = :box, xaxis = :log10) 
+    plot!(xlims = (fmin, fmax),  legend = :topleft) 
+    color = palette(:default) #palette(:tab10)
+    for i in 2:λₙ
+        λ_imag= imag.(Λ[:,i])
+        plot!(f, λ_imag, linewidth = 3, c = color[i], label = "Lambda " * string(i))  
     end
+    plot!(size=(1000,1000))
+    display(p_im)
 
-    min_mode_PDC = minimum(min_lambda)
-    y_max = maximum(max_lambda)
-    y_min = minimum(min_lambda)
-
-    mode_PDC = findmin(abs.(min_lambda .- min_mode_PDC))[2][1]
-    index_mode_PDC = findmin(abs.(real_lambda[:, mode_PDC] .- min_mode_PDC))[2]
-
-    #plotly() # To activate interactive plot
-    # Plotting of magnitude eigenvalues 
     p_re = plot(f, λ_real, linewidth = 3, c = :blue, label = "Lambda " * string(1))  
     plot!(xlabel = "Frequency [Hz]", ylabel = "Re(lambda)", framestyle = :box, xaxis = :log10) 
-    plot!(xlims = (fmin, fmax), ylims = (1.1*y_min, 1.1*y_max), legend = :topleft) 
-
-    color = palette(:default) #palette(:tab10)
-
+    plot!(xlims = (fmin, fmax),legend = :topleft) 
     for i in 2:λₙ
-
         λ_real= real.(Λ[:,i])
-
         plot!(f, λ_real, linewidth = 3, c = color[i], label = "Lambda " * string(i))  
-
     end
     plot!(size=(1000,1000))
     display(p_re)
 
-    p = plot(p_abs, p_re, layout = (2, 1))
+    p = plot(p_abs, p_re, p_im, layout = (3, 1))
     display(p)
-
-    # Dominant oscillation mode is determined based on the frequency at which eigenvalue reaches highest magnitude 
-    println("The oscillation frequency is ", round(f[index_mode]; digits = 1), " Hz")
-    println("The critical eigenvalue is ", mode)
-
-
-    # Dominant oscillation mode is determined based on the frequency at which eigenvalue reaches highest magnitude 
-    println("The oscillation frequency based on PDC is ", round(f[index_mode_PDC]; digits = 1), " Hz")
-    println("The critical eigenvalue is ", mode_PDC)
-
+    
     # Observability, controllability and participation factors can be determined for dominant oscillation mode at the related frequency point 
-
+    for idx = 1:λₙ
+        index_mode_lambda = findmin(abs.(abs_lambda[:, idx] .- max_lambda[idx]))[2]
+        O = zeros(λₙ, λₙ);
+        for i = 1:λₙ
+            for k = 1:λₙ
+                O[k,i] = abs(Φ[index_mode_lambda][k, i]);
+            end
+            Tot = sum(O[:,i])
+            for k = 1:λₙ
+                O[k, i] = O[k, i]/Tot;   
+            end  
+        end
+        println("The mode from lambda ",idx," at ",round.(f[index_mode_lambda],digits=1)," Hz has observability ", round.(O[:,idx]; digits = 2)) 
+    end
+    
     # Observability eigenvalue decomposition
-
     O = zeros(λₙ, λₙ);
-
     # k (Bus) = row; i (Mode) = column
     for i = 1:λₙ
         for k = 1:λₙ
@@ -195,66 +170,170 @@ function EVD(Zcl_bus, omega, fmin, fmax)
             O[k, i] = O[k, i]/Tot;   
         end  
     end
-
     println("The observability of the critical eigenvalue at the buses is ", round.(O[:,mode]; digits = 2)) 
 
     # Controllability eigenvalue decomposition
-
     C = zeros(λₙ, λₙ);
-
     # k (Bus) = row; i (Mode) = column
     for i = 1:λₙ
         for k = 1:λₙ
             C[k,i] = abs(Ψ[index_mode][i, k]);
         end
-
         Tot = sum(C[:,i])
-
         for k = 1:λₙ
             C[k, i] = C[k, i]/Tot;   
         end  
     end
-
     println("The controllability of the critical eigenvalue at the buses is ", round.(C[:,mode]; digits = 2))
 
     # Participation factors eigenvalue decomposition
-
     P = zeros(λₙ, λₙ);
-
     # k (Bus) = row; i (Mode) = column
     for i = 1:λₙ
         for k = 1:λₙ
             P[k,i] = abs(Φ[index_mode][k, i] * Ψ[index_mode][i, k]);
         end
-
         Tot = sum(P[:,i])
-
         for k = 1:λₙ
             P[k, i] = P[k, i]/Tot;   
         end  
-
     end
-
     println("The participation factors of the buses in the critical eigenvalue are ", round.(P[:,mode]; digits = 2))
 
+    # Two ways of finding and assessing the oscillatory modes: (1) PMD and (2) PND
+    # Positive mode damping (PMD) criterion 
+    # Find more information here: Luis Orellana, et al. "Study of black-box models and participation factors for the Positive-Mode Damping stability criterion",2023
+    # https://doi.org/10.1016/j.ijepes.2023.108957
+    PMD_modes = Vector{Vector{Float64}}(undef,λₙ) # Vector with the oscillatory modes for each eigenvalue of the closed-loop impedance matrix
+    PMD_unstable = false # Initialize variable
+    # Positive Net Damping (PND) criterion https://upcommons.upc.edu/bitstream/handle/2117/114185/PND%20criterion%20post-print-1.pdf
+    PND_modes = Vector{Vector{Float64}}(undef,λₙ) # Vector with the oscillatory modes for each eigenvalue of the closed-loop impedance matrix
+    PND_unstable = false # Initialize variable
+
+    real_lambda = real.(Λ) # also the real and imaginary parts
+    imag_lambda = imag.(Λ)
+    
+    # (1) For each eigenvalue the PMD criterion is applied
+    for i in 1:λₙ
+        # PMD: Find the peaks of the magnitude (oscillatory modes)
+        critical_points_PMD = argmaxima(abs_lambda[index_fmin:index_fmax,i])
+        if length(critical_points_PMD)>0
+            modes = []  
+            # println("Eigenvalue ",i," has the following local maxima")
+            for point in critical_points_PMD
+                if abs(f[index_fmin+point]-50.0) > 0.5
+                    # Around the synchronous frequency, the stability assessment might be blurred by the frame transformation effects so skip it
+                    # println(" ",abs_lambda[index_fmin+point,i]," at ",f[index_fmin+point]," Hz")
+                    # Compute the slope of the imaginary part (PMD)
+                    if index_fmin+point-1 > 0
+                        kx = imag_lambda[index_fmin+point, i] - imag_lambda[index_fmin+point-1, i]
+                    else
+                        kx = imag_lambda[index_fmin+point+1, i] - imag_lambda[index_fmin+point, i]
+                    end
+                    
+                    # PMD criteria
+                    if (kx > 0 && real_lambda[index_fmin+point, i]<0) || (kx < 0 && real_lambda[index_fmin+point, i]>0)
+                    # Stable iff real part of the dominant state-space eigenvalue is negative
+                    # However, for some local maxima, the PMD result is unstable even if the system is stable
+                    else
+                        # Unstable with an oscillatory mode at this frequency
+                        PMD_unstable = true
+                        push!(modes,f[index_fmin+point])
+                    end
+                end
+            end
+            PMD_modes[i] = modes # Af the oscillatory modes to the list
+        else
+            PMD_modes[i] = []
+        end
+    end
+
+    if PMD_unstable
+        println("Unstable according to the PMD criterion:")
+        for i in 1:λₙ
+            if length(PMD_modes[i])>0
+                for mode in PMD_modes[i]
+                    println(" Eigenvalue ",i," is unstable at ",round(mode; digits = 2)," Hz")
+                end
+            end
+        end
+    else
+        println("Stable according to the PMD criterion")
+    end
+
+
+    # (2) For each eigenvalue the PND criterion is applied
+    min_real_lambda = zeros(λₙ, 1)
+    for i in 1:λₙ
+        # Find the zero crossing of the imaginary part (oscillatory modes)
+        sign_changes = diff(signbit.(imag_lambda[index_fmin:index_fmax,i])) .!= 0
+        critical_points_PND = findall(sign_changes)
+        if length(critical_points_PND)>0
+            modes = []  
+            # println("Zero-crossings of the imaginary part of eigenvalue ",i)
+            for point in critical_points_PND
+                if abs(f[index_fmin+point]-50.0) > 0.5
+                    # Around the synchronous frequency, the stability assessment might be blurred by the frame transformation effects so skip it
+                    # println(" Crossing at ",f[index_fmin+point]," Hz")
+                    
+                    # PND criteria
+                    if real_lambda[index_fmin+point, i]>0
+                        # Stable: if the closed-loop has positive damping at the resonance points (imag = 0)
+                        # More conservative than the PMD criteria
+                    else
+                        # Unstable with an oscillatory mode at this frequency
+                        PND_unstable = true
+                        push!(modes,f[index_fmin+point])
+                    end
+                end
+            end
+            PND_modes[i] = modes # Af the oscillatory modes to the list
+        else
+            PND_modes[i] = []
+        end
+        min_real_lambda[i] = minimum(real_lambda[index_fmin:index_fmax, i])
+    end
+
+    if PND_unstable
+        println("Unstable according to the PND criterion:")
+        for i in 1:λₙ
+            if length(PND_modes[i])>0
+                for mode in PND_modes[i]
+                    println(" Eigenvalue ",i," is unstable at ",round(mode; digits = 2)," Hz")
+                end
+            end
+        end
+    else
+        println("Stable according to the PND criterion")
+    end
+
+    min_mode_PND = minimum(min_real_lambda)
+    mode_PND = findmin(abs.(min_real_lambda .- min_mode_PND))[2][1]
+    index_mode_PND = findmin(abs.(real_lambda[:, mode_PND] .- min_mode_PND))[2]
+
+    # Dominant oscillation mode is determined based on the minimum real part
+    println("The oscillation frequency based on PND is ", round(f[index_mode_PND]; digits = 1), " Hz as critical eigenvalue ", mode_PND)
+
     # Participation factors eigenvalue decomposition
-
     P = zeros(λₙ, λₙ);
-
     # k (Bus) = row; i (Mode) = column
     for i = 1:λₙ
         for k = 1:λₙ
-            P[k,i] = abs(Φ[index_mode_PDC][k, i] * Ψ[index_mode_PDC][i, k]);
+            P[k,i] = abs(Φ[index_mode_PND][k, i] * Ψ[index_mode_PND][i, k]);
         end
-
         Tot = sum(P[:,i])
-
         for k = 1:λₙ
             P[k, i] = P[k, i]/Tot;   
         end  
-
     end
+    println("The participation factors of the buses in the critical eigenvalue based on PMD are ", round.(P[:,mode_PND]; digits = 2))
 
-    println("The participation factors of the buses in the critical eigenvalue based on PDC are ", round.(P[:,mode_PDC]; digits = 2))
+    if determinant
+        d = abs.(inv.(det.(Zcl_bus)))
+        # d = abs.(det.(Zcl_bus))
+        det_plot = plot(f, d, linewidth = 3, c = :blue, label = "G^-1 " * string(1))  
+        plot!(xlabel = "Frequency [Hz]", ylabel = "Magnitude", framestyle = :box, xaxis = :log10, yaxis = :log10) 
+        plot!(xlims = (fmin, fmax), ylims = (0.9*minimum(d), 1.1*maximum(d)), legend = :topleft) 
+    end
 
 end
