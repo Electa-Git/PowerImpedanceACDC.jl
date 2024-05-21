@@ -8,8 +8,8 @@ s = symbols("s")
 transmissionVoltage = 333 / sqrt(3)
 
 @time net = @network begin
-    
-        g1 = ac_source(V = transmissionVoltage, P = pHVDC1, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
+
+        g1 = ac_source(V = transmissionVoltage, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
 
         z_ground = impedance(z = 1e-3, pins = 3, transformation = true) 
 
@@ -36,7 +36,7 @@ transmissionVoltage = 333 / sqrt(3)
 end
 
 @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus1d,:Bus1q], 
-output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
+output_pins=Any[:gndd,:gndq], omega_range = (3,4,10000))
 
 writedlm("./files/imp_TL_validation.csv",  imp_ac, ',')
 writedlm("./files/w_TL_validation.csv",  omega_ac, ',')

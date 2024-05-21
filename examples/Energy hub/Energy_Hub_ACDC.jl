@@ -63,7 +63,7 @@ net = @network begin
         ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
         pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
         p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),timeDelay = 200e-6, padeOrderNum = 5, padeOrderDen = 5
         )  
 
     MMC3 = mmc(Vᵈᶜ = Vdc, vDCbase = 640, Sbase = 1000, vACbase_LL_RMS = 333, turnsRatio = 333/220, Vₘ = Vm, Lᵣ = Ltrafo, Rᵣ = Rtrafo,
@@ -75,7 +75,7 @@ net = @network begin
         dc = PI_control(Kₚ = 5, Kᵢ = 15)
         )        
 
-
+    # Data from Thomas 320 kV needs to be replaced with better data 
     CableDC23 = cable(length = 60e3, positions = [(-0.5,1), (0.5,1)],
         C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
         I1 = Insulator(rᵢ = 24.25e-3, rₒ = 41.75e-3, ϵᵣ = 2.3),
@@ -84,6 +84,7 @@ net = @network begin
         C3 = Conductor(rᵢ = 49.75e-3, rₒ = 60.55e-3, ρ = 18e-8, μᵣ = 10),     
         I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)   
         
+    # Elia tendering data, needs to be checked whether this data can be used....
     CableAC23 = cable(length = 60e3, positions = [(0,1.33562), (-0.0575,1.4322), (0.0575,1.4322)],
         C1 = Conductor(rₒ = 25.45e-3, ρ = 2.63e-8, μᵣ = 1),
         I1 = Insulator(rᵢ = 25.45e-3, rₒ = 50.65e-3, a = 2e-3, b = 1.5e-3, ϵᵣ = 2.3),
@@ -98,6 +99,8 @@ net = @network begin
         I2 = Insulator(rᵢ = 52.35e-3, rₒ = 55.75e-3, ϵᵣ = 100),
         earth_parameters = (1,1,1), transformation = true)
 
+
+    # Alejandro maybe some slight modifciation, implemented from Aleskandra
     OHLAC3g3 = overhead_line(length = 50e3,
         conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
                         Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
@@ -235,6 +238,7 @@ end
 
     
     # Aggregated OWF (represented using a single TLC)
+    # TODO: Try eval_abcd for two level
     Zg2DQ, omega = determine_impedance(net, elim_elements = [:CableAC2g2], input_pins = Any[:NodeDg2, :NodeQg2], output_pins = Any[:gndD, :gndQ], omega_range = (omega_min, omega_max, omegaₙ)) 
     Yg2DQ = inv.(Zg2DQ)
     
@@ -251,6 +255,9 @@ end
     # end
 
     θₒ = -net.elements[:OWF].element_value.θ
+
+
+    #TODO Understand rotation
 
     Tdq_co = [cos(θₒ) -sin(θₒ); sin(θₒ) cos(θₒ)]
     for i in 1:length(f)
@@ -326,7 +333,8 @@ end
     # V = [vdc2 vd2 vq2 vdc3 vd3 vq3 vdg2 vqg2 vdg3 vqg3]^T
     # I = Y_BUS*V
 
-    Ye = [] #Edges
+    Ye = [] #Edges similar to normal Y matrix we use in the power flow calculations wihtout the active elements. Ordering is like node matrix!
+
 
     for i in 1:length(omega)
 

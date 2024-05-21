@@ -829,59 +829,59 @@ function timeDelayPadeMatrices(padeOrderNum,padeOrderDen,t_delay,numberVars)
         Cd[i+1] = (b_i-(a_i*b_l));
     end
     # Convert from controllable canonical form to diagonal form - This does not work as such a state-space representation is complex-valued
-    d_not_sorted=eigvals(Ad);
-    v_not_sorted=eigvecs(Ad);
-    d=zeros(ComplexF64,padeOrderDen,1);
-    v=zeros(ComplexF64,padeOrderDen,padeOrderDen);
-    matrix_ind=1;
-    # Sort the eigenvalues and eigenvectors
-    for i=1:padeOrderDen
-        if sign(imag(d_not_sorted[i])==0) #Real eigenvalue, copy as is
-            d[matrix_ind]=d_not_sorted[i];
-            v[:,matrix_ind]=v_not_sorted[:,i];
-            matrix_ind+=1;
-        else # Complex eigenvalue
-            if matrix_ind < padeOrderDen
-                if sign(imag(d_not_sorted[i]))==-1
-                    d[matrix_ind]    = real(d_not_sorted[i])     -imag(d_not_sorted[i])*im;
-                    d[matrix_ind+1]  = real(d_not_sorted[i])     +imag(d_not_sorted[i])*im;
-                    v[:,matrix_ind]  = real(v_not_sorted[:,i])   - imag(v_not_sorted[:,i])*im;
-                    v[:,matrix_ind+1]= real(v_not_sorted[:,i])   + imag(v_not_sorted[:,i])*im;
-                else
-                    d[matrix_ind]    = real(d_not_sorted[i])     +imag(d_not_sorted[i])*im;
-                    d[matrix_ind+1]  = real(d_not_sorted[i])     -imag(d_not_sorted[i])*im;
-                    v[:,matrix_ind]  = real(v_not_sorted[:,i])   + imag(v_not_sorted[:,i])*im;
-                    v[:,matrix_ind+1]= real(v_not_sorted[:,i])   - imag(v_not_sorted[:,i])*im;
-                end
-                matrix_ind+=2;
-            end
-        end
-    end
-    matrix_ind=1;
-    T_inv=zeros(padeOrderDen,padeOrderDen);
-    for i=1:padeOrderDen
-        if imag(d[i])==0 #Real eigenvalue
-            T_inv[:,matrix_ind]=v[:,i];
-            matrix_ind+=1;
-        else # Complex eigenvalue
-            if matrix_ind < padeOrderDen
-                T_inv[:,matrix_ind]  =real(v[:,i]);
-                T_inv[:,matrix_ind+1]=imag(v[:,i]);
-                matrix_ind+=2;
-            end
-        end
-    end
+    # d_not_sorted=eigvals(Ad);
+    # v_not_sorted=eigvecs(Ad);
+    # d=zeros(ComplexF64,padeOrderDen,1);
+    # v=zeros(ComplexF64,padeOrderDen,padeOrderDen);
+    # matrix_ind=1;
+    # # Sort the eigenvalues and eigenvectors
+    # for i=1:padeOrderDen
+    #     if sign(imag(d_not_sorted[i])==0) #Real eigenvalue, copy as is
+    #         d[matrix_ind]=d_not_sorted[i];
+    #         v[:,matrix_ind]=v_not_sorted[:,i];
+    #         matrix_ind+=1;
+    #     else # Complex eigenvalue
+    #         if matrix_ind < padeOrderDen
+    #             if sign(imag(d_not_sorted[i]))==-1
+    #                 d[matrix_ind]    = real(d_not_sorted[i])     -imag(d_not_sorted[i])*im;
+    #                 d[matrix_ind+1]  = real(d_not_sorted[i])     +imag(d_not_sorted[i])*im;
+    #                 v[:,matrix_ind]  = real(v_not_sorted[:,i])   - imag(v_not_sorted[:,i])*im;
+    #                 v[:,matrix_ind+1]= real(v_not_sorted[:,i])   + imag(v_not_sorted[:,i])*im;
+    #             else
+    #                 d[matrix_ind]    = real(d_not_sorted[i])     +imag(d_not_sorted[i])*im;
+    #                 d[matrix_ind+1]  = real(d_not_sorted[i])     -imag(d_not_sorted[i])*im;
+    #                 v[:,matrix_ind]  = real(v_not_sorted[:,i])   + imag(v_not_sorted[:,i])*im;
+    #                 v[:,matrix_ind+1]= real(v_not_sorted[:,i])   - imag(v_not_sorted[:,i])*im;
+    #             end
+    #             matrix_ind+=2;
+    #         end
+    #     end
+    # end
+    # matrix_ind=1;
+    # T_inv=zeros(padeOrderDen,padeOrderDen);
+    # for i=1:padeOrderDen
+    #     if imag(d[i])==0 #Real eigenvalue
+    #         T_inv[:,matrix_ind]=v[:,i];
+    #         matrix_ind+=1;
+    #     else # Complex eigenvalue
+    #         if matrix_ind < padeOrderDen
+    #             T_inv[:,matrix_ind]  =real(v[:,i]);
+    #             T_inv[:,matrix_ind+1]=imag(v[:,i]);
+    #             matrix_ind+=2;
+    #         end
+    #     end
+    # end
     #Original implementation, resulting in a SingularException for Pade orders larger than 3.
     # T=inv(T_inv);
     # Ad=T*Ad*T_inv;
     # Bd=T*Bd;
     # Cd=Cd*T_inv;
     # Alternative
-    sys = ss(Ad,Bd,Cd,Dd)
-    sys_modal = modal_form(sys)
-    Ad = sys_modal[1].A
-    Bd = sys_modal[1].B
-    Cd = sys_modal[1].C
+    # sys = ss(Ad,Bd,Cd,Dd)
+    # sys_modal = modal_form(sys)
+    # Ad = sys_modal[1].A
+    # Bd = sys_modal[1].B
+    # Cd = sys_modal[1].C
     # Concatenate the Pade matrices: nDelta_d, nDelta_q, nSigma_d, nSigma_q, nSigma_z
     # A_Pade=cat(Ad,Ad,Ad,Ad,Ad;dims=[1,2]);
     # B_Pade=cat(Bd,Bd,Bd,Bd,Bd;dims=[1,2]);
