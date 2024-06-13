@@ -553,7 +553,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         P_ac = (Vᴳd * iΔd + Vᴳq * iΔq);
                         #iΣz_ref = (Kp_wΣ * (wΣz_ref - wΣz) + Ki_wΣ * xwΣz + Pac) / 3 / Vdc,
                         iΣz_ref = ($(converter.controls[:energy].Kₚ) * ($(converter.controls[:energy].ref[1]) - wΣz) +
-                             x[$index+1] + P_ac) / 3 / Vdc;
+                             x[$index+1] + P_ac_f) / 3 / Vdc;
                         F[$index+2] = $(converter.controls[:zcc].Kᵢ) *(iΣz_ref - x[5]);
                         # vMΣz_ref = Vdc/2 - Kp_Σz*(iΣz_ref - iΣz) - Ki_Σz * xiΣz,
                         vMΣz_ref = (Vdc/2 - $(converter.controls[:zcc].Kₚ) *
