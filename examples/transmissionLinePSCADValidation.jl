@@ -11,7 +11,7 @@ transmissionVoltage = 333 / sqrt(3)
 
         g1 = ac_source(V = transmissionVoltage, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
 
-        z_ground = impedance(z = 1e-3, pins = 3, transformation = true) 
+        z_ground = impedance(z = 1, pins = 3, transformation = true) 
 
          tl1 = transformer(n = 380/380 , Lₚ = 0.0269/2, Rₚ = 0, Rₛ = 0, Lₛ = 0.0269/2, Cₜ = 7e-9, Cₛ = 12e-9, pins = 3, transformation = true)
          

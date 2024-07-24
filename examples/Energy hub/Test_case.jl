@@ -11,7 +11,7 @@ using DelimitedFiles
 using SymEngine
 using Plots
 using LinearAlgebra
-using HVDCstability
+#using HVDCstability
 
 
 
@@ -70,7 +70,7 @@ grid=@network begin
 
 
 
-    CableDC12 = cable(length = 60e3, positions = [(-0.5,1), (0.5,1)],
+    CableDC12 = cable(length = 0.01e3, positions = [(-0.5,1), (0.5,1)],
         C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
         I1 = Insulator(rᵢ = 24.25e-3, rₒ = 41.75e-3, ϵᵣ = 2.3),
         C2 = Conductor(rᵢ = 41.75e-3, rₒ = 46.25e-3, ρ = 22e-8),

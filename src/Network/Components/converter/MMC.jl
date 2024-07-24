@@ -468,31 +468,25 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     # Virtual impedance
 
     if in(:VI, keys(converter.controls))
-
+        # The implementation is equivalent with the one before, since results are matching
+        # Hence the state-space realization, which is different now impacts the results!
         # TODO: Implement arbitary order of butterworth filtering
-        if ((converter.controls[:VI].n_f)) == 2 # Voltage Filtering second order butterworth
+        if ((converter.controls[:VI].n_f)) >=1  # Voltage filtering with butterworth filter
 
+            Abutt, Bbutt, Cbutt, Dbutt =  butterworthMatrices(converter.controls[:VI].n_f, converter.controls[:VI].ω_f, 2);
             #Voltage filtering of Vᴳd
             push!(exp.args, :(
-                F[$index+1]=x[$index+2];  #eta_1
-                F[$index+2]=-($(converter.controls[:VI].ω_f))^2 *x[$index+1]-sqrt(2)*$(converter.controls[:VI].ω_f)*x[$index+2]+($(converter.controls[:VI].ω_f))^2 *Vᴳd; #eta_2
-                Vᴳd_f=x[$index+1]))
+                voltagesIn = [Vᴳd;Vᴳq];
+                statesButt= x[$index + 1 : $index + 2*$(converter.controls[:VI].n_f)]; 
+                F[$index + 1 : $index + 2*$(converter.controls[:VI].n_f)] = $Abutt*statesButt + $Bbutt*voltagesIn;
+                voltagesOut=$Cbutt*statesButt+$Dbutt*voltagesIn;
+                Vᴳd_f=voltagesOut[1];
+                Vᴳq_f=voltagesOut[2];
+                ))
 
             init_x = [init_x;zeros(index-length(init_x))];
-            init_x = [init_x;Vm * cos(θ);0];
-            index += 2
-            
-
-
-            #Voltage filtering of Vᴳq
-            push!(exp.args, :(
-                F[$index+1]=x[$index+2];  #eta_1
-                F[$index+2]=-($(converter.controls[:VI].ω_f))^2 *x[$index+1]-sqrt(2)*$(converter.controls[:VI].ω_f)*x[$index+2]+($(converter.controls[:VI].ω_f))^2 *Vᴳq; #eta_2
-                Vᴳq_f=x[$index+1]))
-
-                init_x = [init_x;zeros(index-length(init_x))];
-                init_x = [init_x;-Vm * sin(θ);0];
-                index += 2
+            init_x = [init_x; (Vm * cos(θ));zeros(converter.controls[:VI].n_f-1);(-Vm * sin(θ));zeros(converter.controls[:VI].n_f-1)];
+            index += 2*(converter.controls[:VI].n_f) 
 
         else #TODO: Implement without filtering
                 # Vᴳq_f= Vᴳq ...
@@ -575,9 +569,9 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                         #             $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - ω * $Lₑ * iΔd + Vᴳq);
                         # Assuming constant w. Having (1+deltaw) instead of 1 results in mismatches above 100 Hz in y_dq and y_qq.
                         vMΔd_ref_c = ( x[$index+1] +
-                                    $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + $Lₑ * iΔq + Vᴳd);
+                                    $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + $Lₑ * iΔq + 0*Vᴳd);
                         vMΔq_ref_c = ( x[$index+2] +
-                                    $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - $Lₑ * iΔd + Vᴳq);
+                                    $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - $Lₑ * iΔd + 0*Vᴳq);
                         (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c]))  # Transformation from converter frame to grid dq frame 
             index += 2
         end
@@ -901,3 +895,72 @@ function timeDelayPadeMatrices(padeOrderNum,padeOrderDen,t_delay,numberVars)
 
     return A_Pade,B_Pade,C_Pade,D_Pade
 end
+
+function butterworthMatrices(buttOrder,ω_c,numberVars)
+
+    # Calculation of the state-space representation of a n-order butterworth filter with a gain of 1.
+    # buttOrder = Order of butterworth filter, ω_c= Cutoff frequency of the filter in [rad/s]
+    # 
+    # TODO: Reference to equations
+   
+    size_A=buttOrder;
+    Ab=zeros(size_A,size_A);
+    Bb=zeros(size_A,1);
+    Bb[end]=1;
+    Bb[end]=Bb[end]*(ω_c)^buttOrder
+    Cb=zeros(1,size_A);
+    Cb[1]=1;
+    Db=0;
+    Ab[1:end-1,2:end] = Matrix(1.0I, buttOrder-1, buttOrder-1);
+    
+    γ=pi/(2*buttOrder)
+    
+    # Calculation of the matrix entries in A 
+    # Calculation of the coefficients of the denominator polynominal aₙ*sⁿ+...+a₀
+    for i=0:buttOrder-1
+    
+        
+        if i==0
+    
+            a_i = 1 
+            Ab[end, i+1] = -a_i;
+        
+        else 
+    
+            a_i = 1; 
+            for μ=1:i
+    
+                a_i=a_i*cos((μ-1)γ)/(sin(μ*γ));
+            
+            end
+            Ab[end, i+1] = -a_i * (1/ω_c)^(i)
+    
+        end
+    
+    
+    end
+    
+    # Convert from aₙ*sⁿ+...+a₀ to sⁿ+...+a₀ by dividing numerator and denominator by 1/aₙ
+    # Ab[end, 1:end]=Ab[end, 1:end]*(ω_c)^buttOrder;
+    # Cb[1]=Cb[1]*(ω_c)^buttOrder;
+    
+    # Adjust matrices for multiple,independent inputs, so far only up to 2 possible
+    if numberVars == 1 #One input, one output
+        A_butt=Ab;
+        B_butt=Bb;
+        C_butt=Cb;
+        D_butt=Db;
+    elseif numberVars == 2 #Two inputs, two outputs 
+        A_butt=cat(Ab,Ab;dims=[1,2]);
+        B_butt=cat(Bb,Bb;dims=[1,2]);
+        C_butt=cat(Cb,Cb;dims=[1,2]);
+        D_butt=cat(Db,Db;dims=[1,2]);
+    end
+    
+    return A_butt,B_butt,C_butt,D_butt
+   
+end 
+
+
+
+
