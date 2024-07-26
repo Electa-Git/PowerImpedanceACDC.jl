@@ -470,7 +470,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
     if in(:VI, keys(converter.controls))
         # The implementation is equivalent with the one before, since results are matching
         # Hence the state-space realization, which is different now impacts the results!
-        # TODO: Implement arbitary order of butterworth filtering
+        # TODO: 
         if ((converter.controls[:VI].n_f)) >=1  # Voltage filtering with butterworth filter
 
             Abutt, Bbutt, Cbutt, Dbutt =  butterworthMatrices(converter.controls[:VI].n_f, converter.controls[:VI].ω_f, 2);
@@ -485,11 +485,17 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
                 ))
 
             init_x = [init_x;zeros(index-length(init_x))];
-            init_x = [init_x; (Vm * cos(θ));zeros(converter.controls[:VI].n_f-1);(-Vm * sin(θ));zeros(converter.controls[:VI].n_f-1)];
+            #init_x = [init_x; (Vm * cos(θ))/Cbutt[1];zeros(converter.controls[:VI].n_f-1);(-Vm * sin(θ))/Cbutt[1];zeros(converter.controls[:VI].n_f-1)];
+            init_x = [init_x; 2*zeros(converter.controls[:VI].n_f)];
             index += 2*(converter.controls[:VI].n_f) 
 
-        else #TODO: Implement without filtering
-                # Vᴳq_f= Vᴳq ...
+        else  # No voltage filtering
+
+            push!(exp.args, :(
+                Vᴳd_f=Vᴳd;
+                Vᴳq_f=Vᴳq;
+            ))
+
         end
 
         
@@ -555,25 +561,54 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc)
             index += 2            
         elseif (key == :occ)
             # output current control
-            push!(exp.args, :(
-                        # (iΔd_ref, iΔq_ref) = T_θ * [iΔd_ref; iΔq_ref];
-                        F[$index+1] = $(converter.controls[:occ].Kᵢ) * (iΔd_ref - iΔd);
-                        F[$index+2] = $(converter.controls[:occ].Kᵢ) * (iΔq_ref - iΔq);
-                        # vMΔd_ref = Ki_Δ * xiΔd + Kp_Δ * (iΔd_ref -  iΔd) + w*L_eqac*iΔq + Vᴳd
-                        # vMΔq_ref = Ki_Δ * xiΔq + Kp_Δ * (iΔq_ref -  iΔq) - w*Leqac*iΔd + Vᴳq
-                        
-                        # Original case, w provided by the PLL
-                        # vMΔd_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+1] +
-                        #             $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + ω * $Lₑ * iΔq + Vᴳd);
-                        # vMΔq_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+2] +
-                        #             $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - ω * $Lₑ * iΔd + Vᴳq);
-                        # Assuming constant w. Having (1+deltaw) instead of 1 results in mismatches above 100 Hz in y_dq and y_qq.
-                        vMΔd_ref_c = ( x[$index+1] +
-                                    $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + $Lₑ * iΔq + 0*Vᴳd);
-                        vMΔq_ref_c = ( x[$index+2] +
-                                    $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - $Lₑ * iΔd + 0*Vᴳq);
-                        (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c]))  # Transformation from converter frame to grid dq frame 
-            index += 2
+
+
+            if ((converter.controls[:occ].n_f)) >=1  # Filtering of the voltage in the voltage feedforward with nth-order butterworth filter with gain 1 
+
+                Abutt_fc, Bbutt_fc, Cbutt_fc, Dbutt_fc =  butterworthMatrices(converter.controls[:occ].n_f, converter.controls[:occ].ω_f, 2);
+                #Voltage filtering of Vᴳd
+                push!(exp.args, :(
+                    voltagesIn = [Vᴳd;Vᴳq];
+                    statesButt_fc= x[$index + 1 : $index + 2*$(converter.controls[:occ].n_f)]; 
+                    F[$index + 1 : $index + 2*$(converter.controls[:occ].n_f)] = $Abutt_fc*statesButt_fc + $Bbutt_fc*voltagesIn;
+                    voltagesOut_fc=$Cbutt_fc*statesButt_fc+$Dbutt_fc*voltagesIn;
+                    Vᴳd_fc=voltagesOut_fc[1];
+                    Vᴳq_fc=voltagesOut_fc[2];
+                    ))
+                    init_x = [init_x;zeros(index-length(init_x))];
+                    init_x = [init_x; 2*zeros(converter.controls[:occ].n_f)];
+                    index += 2*(converter.controls[:occ].n_f) 
+
+            else # No filtering of the voltage in the voltage feedforward
+
+                push!(exp.args, :(
+                    Vᴳd_fc=1*Vᴳd;
+                    Vᴳq_fc=1*Vᴳq;
+                ))
+
+
+            end
+                push!(exp.args, :(
+                    # (iΔd_ref, iΔq_ref) = T_θ * [iΔd_ref; iΔq_ref];
+                    F[$index+1] = $(converter.controls[:occ].Kᵢ) * (iΔd_ref - iΔd);
+                    F[$index+2] = $(converter.controls[:occ].Kᵢ) * (iΔq_ref - iΔq);
+                    # vMΔd_ref = Ki_Δ * xiΔd + Kp_Δ * (iΔd_ref -  iΔd) + w*L_eqac*iΔq + Vᴳd
+                    # vMΔq_ref = Ki_Δ * xiΔq + Kp_Δ * (iΔq_ref -  iΔq) - w*Leqac*iΔd + Vᴳq
+                    
+                    # Original case, w provided by the PLL
+                    # vMΔd_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+1] +
+                    #             $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + ω * $Lₑ * iΔq + Vᴳd);
+                    # vMΔq_ref_c = ($(converter.controls[:occ].Kᵢ) * x[$index+2] +
+                    #             $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - ω * $Lₑ * iΔd + Vᴳq);
+                    # Assuming constant w. Having (1+deltaw) instead of 1 results in mismatches above 100 Hz in y_dq and y_qq.
+                    vMΔd_ref_c = ( x[$index+1] +
+                                $(converter.controls[:occ].Kₚ) * (iΔd_ref - iΔd) + $Lₑ * iΔq + 1*Vᴳd_fc);
+                    vMΔq_ref_c = ( x[$index+2] +
+                                $(converter.controls[:occ].Kₚ) * (iΔq_ref - iΔq) - $Lₑ * iΔd + 1*Vᴳq_fc);
+                    (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c]))  # Transformation from converter frame to grid dq frame 
+                index += 2
+
+
         end
     end
     push!(exp.args,
@@ -871,11 +906,11 @@ function timeDelayPadeMatrices(padeOrderNum,padeOrderDen,t_delay,numberVars)
     # Bd=T*Bd;
     # Cd=Cd*T_inv;
     # Alternative
-    # sys = ss(Ad,Bd,Cd,Dd)
-    # sys_modal = modal_form(sys)
-    # Ad = sys_modal[1].A
-    # Bd = sys_modal[1].B
-    # Cd = sys_modal[1].C
+    sys = ss(Ad,Bd,Cd,Dd)
+    sys_modal = modal_form(sys; C1=true)
+    Ad = sys_modal[1].A
+    Bd = sys_modal[1].B
+    Cd = sys_modal[1].C
     # Concatenate the Pade matrices: nDelta_d, nDelta_q, nSigma_d, nSigma_q, nSigma_z
     # A_Pade=cat(Ad,Ad,Ad,Ad,Ad;dims=[1,2]);
     # B_Pade=cat(Bd,Bd,Bd,Bd,Bd;dims=[1,2]);
@@ -907,7 +942,6 @@ function butterworthMatrices(buttOrder,ω_c,numberVars)
     Ab=zeros(size_A,size_A);
     Bb=zeros(size_A,1);
     Bb[end]=1;
-    Bb[end]=Bb[end]*(ω_c)^buttOrder
     Cb=zeros(1,size_A);
     Cb[1]=1;
     Db=0;
@@ -941,9 +975,21 @@ function butterworthMatrices(buttOrder,ω_c,numberVars)
     end
     
     # Convert from aₙ*sⁿ+...+a₀ to sⁿ+...+a₀ by dividing numerator and denominator by 1/aₙ
-    # Ab[end, 1:end]=Ab[end, 1:end]*(ω_c)^buttOrder;
-    # Cb[1]=Cb[1]*(ω_c)^buttOrder;
+    Ab[end, 1:end]=Ab[end, 1:end]*(ω_c)^buttOrder;
+    Cb[1]=Cb[1]*(ω_c)^buttOrder;
     
+
+    # Controllable canonical form can create problems while solving for MMC steady-state, espec. when high order pade approximation is used. 
+    # Probably related to high conditioning number of controllable canonical form.
+    # Transformation to modal form, which results in lower conditioning number.
+    sys = ss(Ab,Bb,Cb,Db)
+    sys_modal = modal_form(sys;C1 = true)
+    Ab= sys_modal[1].A
+    Bb = sys_modal[1].B
+    Cb = sys_modal[1].C
+    Db = sys_modal[1].D
+
+
     # Adjust matrices for multiple,independent inputs, so far only up to 2 possible
     if numberVars == 1 #One input, one output
         A_butt=Ab;

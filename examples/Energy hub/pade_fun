@@ -21,7 +21,7 @@ function timeDelayPadeMatrices(padeOrderNum,padeOrderDen,t_delay,numberVars)
         Ad[end,i+1] =-a_i;
         Cd[i+1] = (b_i-(a_i*b_l));
     end
-    # # Convert from controllable canonical form to diagonal form - This does not work as such a state-space representation is complex-valued
+    # Convert from controllable canonical form to diagonal form - This does not work as such a state-space representation is complex-valued
     # d_not_sorted=eigvals(Ad);
     # v_not_sorted=eigvecs(Ad);
     # d=zeros(ComplexF64,padeOrderDen,1);
@@ -64,38 +64,35 @@ function timeDelayPadeMatrices(padeOrderNum,padeOrderDen,t_delay,numberVars)
     #         end
     #     end
     # end
-    # # Original implementation, resulting in a SingularException for Pade orders larger than 3.
-    # # T=inv(T_inv);
-    # # Ad=T*Ad*T_inv;
-    # # Bd=T*Bd;
-    # # Cd=Cd*T_inv;
-    # # Alternative
-    # sys = ss(Ad,Bd,Cd,Dd)
-    # sys_modal = sys
-    # Ad = sys_modal[1].A
-    # Bd = sys_modal[1].B
-    # Cd = sys_modal[1].C
-    # # Concatenate the Pade matrices: nDelta_d, nDelta_q, nSigma_d, nSigma_q, nSigma_z
-    # # A_Pade=cat(Ad,Ad,Ad,Ad,Ad;dims=[1,2]);
-    # # B_Pade=cat(Bd,Bd,Bd,Bd,Bd;dims=[1,2]);
-    # # C_Pade=cat(Cd,Cd,Cd,Cd,Cd;dims=[1,2]);
-    # # D_Pade=cat(Dd,Dd,Dd,Dd,Dd;dims=[1,2]);
-    # if numberVars == 1
-    #     A_Pade=Ad;
-    #     B_Pade=Bd;
-    #     C_Pade=Cd;
-    #     D_Pade=Dd;
-    # elseif numberVars == 2
-    #     A_Pade=cat(Ad,Ad;dims=[1,2]);
-    #     B_Pade=cat(Bd,Bd;dims=[1,2]);
-    #     C_Pade=cat(Cd,Cd;dims=[1,2]);
-    #     D_Pade=cat(Dd,Dd;dims=[1,2]);
-    # end
+    #Original implementation, resulting in a SingularException for Pade orders larger than 3.
+    # T=inv(T_inv);
+    # Ad=T*Ad*T_inv;
+    # Bd=T*Bd;
+    # Cd=Cd*T_inv;
+    # Alternative
+    sys = ss(Ad,Bd,Cd,Dd)
+    sys_modal = modal_form(sys;C1 = true)
+    Ad = sys_modal[1].A
+    Bd = sys_modal[1].B
+    Cd = sys_modal[1].C
+    # Concatenate the Pade matrices: nDelta_d, nDelta_q, nSigma_d, nSigma_q, nSigma_z
+    # A_Pade=cat(Ad,Ad,Ad,Ad,Ad;dims=[1,2]);
+    # B_Pade=cat(Bd,Bd,Bd,Bd,Bd;dims=[1,2]);
+    # C_Pade=cat(Cd,Cd,Cd,Cd,Cd;dims=[1,2]);
+    # D_Pade=cat(Dd,Dd,Dd,Dd,Dd;dims=[1,2]);
+    if numberVars == 1
+        A_Pade=Ad;
+        B_Pade=Bd;
+        C_Pade=Cd;
+        D_Pade=Dd;
+    elseif numberVars == 2
+        A_Pade=cat(Ad,Ad;dims=[1,2]);
+        B_Pade=cat(Bd,Bd;dims=[1,2]);
+        C_Pade=cat(Cd,Cd;dims=[1,2]);
+        D_Pade=cat(Dd,Dd;dims=[1,2]);
+    end
 
-
-
-
-    return Ad,Bd,Cd,Dd
+    return A_Pade,B_Pade,C_Pade,D_Pade
 end
 
 
@@ -116,6 +113,16 @@ D_delay = timeDelayOut[4];
 
 println("Script done!")
 
+
+# Print the matrices (you can customize this part)
+println("A matrix:")
+display(A_delay)
+println("B matrix:")
+display(B_delay)
+println("C matrix:")
+display(C_delay)
+println("D matrix:")
+display(D_delay)
 
 
 

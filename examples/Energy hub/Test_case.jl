@@ -47,14 +47,14 @@ grid=@network begin
      MMC1 = mmc(Vᵈᶜ = Vdc, vDCbase = 640, Sbase = 1060, vACbase_LL_RMS = 320, turnsRatio = 320/400, Vₘ = Vm, Lᵣ = 0.18 * (320^2/1060) /2/pi/50, Rᵣ = 0.001 *(320^2/1060),
         P_max = 1500, P_min = -1500, P = Pmmc, Q = Qmmc, Q_max = 1000, Q_min = -1000, 
         Rₐᵣₘ = 0.4,Lₐᵣₘ = 46.125e-3,Cₐᵣₘ = 11.3867e-3,N = 400,
-        occ = PI_control(Kₚ = 0.6787, Kᵢ = 292.2087),
+        occ = PI_control(Kₚ = 0.6787, Kᵢ = 292.2087, n_f=1, ω_f=200*2*pi),
         ccc = PI_control(Kₚ = 0.0992, Kᵢ = 42.9719),
         zcc = PI_control(Kₚ = 0.0992, Kᵢ = 42.9719),
         energy = PI_control(Kₚ = 1.386, Kᵢ = 29.70),
         pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664, n_f= 1,ω_f=75*2*pi),
         q = PI_control(Kₚ = 0.0, Kᵢ = 30.0, n_f = 2,ω_f = 140*2*pi),
         p = VSE(H = 5,K_d = 100,K_ω = 10,ref_ω = 1, n_f = 2,ω_f = 140*2*pi),
-        VI= CCQSEM(Rᵥ = 0.01,Lᵥ = 0.25,ref_vd = 1,ref_vq = 0,n_f = 2,ω_f = 200), gfm= true, timeDelay = 200e-6, padeOrderNum = 5, padeOrderDen = 5) 
+        VI= CCQSEM(Rᵥ = 0.01,Lᵥ = 0.25,ref_vd = 1,ref_vq = 0,n_f = 2,ω_f = 200), gfm= true) 
 
         # MMC1 = mmc(Vᵈᶜ = Vdc, vDCbase = 640, Sbase = 1000, vACbase_LL_RMS = 333, turnsRatio = 333/380, Vₘ = Vm, Lᵣ = Ltrafo, Rᵣ = Rtrafo,
         # P_max = 1500, P_min = -1500, P = Pmmc, Q = Qmmc, Q_max = 1000, Q_min = -1000,
@@ -145,6 +145,7 @@ end
 
 
 bode_Ydd = bodeplot(Y_dd, omega_Y_MMC1, legend = "Y_dd")
+
 display(bode_Ydd)
 
 
