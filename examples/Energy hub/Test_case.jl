@@ -3,26 +3,29 @@
 # Single node stability analysis
 
 
-#= include("../../src/HVDCstability.jl")
-using .HVDCstability 
- =#
+# include("../../src/HVDCstability.jl")
+# using .HVDCstability 
+ 
 
 using DelimitedFiles
 using SymEngine
 using Plots
 using LinearAlgebra
+#using HVDCstability
 
 
 
 s = symbols("s")
-Pmmc = 700
+Pmmc = 0.7*1060
 Qmmc = 0
-Vm = 380 / sqrt(3) #Vln,rms
+Vm = 400 / sqrt(3) #Vln,rms !!!!!!!!!!!!Change!!!!!!!!!!!!!!!!!!
 Vdc = 640
 
 Ztrafo_base = 380^2/1000
+
 Ltrafo = 0.18 * Ztrafo_base /2/pi/50
 Rtrafo = 0.005 * Ztrafo_base
+
 
 
 grid=@network begin
@@ -33,27 +36,41 @@ grid=@network begin
 
     G3 = ac_source(pins = 3, V = Vm, transformation = true)
 
-    Zg3 = impedance(z = 0.28 + 0.009*s, pins = 3, transformation = true)
+    # Zg3 = impedance(z = 0.28 + 0.009*s, pins = 3, transformation = true)
 
-    OHLg3MMC1 = overhead_line(length = 50e3,
-        conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
-                        Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
-        groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
-        earth_parameters = (1,1,100), transformation = true)
+    # OHLg3MMC1 = overhead_line(length = 50e3,
+    #     conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
+    #                     Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
+    #     groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
+    #     earth_parameters = (1,1,100), transformation = true)
     
-    MMC1 = mmc(Vᵈᶜ = Vdc, vDCbase = 640, Sbase = 1000, vACbase_LL_RMS = 333, turnsRatio = 333/380, Vₘ = Vm, Lᵣ = Ltrafo, Rᵣ = Rtrafo,
-        P_max = 1500, P_min = -1500, P = Pmmc, Q = Qmmc, Q_max = 1000, Q_min = -1000,
-        occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
-        ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
-        pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-        p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159), 
-        #p = VSE(H= 1,K_d=0,K_ω=0,n_f=0,ω_f=0)
-        ) 
+     MMC1 = mmc(Vᵈᶜ = Vdc, vDCbase = 640, Sbase = 1060, vACbase_LL_RMS = 320, turnsRatio = 320/400, Vₘ = Vm, Lᵣ = 0.18 * (320^2/1060) /2/pi/50, Rᵣ = 0.001 *(320^2/1060),
+        P_max = 1500, P_min = -1500, P = Pmmc, Q = Qmmc, Q_max = 1000, Q_min = -1000, 
+        Rₐᵣₘ = 0.4,Lₐᵣₘ = 46.125e-3,Cₐᵣₘ = 11.3867e-3,N = 400,
+        occ = PI_control(Kₚ = 0.6787, Kᵢ = 292.2087, n_f=1, ω_f=200*2*pi),
+        ccc = PI_control(Kₚ = 0.0992, Kᵢ = 42.9719),
+        zcc = PI_control(Kₚ = 0.0992, Kᵢ = 42.9719),
+        energy = PI_control(Kₚ = 1.386, Kᵢ = 29.70),
+        pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664, n_f= 1,ω_f=75*2*pi),
+        q = PI_control(Kₚ = 0.0, Kᵢ = 30.0, n_f = 2,ω_f = 140*2*pi),
+        p = VSE(H = 5,K_d = 100,K_ω = 10,ref_ω = 1, n_f = 2,ω_f = 140*2*pi),
+        VI= CCQSEM(Rᵥ = 0.01,Lᵥ = 0.25,ref_vd = 1,ref_vq = 0,n_f = 2,ω_f = 200), gfm= true) 
+
+        # MMC1 = mmc(Vᵈᶜ = Vdc, vDCbase = 640, Sbase = 1000, vACbase_LL_RMS = 333, turnsRatio = 333/380, Vₘ = Vm, Lᵣ = Ltrafo, Rᵣ = Rtrafo,
+        # P_max = 1500, P_min = -1500, P = Pmmc, Q = Qmmc, Q_max = 1000, Q_min = -1000,
+        # occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
+        # ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+        # zcc = PI_control(Kₚ = 0.0992, Kᵢ = 42.9719),
+        # energy = PI_control(Kₚ = 1.386, Kᵢ = 29.70),
+        # pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
+        # p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+        # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+        # ) 
 
 
 
-    CableDC12 = cable(length = 60e3, positions = [(-0.5,1), (0.5,1)],
+
+    CableDC12 = cable(length = 0.01e3, positions = [(-0.5,1), (0.5,1)],
         C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
         I1 = Insulator(rᵢ = 24.25e-3, rₒ = 41.75e-3, ϵᵣ = 2.3),
         C2 = Conductor(rᵢ = 41.75e-3, rₒ = 46.25e-3, ρ = 22e-8),
@@ -90,14 +107,8 @@ grid=@network begin
     G2[2.1] ⟷ gndD
     G2[2.2] ⟷ gndQ
 
-    G3[1.1] ⟷ Zg3[1.1] ⟷ NodeG3d
-    G3[1.2] ⟷ Zg3[1.2] ⟷ NodeG3q
-
-    Zg3[2.1] ⟷ OHLg3MMC1[2.1] ⟷ Nodeg3d
-    Zg3[2.2] ⟷ OHLg3MMC1[2.2] ⟷ Nodeg3q
-
-    OHLg3MMC1[1.1] == MMC1[2.1] ⟷ NodeMMC1d
-    OHLg3MMC1[1.2] == MMC1[2.2] ⟷ NodeMMC1q
+    G3[1.1] == MMC1[2.1] ⟷ NodeMMC1d
+    G3[1.2]  == MMC1[2.2] ⟷ NodeMMC1q
     
     MMC1[1.1]== CableDC12[1.1] ⟷ NodeDC1
     MMC2[1.1]== CableDC12[2.1] ⟷ NodeDC2
@@ -116,19 +127,26 @@ grid=@network begin
 
 end
 
-omega_Y_MMC1 = collect(range(2*pi*0.01, stop=2*pi*1000, step=1))
+omega_Y_MMC1 = collect(range(2*pi*0.1, stop=2*pi*5000, step=1))
 
 
 
 Y_MMC1 = []
-
+Y_dd = []
 
 
 for i in 1:length(omega_Y_MMC1)
     Y1 = eval_abcd(grid.elements[:MMC1].element_value, 1im*omega_Y_MMC1[i]) 
     push!(Y_MMC1, [transpose(Y1[1,:]); transpose(-Y1[2,:]); transpose(-Y1[3,:])]) # Keep sign of Ydc, swapping sign of Yacs
-    # push!(Y_dc2, Y2[1,1]) 
+    push!(Y_dd, -Y1[2,2]) 
 end
+
+
+
+
+bode_Ydd = bodeplot(Y_dd, omega_Y_MMC1, legend = "Y_dd")
+
+display(bode_Ydd)
 
 
 writedlm("./files/Y_MMC1.csv",  Y_MMC1, ',')
