@@ -19,7 +19,7 @@ In order to run the package it is necessary to install supporting packages: `Par
 using Pkg
 Pkg.add("package_name")
 ```
-
+test
 To remove the package, call the following command:
 ```
 using Pkg
