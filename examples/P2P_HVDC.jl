@@ -1,20 +1,11 @@
-# For debugging
-# include("../src/HVDCstability.jl")
-# using .HVDCstability
-# using DelimitedFiles,SymEngine
-# For normal operation
-using DelimitedFiles,SymEngine
-s = symbols("s")
+using PowerImpedanceACDC,DelimitedFiles
+
 transmissionVoltage = 380 / sqrt(3)
 pHVDC1 = 600
 qC1 = -100
 qC2 = 100
-qC3 = 0
-qC4 = 100
-
 # The P and Q defined here are what is injected into the network. 
-# The setpoint of the reactive power controller is minus the value set here. This is adjusted internally, no action here needed.
-# For voltage controlling converters the voltage references have to be defined inside the corresponding voltage controller!!
+
 @time net = @network begin
 
         voltageBase = transmissionVoltage
@@ -23,32 +14,24 @@ qC4 = 100
 
                                 
         # HVDC link 1
-        # PU gains
         # MMC1 controls the DC voltage, and is situated at the remote end.
         c1 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
                 P_max = 1500, P_min = -1500, P = -pHVDC1, Q = qC1, Q_max = 500, Q_min = -500,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
-                # ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [transmissionVoltage*sqrt(2)]),
-                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC1]),
-                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [transmissionVoltage*sqrt(2)]),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15, ref = [1.0])
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+                dc = PI_control(Kₚ = 5, Kᵢ = 15)
                 )
         # MMC2 controls P&Q. It is connected to bus 7. Define the transformer impedance parameters at the converter side!
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
                 P_max = 1000, P_min = -1000, P = pHVDC1, Q = qC2, Q_max = 1000, Q_min = -1000,
-                # timeDelay = 150e-6, padeOrderNum = 3, padeOrderDen = 3,
                 vACbase_LL_RMS = 333, turnsRatio = 333/380, Lᵣ = 0.0461, Rᵣ = 0.4103,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
-                # ccc = PI_control(Kₚ = 0.067, Kᵢ = 30.8425),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
-                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [pHVDC1]),
-                # vac_supp = PI_control(Kₚ = 20, ω_f = 100, ref = [transmissionVoltage*sqrt(2)]),
-                # q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159, ref = [qC2])
-                vac = PI_control(Kₚ = 0, Kᵢ = 100, ref = [transmissionVoltage*sqrt(2)])
+                p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+                q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
                 )
 
         dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
@@ -97,11 +80,12 @@ qC4 = 100
         c1[1.1] ⟷ dc_line[1.1]
         c2[1.1] ⟷ dc_line[2.1]
 
-        # 30 km cable at the AC side
+        # 30 km power line at the AC side
         c2[2.1] == tl78[1.1]
         c2[2.2] == tl78[1.2]
         g1[1.1] == tl78[2.1] == Bus7d
         g1[1.2] == tl78[2.2] == Bus7q
+
         # Nothing at the AC side
         # g1[1.1] == c2[2.1] == Bus7d
         # g1[1.2] == c2[2.2] == Bus7q
@@ -112,16 +96,19 @@ qC4 = 100
 
 end
 
+# Determine impedance seen at the AC side of the HVDC link
 @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus7d,:Bus7q], 
 output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
+
 # @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g4], input_pins=Any[:BusRd,:BusRq], 
 # output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
 
-writedlm("./files/imp_P2P.csv",  imp_ac, ',')
-writedlm("./files/w_P2P.csv",  omega_ac, ',')
+# Save the impedance and frequency data of estimarted impedance at the AC side of the HVDC link
+writedlm("./imp_P2P.csv",  imp_ac, ',')
+writedlm("./w_P2P.csv",  omega_ac, ',')
 
-
-writedlm("./files/A_p2p.csv",  net.elements[:c1].element_value.A, ',')
-writedlm("./files/B_p2p.csv",  net.elements[:c1].element_value.B, ',')
-writedlm("./files/C_p2p.csv",  net.elements[:c1].element_value.C, ',')
-writedlm("./files/D_p2p.csv",  net.elements[:c1].element_value.D, ',')
+# Save the A,B,C,D matrices of the MMC at the remote end
+writedlm("./A_p2p.csv",  net.elements[:c1].element_value.A, ',')
+writedlm("./B_p2p.csv",  net.elements[:c1].element_value.B, ',')
+writedlm("./C_p2p.csv",  net.elements[:c1].element_value.C, ',')
+writedlm("./D_p2p.csv",  net.elements[:c1].element_value.D, ',')

@@ -15,7 +15,7 @@ connect the pin to the ground while constructing the network.
 function ac_source(;args...)
     source = Source()
     transformation = false
-    for (key, val) in kwargs_pairs(args)
+    for (key, val) in pairs(args)
         if in(key, propertynames(source))
             setfield!(source, key, val)
         elseif (key == :transformation)

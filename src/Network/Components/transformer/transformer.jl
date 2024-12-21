@@ -68,7 +68,7 @@ Pins: `1.1`, `2.1` for single phase transformer and `1.1`, `1.2`, `1.3`, `2.1`,
 function transformer(;args...)
     t = Transformer() #mutable struct defined above
     transformation = false #dq transformation
-    for (key, val) in kwargs_pairs(args)
+    for (key, val) in pairs(args)
         if in(key, propertynames(t))
             setfield!(t, key, val)
         elseif (key == :transformation)

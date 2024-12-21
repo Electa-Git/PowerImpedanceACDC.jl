@@ -1,8 +1,5 @@
 export tlc
 
-include("converter.jl")
-include("controller.jl")
-
 @with_kw mutable struct TLC <: Converter
     ω₀ :: Union{Int, Float64} = 100*π
 
@@ -45,7 +42,7 @@ end
 function tlc(;args...)
     converter = TLC()
 
-    for (key, val) in kwargs_pairs(args)
+    for (key, val) in pairs(args)
         if isa(val, Controller)
             converter.controls[key] = val
         elseif in(key, propertynames(converter))
