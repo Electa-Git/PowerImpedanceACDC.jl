@@ -14,7 +14,7 @@ function mixed_OHL_cable(;args...)
     m = Mixed_OHL_cable()
     pins = 0
     transformation = false
-    for (key, val) in kwargs_pairs(args)
+    for (key, val) in pairs(args)
         if (key == :transformation)
             transformation = val
         else

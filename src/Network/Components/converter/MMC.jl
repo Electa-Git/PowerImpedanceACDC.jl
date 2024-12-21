@@ -1,8 +1,5 @@
 export mmc
 
-include("converter.jl")
-include("controller.jl")
-using NonlinearSolve, SteadyStateDiffEq # Delete and add to HVDCstability
 @with_kw mutable struct MMC <: Converter
     ω₀ :: Union{Int, Float64} = 100*π           # Base angular frequncy [rad/s]
 
@@ -94,7 +91,7 @@ DC-side: `1.1`.
 function mmc(;args...) #Constructor 
     converter = MMC()
 
-    for (key, val) in kwargs_pairs(args)
+    for (key, val) in pairs(args)
         if isa(val, Controller)
             converter.controls[key] = val
         elseif in(key, propertynames(converter))

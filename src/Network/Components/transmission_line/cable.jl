@@ -86,7 +86,7 @@ end
 function cable(;args...) # in parenthesis the input of the function julia uses "..." to describe a variable number of arguments. Variable because depends on the cable/insulator/sheath structure
     c = Cable() #variable c is become a mutable structure type-> Cable
     transformation = false #variable transformation is defined false (park transformation not operated)
-    for (key, val) in kwargs_pairs(args)
+    for (key, val) in pairs(args)
         if key == :positions
             for v in val
                 push!(c.positions, v) #insert v at the end of c.position ->variable position in c

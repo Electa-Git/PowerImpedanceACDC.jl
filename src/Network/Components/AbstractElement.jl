@@ -2,7 +2,7 @@ __precompile__()
 
 export save_data, plot_data
 
-include("tools/tools.jl")
+
 
 """
 Struct guarantees representation of the component like a multiport
@@ -24,7 +24,7 @@ mutable struct Element
 
   function Element(;args...)
     elem = new()
-    for (key, val) in kwargs_pairs(args)
+    for (key, val) in pairs(args)
       if (key in propertynames(elem))
         setfield!(elem, key, val)
       else
@@ -200,5 +200,4 @@ function plot_data(element :: Element; omega_range = (-3, 5, 1000),
     plot_data(element.element_value, omegas)
 end
 
-include("../Network.jl")
-include("element_types.jl")
+

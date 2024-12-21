@@ -93,7 +93,7 @@ groundwires = Groundwires(nᵍ = 2, Δxᵍ = 6.5, Δyᵍ = 7.5, Rᵍᵈᶜ = 0.9
 function overhead_line(;args...)
     tl = Overhead_line()
     transformation = false
-    for (key, val) in kwargs_pairs(args)
+    for (key, val) in pairs(args)
         if in(key, propertynames(tl))
             setfield!(tl, key, val)
         elseif (key == :transformation)

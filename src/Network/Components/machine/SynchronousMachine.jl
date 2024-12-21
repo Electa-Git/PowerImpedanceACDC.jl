@@ -1,6 +1,6 @@
 export synchronousmachine
 
-include("machine.jl")
+
 # include("controller.jl") # Removed this for now, will need to think in the future how to implement controllers for SGs.
 # TODO: Right now, second pins of the SG should be connected to the ground.
 @with_kw mutable struct SynchronousMachine <: Machine
@@ -80,7 +80,7 @@ end
 function synchronousmachine(;args...)
     gen = SynchronousMachine()
 
-    for (key, val) in kwargs_pairs(args)
+    for (key, val) in pairs(args)
         if in(key, propertynames(gen))
             setfield!(gen, key, val)
         else

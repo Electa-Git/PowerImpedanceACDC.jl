@@ -1,5 +1,4 @@
 export EVD
-using Peaks
 
 function EVD(Zcl_bus, omega, fmin, fmax,determinant=false)
 

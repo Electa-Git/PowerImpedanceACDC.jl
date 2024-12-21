@@ -1,40 +1,88 @@
-isdefined(Base, :__precompile__) && __precompile__()
-
 module PowerImpedanceACDC
 
-    # default struct values
+    # Default struct values
     using Parameters
     using DataStructures
 
-    # files manipulation
-    using FileIO, DelimitedFiles
-
-    # time delays
+    # Time delays
     using ControlSystemsBase, RobustAndOptimalControl
 
-    # plotting
+    # Plotting
     using PGFPlotsX
-    using Compat, Dates # compatibility across Julia
+    using Plots
 
-    # symbolic and numerical calculations
+    # Symbolic and numerical calculations
     using SymEngine
     using LinearAlgebra
-    using NLsolve, ForwardDiff  # solve diffs and nonlinear equations
-
+    using NLsolve, ForwardDiff,NonlinearSolve, SteadyStateDiffEq  # solve diffs and nonlinear equations
+    
     # Power flow
     using PowerModels, PowerModelsACDC
     using Ipopt
     using JuMP
 
-    # New Nyquist plots from Thomas
-    using Plots
-    using Combinatorics
+    # For tools
+    using Peaks
+
+    # Miscellaneous
     using Munkres
+    using Markdown
 
-    # file includes
-    include("Network/globals.jl")
-    include("Network/compat.jl")
+    # Including all components    
     include("Network/Components/AbstractElement.jl")
-    include("Network/Solvers/solvers.jl")
 
+    # Including network
+    include("Network/Network.jl")
+    
+    # Including network solvers
+    include("Network/Solvers/make_abcd.jl")
+    include("Network/Solvers/make_y.jl")
+    include("Network/Solvers/make_z.jl")
+    include("Network/Solvers/determine_impedance.jl")
+    include("Network/Solvers/make_y_matrix.jl")
+    include("Network/Solvers/stability.jl")
+
+    # Including tools
+    include("Network/Components/tools/abcd_parameters.jl")
+    include("Network/Components/tools/kron.jl")
+    include("Network/Components/tools/plot.jl")
+    include("Network/Components/tools/nyquist.jl")
+    include("Network/Components/tools/nyquistplot.jl")
+    include("Network/Components/tools/small_gain.jl")
+    include("Network/Components/tools/stabilitymargin.jl")
+    include("Network/Components/tools/EVD.jl")
+    include("Network/Components/tools/bodeplot.jl")
+    include("Network/Components/tools/passivity.jl")
+
+    # Impedance
+    include("Network/Components/impedance/impedance.jl")
+
+    # Transfromer
+    include("Network/Components/transformer/transformer.jl")
+
+    # Shunt reactor
+    include("Network/Components/shunt_reactor/shunt_reactor.jl")
+
+    # Cables and transmission lines
+    include("Network/Components/transmission_line/transmission_line.jl")
+    include("Network/Components/transmission_line/cable.jl")
+    include("Network/Components/transmission_line/overhead_line.jl")
+    include("Network/Components/transmission_line/mixed_OHL_cable.jl")
+
+    # Grid or source
+    include("Network/Components/source/source.jl")
+    include("Network/Components/source/dc_source.jl")
+    include("Network/Components/source/ac_source.jl")
+
+    # Converter
+    include("Network/Components/converter/converter.jl")
+    include("Network/Components/converter/controller.jl")
+    include("Network/Components/converter/MMC.jl")
+    include("Network/Components/converter/TLC.jl")
+
+    # Machines
+    include("Network/Components/machine/machine.jl")
+    include("Network/Components/machine/SynchronousMachine.jl")
+
+    
 end
