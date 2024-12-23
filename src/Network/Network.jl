@@ -157,6 +157,17 @@ function connect!(n::Network)
     end
 end
 
+# Doctest, should be added again to @doc block
+# ```jldoctest; output = false, setup = :(include("../src/PowerImpedanceACDC.jl"); using .PowerImpedanceACDC), filter = r"(PowerImpedanceACDC\.)?Network\(.*"s
+# network = Network()
+# add!(network, :r, impedance(z = 1e3, pins = 1))
+# add!(network, :src, dc_source(V = 5))
+# connect!(network, (:src, 2.1), (:r, 2.1), :gnd) # connect to gnd net
+# network
+# # output
+# Network(...)
+# ```
+
 @doc doc"""
     connect!(n::Network, pins::Union{Symbol,Tuple{Symbol,Any}}...)
 Connects the given pins (or named nets) to each other in the network `n`. Named
@@ -165,15 +176,7 @@ first entry is the reference designator of an element in `c`, and the second
 entry is the pin name. For convenience, the latter is automatically converted to
 a `Symbol` as needed.
 # Example
-```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Network\(.*"s
-network = Network()
-add!(network, :r, impedance(z = 1e3, pins = 1))
-add!(network, :src, dc_source(V = 5))
-connect!(network, (:src, 2.1), (:r, 2.1), :gnd) # connect to gnd net
-network
-# output
-Network(...)
-```
+
 """
 function connect!(n::Network, pins::Union{Symbol,Tuple{Symbol,Any}}...)
     nets = []
@@ -601,6 +604,36 @@ function power_flow(net :: Network)
     return result
 end
 
+# Doctest, should be added again to @doc block
+# ```jldoctest; output = false, setup = :(include("../src/PowerImpedanceACDC.jl"); using .PowerImpedanceACDC), filter = r"(PowerImpedanceACDC\.)?Network\(.*"s
+# @network begin
+#     src = dc_source(V = 5)
+#     r = impedance(z = 1000, pins = 1)
+#     src[1.1] ⟷ r[1.1]
+#     src[2.1] ⟷ r[2.1]
+# end
+# # output
+# Network(...)
+# ```
+
+# ```jldoctest; output = false, setup = :(include("../src/PowerImpedanceACDC.jl"); ImpedanceACDC), filter = r"(PowerImpedanceACDC\.)?Network\(.*"s
+# @network begin
+#     src = dc_source(V = 5)
+#     r = impedance(z = 1000, pins = 1), src[1.1] ⟷ [1.1], src[2.1] ⟷ [2.1]
+# end
+# # output
+# Network(...)
+# ```
+
+# ```jldoctest; output = false, setup = :(include("../src/PowerImpedanceACDC.jl"); ImpedanceACDC), filter = r"(PowerImpedanceACDC\.)?Network\(.*"s
+# @network begin
+#     src = dc_source(V = 5), [2.1] ⟷ gnd
+#     r = impedance(z = 1000, pins = 1), [1.1] ⟷ src[1.1], [2.1] ⟷ gnd
+# end
+# # output
+# Network(...)
+# ```
+
 @doc doc"""
     @network begin #= ... =# end
 Provides a simple domain-specific language to decribe networks. The
@@ -610,39 +643,16 @@ Provides a simple domain-specific language to decribe networks. The
 # Example
 To create a network with a voltage source connected to a resistor:
 
-```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Network\(.*"s
-@network begin
-    src = dc_source(V = 5)
-    r = impedance(z = 1000, pins = 1)
-    src[1.1] ⟷ r[1.1]
-    src[2.1] ⟷ r[2.1]
-end
-# output
-Network(...)
-```
+
 Alternatively, connection specifications can be given after an element
 specification, separated by commas. In that case, the `refdes` may be omitted,
 defaulting to the current element.
 # Example
-```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Network\(.*"s
-@network begin
-    src = dc_source(V = 5)
-    r = impedance(z = 1000, pins = 1), src[1.1] ⟷ [1.1], src[2.1] ⟷ [2.1]
-end
-# output
-Network(...)
-```
+
 Finally, a connection endpoint may simply be of the form `netname`, to connect
 to a named net. (Such named nets are created as needed.)
 # Example
-```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Network\(.*"s
-@network begin
-    src = dc_source(V = 5), [2.1] ⟷ gnd
-    r = impedance(z = 1000, pins = 1), [1.1] ⟷ src[1.1], [2.1] ⟷ gnd
-end
-# output
-Network(...)
-```
+
 If a net or pin specification is not just a single symbol or number, and has to
 be put in quotes (e.g. `"in+"`, `"9V"`)
 !!! note
@@ -741,24 +751,26 @@ macro network(cdef)
     return ccode
 end
 
+# Doctest, should be added again to @doc
+# ```jldoctest; output = false, setup = :(include("../src/PowerImpedanceACDC.jl"); using .PowerImpedanceACDC), filter = r"(PowerImpedanceACDC\.)?Element\(.*"s
+# net = @network begin
+#    r1 = impedance(z = 10e3, pins = 1)
+#    r2 = impedance(z = 10e3, pins = 1), [1.1] == r1[2.1]
+#    c = impedance(z = 10e3, pins = 1), [1.1] == r2[1.1], [2.1] == r2[2.1]
+#    src = dc_source(V = 5), [1.1] == r1[1.1], [2.1] == r2[2.1]
+# end
+# composite_element(net, Any[(:r2, Symbol(1.1))], Any[(:r2, Symbol(2.1))])
+# # output
+
+# Element(...)
+# ```
 
 @doc doc"""
     function composite_element(subnet::Network, input_pins::Array{Any}, output_pins::Array{Any})
 Create a net element from the (sub-)network `net`. The `input_pins` and `output_pin`
 define input and output nodes of the element.
 # Example
-```jldoctest; output = false, setup = :(include("../src/HVDCstability.jl"); using .HVDCstability), filter = r"(HVDCstability\.)?Element\(.*"s
-net = @network begin
-   r1 = impedance(z = 10e3, pins = 1)
-   r2 = impedance(z = 10e3, pins = 1), [1.1] == r1[2.1]
-   c = impedance(z = 10e3, pins = 1), [1.1] == r2[1.1], [2.1] == r2[2.1]
-   src = dc_source(V = 5), [1.1] == r1[1.1], [2.1] == r2[2.1]
-end
-composite_element(net, Any[(:r2, Symbol(1.1))], Any[(:r2, Symbol(2.1))])
-# output
 
-Element(...)
-```
 """
 function composite_element(subnet::Network, input_pins::Array{Any}, output_pins::Array{Any})
     element = Element(input_pins = length(input_pins), output_pins = length(output_pins),

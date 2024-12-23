@@ -2,6 +2,35 @@ docs:
   image: julia:1.11
   stage: deploy
   script:
+    - echo "==[ CI/CD Environment Information ]=="
+    - echo "GitLab Runner Version is ($CI_RUNNER_VERSION)"
+    - echo "GitLab Runner Description is $CI_RUNNER_DESCRIPTION"
+    - echo "Running on Runner ID is $CI_RUNNER_ID"
+    - echo "Job ID is $CI_JOB_ID"
+    - echo "Pipeline ID is $CI_PIPELINE_ID"
+    - echo "Project URL is $CI_PROJECT_URL"
+    - echo "Commit SHA is $CI_COMMIT_SHA"
+    - echo "Current Branch is $CI_COMMIT_REF_NAME"
+    - echo "Job Started on is $(date)"
+    - echo "Host Name is $(hostname)"
+    - echo "Working Directory is $(pwd)"
+    - echo "GitLab Project Directory is $CI_PROJECT_DIR"
+    - echo "Available Disk Space:"
+    - df -h
+    - echo "Environment Variables:"
+    - env | sort
+    - echo "==[ Filesystem Information ]=="
+    - echo "Root Directory Structure:"
+    - ls -la /
+    - echo "Current Directory Structure:"
+    - ls -la
+    - echo "Docs Directory Structure:"
+    - ls -la docs
+    - echo "Inside Container is $(whoami)@$(hostname)"
+    - echo "Home Directory Structure:"
+    - ls -la ~
+    
+    - echo "==[ Starting Julia Documentation Build ]=="
     - |
       julia --project=docs -e '
         using Pkg
@@ -11,9 +40,24 @@ docs:
         using PowerImpedanceACDC
         doctest(PowerImpedanceACDC)
         include("docs/make.jl")'
+    
+    - echo "==[ Post-Build Check  docs Directory Structure ]=="
+    - find docs
+    
+    - echo "==[ Moving Documentation Files to public/ Directory ]=="
+    - mkdir -p public
+    - mv docs/build/* public/
+    - echo "==[ Final public Directory Structure ]=="
+    - find public
+    
+  artifacts:
+    paths:
+      - public
+  
   only:
     - main
-    - tags
+
+
 
 
 

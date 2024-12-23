@@ -3,9 +3,8 @@ using PowerImpedanceACDC
 
 makedocs(
     sitename = "PowerImpedanceACDC",
-    format = Documenter.HTML(inventory_version="0.0"),
+    format = Documenter.HTML(),
     modules = [PowerImpedanceACDC],
-    doctest = false,
     repo = "gitlab.kuleuven.be/electa/controlgroup/hvdcstability.jl.git",
     pages = [
         "Home" => "index.md"
