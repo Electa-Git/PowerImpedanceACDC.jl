@@ -21,7 +21,10 @@ qC2 = 100
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
-                dc = PI_control(Kₚ = 5, Kᵢ = 15)
+                dc = PI_control(Kₚ = 5, Kᵢ = 15),
+                timeDelay = 0.000001,
+                padeOrderNum = 3,                    
+                padeOrderDen = 3 
                 )
         # MMC2 controls P&Q. It is connected to bus 7. Define the transformer impedance parameters at the converter side!
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
