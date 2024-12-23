@@ -1,0 +1,19 @@
+docs:
+  image: docker.km3net.de/base/julia:1.6
+  stage: deploy
+  script:
+    - |
+      julia --project=docs -e '
+        using Pkg
+        Pkg.develop(PackageSpec(path=pwd()))
+        Pkg.instantiate()
+        using Documenter: doctest
+        using PowerImpedanceACDC
+        doctest(PowerImpedanceACDC)
+        include("docs/make.jl")'
+  only:
+    - main
+    - tags
+
+
+
