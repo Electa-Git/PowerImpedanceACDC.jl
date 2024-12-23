@@ -1,5 +1,5 @@
 docs:
-  image: docker.km3net.de/base/julia:1.6
+  image: julia:1.11
   stage: deploy
   script:
     - |
