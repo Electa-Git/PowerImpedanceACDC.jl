@@ -55,7 +55,7 @@ docs:
       - public
   
   only:
-    - main
+    - docs
 
 
 
