@@ -41,8 +41,8 @@ pages:
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
         using Documenter: doctest
-        using JuliaGitLabPages
-        doctest(JuliaGitLabPages)
+        using PowerImpedanceACDC
+        doctest(PowerImpedanceACDC)
         include("docs/make.jl")'
     - echo "==[ Post-Build Check docs Directory Structure ]=="
     - find docs
@@ -55,4 +55,4 @@ pages:
     paths:
       - public
   only:
-    - main
+    - docs
