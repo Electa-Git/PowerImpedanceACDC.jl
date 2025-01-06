@@ -28,11 +28,11 @@ makedocs(
 # Documenter can also automatically deploy documentation to gh-pages.
 # See "Hosting Documentation" and deploydocs() in the Documenter manual
 # for more information.
-GITLAB_TOKEN = ENV["GITLAB_TOKEN"]
+# GITLAB_TOKEN = ENV["GITLAB_TOKEN"]
 
 deploydocs(
-    repo = "u0167553:$GITLAB_TOKEN@gitlab.kuleuven.be/electa/controlgroup/hvdcstability.jl.git",
-    devbranch="main",
+    repo = "gitlab.kuleuven.be/electa/controlgroup/hvdcstability.jl.git", # u0167553:$GITLAB_TOKEN@
+    devbranch="docs",
     branch="gl-pages",
     deploy_config = Documenter.GitLab()
 )
