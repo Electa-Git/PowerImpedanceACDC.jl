@@ -55,4 +55,4 @@ pages:
     paths:
       - public
   only:
-    - main
+    - docs
