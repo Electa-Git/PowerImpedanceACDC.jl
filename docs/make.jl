@@ -33,6 +33,6 @@ makedocs(
 deploydocs(
     repo = "git@gitlab.kuleuven.be/electa/controlgroup/hvdcstability.jl.git", # u0167553:$DOCUMENTER_KEY@
     devbranch="docs",
-    branch="gl-pages",
+    # branch="gl-pages",
     deploy_config = Documenter.GitLab()
 )

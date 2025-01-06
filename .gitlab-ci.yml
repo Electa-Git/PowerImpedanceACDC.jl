@@ -1,6 +1,11 @@
 pages:
   image: julia:1.11
   stage: deploy
+  before_script:
+    - mkdir -p ~/.ssh
+    - echo "$DOCUMENTER_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - echo -e "Host gitlab.kuleuven.be\n\tStrictHostKeyChecking no\n\tIdentityFile ~/.ssh/deploy_key\n" > ~/.ssh/config
   script:
     - echo "==[ CI/CD Environment Information ]=="
     - echo "GitLab Runner Version is ($CI_RUNNER_VERSION)"
@@ -29,7 +34,6 @@ pages:
     - echo "Inside Container is $(whoami)@$(hostname)"
     - echo "Home Directory Structure:"
     - ls -la ~
-    
     - echo "==[ Starting Julia Documentation Build ]=="
     - |
       julia --project=docs -e '
@@ -37,27 +41,18 @@ pages:
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
         using Documenter: doctest
-        using PowerImpedanceACDC
-        doctest(PowerImpedanceACDC)
+        using JuliaGitLabPages
+        doctest(JuliaGitLabPages)
         include("docs/make.jl")'
-    
-    - echo "==[ Post-Build Check  docs Directory Structure ]=="
+    - echo "==[ Post-Build Check docs Directory Structure ]=="
     - find docs
-    
     - echo "==[ Moving Documentation Files to public/ Directory ]=="
     - mkdir -p public
     - mv docs/build/* public/
     - echo "==[ Final public Directory Structure ]=="
     - find public
-    
   artifacts:
     paths:
       - public
-  
   only:
-    - docs
-
-
-
-
-
+    - main
