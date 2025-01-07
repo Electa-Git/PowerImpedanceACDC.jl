@@ -32,7 +32,7 @@ makedocs(
 #DOCUMENTER_KEY = ENV["DOCUMENTER_KEY"]
 
 deploydocs(
-    repo = "git@gitlab.kuleuven.be/electa/controlgroup/hvdcstability.jl.git", # u0167553:$DOCUMENTER_KEY@
+    repo = "gitlab.kuleuven.be/electa/controlgroup/hvdcstability.jl.git", # u0167553:$DOCUMENTER_KEY@
     devbranch="docs",
     # branch="gl-pages",
     #deploy_config = Documenter.GitLab()
