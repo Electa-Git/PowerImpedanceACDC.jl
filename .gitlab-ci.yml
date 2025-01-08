@@ -34,6 +34,7 @@ pages:
     - echo "==[ Starting Julia Documentation Build ]=="
     - |
       julia --project=docs -e '
+        ENV["JULIA_PKG_PRECOMPILE_AUTO"]=0
         using Pkg
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
