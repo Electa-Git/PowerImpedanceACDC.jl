@@ -33,8 +33,7 @@ pages:
     - ls -la ~
     - echo "==[ Starting Julia Documentation Build ]=="
     - |
-      julia --project=docs -e '
-        ENV["JULIA_PKG_PRECOMPILE_AUTO"]=0
+      julia --project=docs --compiled-modules=existing -e '
         using Pkg
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
