@@ -1,5 +1,4 @@
-# Impedance1 
-<!-- Added 1 for testing cross-references across files, needs to be removed -->
+# Impedance
 
 ```@meta
 CurrentModule = PowerImpedanceACDC

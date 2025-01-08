@@ -7,11 +7,11 @@ determined in the initialisation by solving the power flow equations
 representing the combined AC/DC system.
 
 To do so, the network is initialized using the optimal power flow tool
-[[1]](#1) implemented as a Julia package, which can be found
+[^1] implemented as a Julia package, which can be found
 in the [PowerModelsACDC](https://github.com/Electa-Git/PowerModelsACDC.jl) repository. The
 package relies on the power flow models developed for the MatACDC
-simulator [[2]](#2), which extends Matpower
-[[3]](#3) AC power system models with the DC
+simulator [^2], which extends Matpower
+[^3] AC power system models with the DC
 representations and with power converters.
 
 As a result, the constructed power system is divided into AC and DC
@@ -26,11 +26,11 @@ analysis.
 AC and DC branches represent three-phase AC and DC connections between
 buses respectively. Branches are grouped inside AC or DC grids (zones).
 AC branches are defined with parameters described in
-[[3]](#3), while DC branches parameters are given in
-[[2]](#2).
+[^3], while DC branches parameters are given in
+[^2].
 
 For the purpose of modeling the system components, the model of the AC
-branch as provided in [[3]](#3) is depicted in the following figure. Beside the shunt admittance
+branch as provided in [^3] is depicted in the following figure. Beside the shunt admittance
 $j\frac{b_c}{2}$,the Julia package [PowerModelsACDC](https://github.com/Electa-Git/PowerModelsACDC.jl) supports the admittance as
 $\frac{g_c}{2} + j\frac{b_c}{2}$. The full expression for the AC
 admittance parameters is given by the equation:
@@ -44,16 +44,16 @@ components have diagonal matrix models, with equal elements on the
 matrix diagonal. 
 
 ![Matpower AC branch model
-[[3]](#3).](pictures/power_flow/branch_ac.png)
+[^3].](pictures/power_flow/branch_ac.png)
 
 A DC branch is modeled with its equivalent series resistance
-[[2]](#2). For the power flow calculation, some components
+[^2]. For the power flow calculation, some components
 are modeled as AC and DC branches and their models are described in
 detail in this subsection.
 
-### Impedance
-[Impedance1](@ref)
-As described, an impedance is modeled using ABCD
+### Impedance model
+
+As described, an [Impedance](@ref) is modeled using ABCD
 parameters: $$\begin{bmatrix}
     \textbf{A} & \textbf{B} \\
     \textbf{C} & \textbf{D}
@@ -77,11 +77,9 @@ several nodes in the system. AC shunt impedances should be treated
 separately as a shunt component. DC shunt impedances can only be added
 as DC loads.
 
-### Transformer
+### Transformer model
 
-Since the transformer model considered in
-[\[sec:transformer\]](#sec:transformer){reference-type="ref"
-reference="sec:transformer"} cannot be easily represented as the modelf for an AC branch, Y parameters are extracted from
+Since the [Transformer](@ref) model considered previously cannot be easily represented as the model for an AC branch, Y parameters are extracted from
 the ABCD parameters.
 
 In the case of DC branches, since ABCD parameters are each of size
@@ -109,12 +107,10 @@ The following expressions are derived: $$\begin{aligned}
 \nonumber &g_c = \Re\{y_c\}, \quad b_c = \Im\{y_c\}.
 \end{aligned}$$
 
-### Transmission line
+### Transmission line model
 
 A transmission line (OHL, cable, cross-bonded cable or mixed OHL-cable)
-is represented using its nominal $\pi$-model depicted in Fig.
-[2](#fig:transmission_line:equivalent_pi){reference-type="ref"
-reference="fig:transmission_line:equivalent_pi"}, where
+is represented using its nominal $\pi$-model depicted in the next figure.
 $$ 
 \nonumber \textbf{Z}(j\omega) = \textbf{Y}_c^{-1} \sinh(\mathbf{\Gamma} l), \\
 \textbf{Y}(j\omega) = \textbf{Y}_c \tanh(\mathbf{\Gamma} l).
@@ -140,10 +136,9 @@ branch model is given by: $$\begin{aligned}
 
 ## Power converter
 
-A power converter is, in accordance with [[2]](#2), modeled
+A power converter is, in accordance with [^2], modeled
 together with its phase reactor, filter and transformer. In order to
-match the constructed MMC model in Section
-[\[sec:mmc\]](#sec:mmc){reference-type="ref" reference="sec:mmc"}, only
+match the constructed MMC model in [MMC](@ref) only
 the reactor is considered.
 
 Losses of the converter are calculated in the form of
@@ -160,10 +155,10 @@ active power controlling converter.
 
 ## References
 
-<a id="1">[1]</a>  H. Ergun, J. Dave, D. Van Hertem, and F. Geth, "Optimal power flow for AC/DC grids: Formulation, convex relaxation, linear approximation, and implementation," IEEE Transactions on Power Systems, vol. 34, no. 4, pp. 2980-2990, July 2019, doi: 10.1109/TPWRS.2019.2897835.
+[^1]: H. Ergun, J. Dave, D. Van Hertem, and F. Geth, "Optimal power flow for AC/DC grids: Formulation, convex relaxation, linear approximation, and implementation," IEEE Transactions on Power Systems, vol. 34, no. 4, pp. 2980-2990, July 2019, doi: 10.1109/TPWRS.2019.2897835.
 
-<a id="2">[2]</a> J. Beerten, "MATACDC 1.0 User's manual," Department Electrical Engineering, University of Leuven, 2012. [Online]. Available: https://www.esat.kuleuven.be/electa/teaching/matacdc/MatACDCManual
+[^2]: J. Beerten, "MATACDC 1.0 User's manual," Department Electrical Engineering, University of Leuven, 2012. [Online]. Available: https://www.esat.kuleuven.be/electa/teaching/matacdc/MatACDCManual
 
-<a id="3">[3]</a> R. D. Zimmerman and C. E. Murillo-Sánchez, "MATPOWER 6.0 user's manual," PSERC, Tempe, AZ, USA, 2016.
+[^3]: R. D. Zimmerman and C. E. Murillo-Sánchez, "MATPOWER 6.0 user's manual," PSERC, Tempe, AZ, USA, 2016.
 
 
