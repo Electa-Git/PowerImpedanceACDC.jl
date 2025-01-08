@@ -152,8 +152,7 @@ ideal, the model implementation supports only a constant value
 $c = \frac{R_{arm}}{2}$.
 
 ![Power flow model of the power
-converter.](pictures/power_flow/converter_pf.png){#fig:power_flow:converter
-width="\\linewidth"}
+converter.](pictures/power_flow/converter_pf.png)
 
 Depending on the actual realisation of the converter's controls, the
 parameters of the converter can be set as a DC voltage controlling or an
@@ -165,6 +164,6 @@ active power controlling converter.
 
 <a id="2">[2]</a> J. Beerten, "MATACDC 1.0 User's manual," Department Electrical Engineering, University of Leuven, 2012. [Online]. Available: https://www.esat.kuleuven.be/electa/teaching/matacdc/MatACDCManual
 
-<a id="3">[3]</a>R. D. Zimmerman and C. E. Murillo-Sánchez, "MATPOWER 6.0 user's manual," PSERC, Tempe, AZ, USA, 2016.
+<a id="3">[3]</a> R. D. Zimmerman and C. E. Murillo-Sánchez, "MATPOWER 6.0 user's manual," PSERC, Tempe, AZ, USA, 2016.
 
 
