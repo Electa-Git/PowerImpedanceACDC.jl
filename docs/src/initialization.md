@@ -52,7 +52,7 @@ are modeled as AC and DC branches and their models are described in
 detail in this subsection.
 
 ### Impedance
-[Impedance](@ref)
+[Impedance1](@ref)
 As described, an impedance is modeled using ABCD
 parameters: $$\begin{bmatrix}
     \textbf{A} & \textbf{B} \\
