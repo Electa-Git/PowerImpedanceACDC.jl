@@ -7,21 +7,25 @@ makedocs(
     modules = [PowerImpedanceACDC],
     repo = "gitlab.kuleuven.be/electa/controlgroup/hvdcstability.jl.git",
     pages = [
-        "Home" => "index.md"
+        "Getting started" => "index.md"
+        "Introduction" =>  "introduction.md"
         "Manual" => [
-            "Results" => "result-data.md",
+            "Network" => "network.md",
+            "Initialization" => "initialization.md",
+            "Impedance & Stability" => "results.md",
+            "Examples" => "example.md",
         ]
-        "Library" => [
-            "Network Formulations" => "formulations.md",
-            "Components" => [
-                "Source" => "source.md",
-                "Impedance" => "impedance.md",
-                "Transformer" => "transformer.md",
-                "Shunt reactor" => "shunt.md",
-                "Transmission line" => "transmission_line.md",
-                "MMC" => "MMC.md"
-                ]
-        ]
+        
+        "Components" => [
+            "Source" => "source.md",
+            "Impedance" => "impedance.md",
+            "Transformer" => "transformer.md",
+            "Shunt reactor" => "shunt.md",
+            "Transmission line" => "transmission_line.md",
+            "MMC" => "MMC.md",
+            "TLC" => "TLC.md"
+            ]
+        
     ]
 )
 
