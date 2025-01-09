@@ -37,11 +37,13 @@ branch as provided in [^3] is depicted in the following figure. Beside the shunt
 $j\frac{b_c}{2}$,the Julia package [PowerModelsACDC](https://github.com/Electa-Git/PowerModelsACDC.jl) supports the admittance as
 $\frac{g_c}{2} + j\frac{b_c}{2}$. The full expression for the AC
 admittance parameters is given by the equation:
-$$ \textbf{Y}_{ac} = \begin{bmatrix}
+```math
+ \textbf{Y}_{ac} = \begin{bmatrix}
     \left(y_s + \frac{g_c}{2} + j\frac{b_c}{2} \right) \, \frac{1}{\tau^2} & -\frac{y_s}{\tau \, \exp(-j\theta_{\rm shift})} \\
     -\frac{y_s}{\tau \, \exp(-j\theta_{\rm shift})} & \left(y_s + \frac{g_c}{2} + j\frac{b_c}{2} \right) 
     \end{bmatrix}.
-$$ It should be noted that the AC network is
+```
+ It should be noted that the AC network is
 considered as balanced for the power flow solution, and thus, all the
 components have diagonal matrix models, with equal elements on the
 matrix diagonal. 
@@ -57,16 +59,16 @@ detail in this subsection.
 ### Impedance model
 
 As described, an [Impedance](@ref) is modeled using ABCD
-parameters: $$\begin{bmatrix}
+parameters: 
+$$ \begin{bmatrix}
     \textbf{A} & \textbf{B} \\
     \textbf{C} & \textbf{D}
     \end{bmatrix} = 
     \begin{bmatrix}
     \textbf{I} & \textbf{Z} \\
     \textbf{0} & \textbf{I}
-    \end{bmatrix}.$$ In the case of the DC impedance, all matrices are
-of size $1 \times 1$, while three-phase impedances are of size
-$3 \times 3$.
+    \end{bmatrix} $$
+ In the case of the DC impedance, all matrices are of size $1 \times 1$, while three-phase impedances are of size $3 \times 3$.
 
 The DC branch model is then given as a Thevenin equivalent series
 impedance $r = \Re\{Z\}$. The AC branch is modeled as an ideal
