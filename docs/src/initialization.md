@@ -141,7 +141,7 @@ branch model is given by: $$\begin{aligned}
 
 A power converter is, in accordance with [^2], modeled
 together with its phase reactor, filter and transformer. In order to
-match the constructed MMC model in [Multi modular converter](@ref) only
+match the constructed MMC model in [Multi modular converter (MMC)](@ref) only
 the reactor is considered.
 
 Losses of the converter are calculated in the form of
