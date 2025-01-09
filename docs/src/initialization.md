@@ -34,7 +34,7 @@ AC branches are defined with parameters described in
 
 For the purpose of modeling the system components, the model of the AC
 branch as provided in [^3] is depicted in the following figure. Beside the shunt admittance
-$j\frac{b_c}{2}$,the Julia package [PowerModelsACDC](https://github.com/Electa-Git/PowerModelsACDC.jl) supports the admittance as
+`` j\frac{b_c}{2} ``,the Julia package [PowerModelsACDC](https://github.com/Electa-Git/PowerModelsACDC.jl) supports the admittance as
 $\frac{g_c}{2} + j\frac{b_c}{2}$. The full expression for the AC
 admittance parameters is given by the equation:
 ```math
@@ -60,14 +60,17 @@ detail in this subsection.
 
 As described, an [Impedance](@ref) is modeled using ABCD
 parameters: 
-$$ \begin{bmatrix}
-    \textbf{A} & \textbf{B} \\
+```math 
+\begin{bmatrix}
+\textbf{A} & \textbf{B} \\
     \textbf{C} & \textbf{D}
     \end{bmatrix} = 
     \begin{bmatrix}
     \textbf{I} & \textbf{Z} \\
     \textbf{0} & \textbf{I}
-    \end{bmatrix} $$
+    \end{bmatrix} 
+```
+
  In the case of the DC impedance, all matrices are of size $1 \times 1$, while three-phase impedances are of size $3 \times 3$.
 
 The DC branch model is then given as a Thevenin equivalent series
@@ -103,23 +106,26 @@ $\textbf{Y}\left\langle 1,1 \right\rangle = \left(y_s + \frac{g_c}{2} + j\frac{b
 $\textbf{Y}\left\langle 1,4 \right\rangle = \textbf{Y}\left\langle 4,1 \right\rangle = -\frac{y_s}{\tau \, \exp(-j\theta_{\rm shift})}$
 and
 $\textbf{Y}\left\langle 4,4 \right\rangle = \left(y_s + \frac{g_c}{2} + j\frac{b_c}{2} \right)$.
-The following expressions are derived: $$\begin{aligned}
-\nonumber &\tau = \sqrt{\frac{\textbf{Y}\left\langle 4,4 \right\rangle}{\textbf{Y}\left\langle 1,1 \right\rangle}}, \quad
+The following expressions are derived: 
+```math 
+\begin{aligned}
+\nonumber & \tau = \sqrt{\frac{\textbf{Y}\left\langle 4,4 \right\rangle}{\textbf{Y}\left\langle 1,1 \right\rangle}}, \quad
 \nonumber \theta_{\rm shift} = 0, \\
-\nonumber &y_s = -\textbf{Y}\left\langle 1,4 \right\rangle \, \tau \, \exp(-j\theta_{\rm shift}) , \\
-\nonumber &y_c = \textbf{Y}\left\langle 4,4 \right\rangle - y_s, \\
-\nonumber &r_s = \Re\left\{\frac{1}{y_s}\right\}, \quad x_s = \Im\left\{\frac{1}{y_s}\right\}, \\
-\nonumber &g_c = \Re\{y_c\}, \quad b_c = \Im\{y_c\}.
-\end{aligned}$$
+\nonumber & y_s = -\textbf{Y}\left\langle 1,4 \right\rangle  \tau \, \exp(-j\theta_{\rm shift}) , \\
+\nonumber & y_c = \textbf{Y}\left\langle 4,4 \right\rangle - y_s, \\
+\nonumber & r_s = \Re\left\{\frac{1}{y_s}\right\}, \quad x_s = \Im\left\{\frac{1}{y_s}\right\}, \\
+\nonumber & g_c = \Re\{y_c\}, \quad b_c = \Im\{y_c\}
+\end{aligned}
+```
 
 ### Transmission line model
 
 A transmission line (OHL, cable, cross-bonded cable or mixed OHL-cable)
 is represented using its nominal $\pi$-model depicted in the next figure.
-$$ 
+```math 
 \nonumber \textbf{Z}(j\omega) = \textbf{Y}_c^{-1} \sinh(\mathbf{\Gamma} l), \\
 \textbf{Y}(j\omega) = \textbf{Y}_c \tanh(\mathbf{\Gamma} l).
-$$
+```
 
 ![Nominal $\pi$-model of the transmission
 line.](pictures/transmission_line/nominal-PI.pdf)
@@ -131,11 +137,14 @@ For the balanced AC transmission line, the impedance and admittance
 matrices are diagonal. It can be chosen as
 $Z(j\omega) = \textbf{Z}(j\omega) \left\langle 1,1 \right\rangle$ and
 $Y(j\omega) = \textbf{Y}\left\langle 1,1 \right\rangle$. Then, the AC
-branch model is given by: $$\begin{aligned}
+branch model is given by: 
+```math
+\begin{aligned}
 \nonumber & \tau = 0, \quad \theta_{\rm shift} = 0, \\
 \nonumber & r_s = \Re\{Z(j\omega)\}, \quad x_s = \Im\{Z(j\omega)\}, \\
-& g_c = \Re\{Y(j\omega)\}, \quad b_c = \Im\{Y(j\omega)\}.
-\end{aligned}$$
+& g_c = \Re\{Y(j\omega)\}, \quad b_c = \Im\{Y(j\omega)\}
+\end{aligned}
+```
 
 
 
@@ -147,9 +156,9 @@ match the constructed MMC model in [Multi modular converter (MMC)](@ref) only
 the reactor is considered.
 
 Losses of the converter are calculated in the form of
-$P_{loss} = a + b I_c + c I_c^2$. Since the switches are modeled as
+``P_{loss} = a + b I_c + c I_c^2``. Since the switches are modeled as
 ideal, the model implementation supports only a constant value
-$c = \frac{R_{arm}}{2}$.
+``c = \frac{R_{arm}}{2}``.
 
 ![Power flow model of the power
 converter.](pictures/power_flow/converter_pf.png)
