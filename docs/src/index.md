@@ -38,9 +38,7 @@ CurrentModule = PowerImpedanceACDC
 PowerImpedanceACDC.make_abcd
 ```
 
-```@docs
-PowerImpedanceACDC.power_flow
-```
+
 
 ```@docs
 PowerImpedanceACDC.check_stability

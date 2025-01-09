@@ -4,8 +4,11 @@ As the ABCD formulation is a linear representation of the power system,
 nonlinear descriptions of the components such as power converters must
 be linearized around an operating point. This operating point is
 determined in the initialisation by solving the power flow equations
-representing the combined AC/DC system.
+representing the combined AC/DC system. This initialization is done automatically within the package using the [`PowerImpedanceACDC.power_flow`](@ref) function.
 
+```@docs
+PowerImpedanceACDC.power_flow
+```
 To do so, the network is initialized using the optimal power flow tool
 [^1] implemented as a Julia package, which can be found
 in the [PowerModelsACDC](https://github.com/Electa-Git/PowerModelsACDC.jl) repository. The
@@ -138,7 +141,7 @@ branch model is given by: $$\begin{aligned}
 
 A power converter is, in accordance with [^2], modeled
 together with its phase reactor, filter and transformer. In order to
-match the constructed MMC model in [MMC](@ref) only
+match the constructed MMC model in [Multi modular converter](@ref) only
 the reactor is considered.
 
 Losses of the converter are calculated in the form of
