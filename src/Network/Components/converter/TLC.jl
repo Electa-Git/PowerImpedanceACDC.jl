@@ -86,8 +86,8 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Qac /= Sbase
     Pdc /= Sbase
     
-    Vᴳd = Vm * cos(θ)
-    Vᴳq = -Vm * sin(θ)
+    Vᴳd = Vm # Vᴳd = Vm * cos(θ)
+    Vᴳq = 0# Vᴳq = -Vm * sin(θ)
 
     Id = ((Vᴳd * Pac + Vᴳq * Qac) / (Vᴳd^2 + Vᴳq^2)) 
     Iq = ((Vᴳq * Pac - Vᴳd * Qac) / (Vᴳd^2 + Vᴳq^2)) 
@@ -341,7 +341,6 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
        f = eval(:((F,x,inputs) -> $expr))
        return Base.invokelatest(f, F,x,inputs)
     end
-
 
     vector_inputs = [Vdc, Vᴳd, Vᴳq]
     init_x = [init_x; zeros(index-2,1)]
