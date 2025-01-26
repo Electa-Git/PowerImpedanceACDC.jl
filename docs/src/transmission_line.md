@@ -89,16 +89,28 @@ Earth parameters are given with permeability $\mu_e$, permittivity $\epsilon_e$ 
 
 In order to represent the transmission line using ABCD parameters, it is necessary to calculate series impedance and shunt admittance matrices [^3]. Both matrices are of the size $n \times n$, where $n = \sum\limits_{i=1}^{n_c} n^i_{bc} + n_g$. The impedance matrix has the following form: 
 ```math
- \mathbf{Z} = \operatorname{diag}(Z_i) + 
+\mathbf{Z} = \operatorname{diag}(Z_i) + 
 \begin{bmatrix}
 Z_{0,11} & \cdots & Z_{0,1n} \\
 \vdots & \ddots & \vdots \\
 Z_{0,n1} & \cdots & Z_{0,nn}
 \end{bmatrix}
 ```
- where \[ Z_i = \frac{m\rho_i}{2\pi r_i} \, \coth(0.733mr_i) + \frac{0.3179 \rho_i}{\pi r_i^2}, \quad \text{for the } i\text{-th conductor/sub-conductor/ground wire}. \] \[ r_i \text{ is its radius, resistivity } \rho_i = R^i_{dc} \, \pi r_i^2, \quad m = \sqrt{j\omega \,\frac{\mu_0 \mu_{r,i}}{\rho_i}}; \] \[ \text{The components } Z_{0, ij} = \frac{j\omega \, \mu_0}{2\pi} \, \log\left( \frac{\hat{D}_{ij}}{d_{ij}}\right) \text{ for } \ldots \] for
-\[ \begin{aligned} d_{ij} &= \begin{cases} \sqrt{(x_i-x_j)^2 + (y_i-y_j)^2}, & \text{if } i \neq j, \\ r_i, & \text{if } i = j, \end{cases} \\ D_{ij} &= \begin{cases} \sqrt{(x_i-x_j)^2 + (y_i+y_j)^2}, & \text{if } i \neq j, \\ 2y_i, & \text{if } i = j, \end{cases} \\ \hat{D}_{ij} &= \sqrt{(y_i + y_j + 2d_e)^2 + (x_i-x_j)^2}, \\ d_e &= \sqrt{\frac{1}{j\omega \mu_e (\sigma_e + j\omega \epsilon_e)}}. \end{aligned} \]
-The shunt admittance is a matrix formed as
+where $Z_i = \frac{m\rho_i}{2\pi r_i} , \coth(0.733mr_i) + \frac{0.3179 \rho_i}{\pi r_i^2}, \quad \text{for the } i\text{-th conductor/sub-conductor/ground wire}.$
+
+$r_i \text{ is its radius, resistivity } \rho_i = R^i_{dc} , \pi r_i^2, \quad m = \sqrt{j\omega ,\frac{\mu_0 \mu_{r,i}}{\rho_i}};$
+
+The components $Z_{0,ij} = \frac{j\omega , \mu_0}{2\pi} , \log\left( \frac{\hat{D}{ij}}{d{ij}}\right).$ for:
+
+$d_{ij} = \begin{cases} \sqrt{(x_i-x_j)^2 + (y_i-y_j)^2}, & \text{if } i \neq j, \ r_i, & \text{if } i = j, \end{cases}$
+
+$D_{ij} = \begin{cases} \sqrt{(x_i-x_j)^2 + (y_i+y_j)^2}, & \text{if } i \neq j, \ 2y_i, & \text{if } i = j, \end{cases}$
+
+$\hat{D}_{ij} = \sqrt{(y_i + y_j + 2d_e)^2 + (x_i-x_j)^2},$
+
+$d_e = \sqrt{\frac{1}{j\omega \mu_e (\sigma_e + j\omega \epsilon_e)}}.$
+
+The shunt admittance is a matrix formed as:
 ```math
 \mathbf{Y} = s \, \mathbf{P}^{-1} + \mathbf{G}
 ```
