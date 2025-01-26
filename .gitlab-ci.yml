@@ -51,5 +51,4 @@ pages:
   artifacts:
     paths:
       - public
-  only:
-    - docs
+  
