@@ -76,7 +76,6 @@ r = \frac{d_{sb}}{2 \sin(\varphi/2)},
  the position can be estimated starting from the angle $\varphi_s = \frac{\pi}{2}$ if the number of sub-conductors odd, orfrom $\varphi_s = \frac{\pi + \varphi}{2}$ for an even number of sub-conductors, as follows: 
 
 ```math
- 
 x_{bc} = x_c + r \cos(\varphi_s + k \, \varphi), \\ y_{bc} = y_c + r \sin(\varphi_s + k \, \varphi) - \frac{2}{3} \, d_{sag},  
 ```
  for $k \in \{1, 2, ..., n_{bc}\}$. If the number of sub-conductors is equal to one, its position is given by $(x_c, \hat{y}_c)$. Each conductor is characterized with the relative permeability of the material $\mu_r$, the conductor dc resistance $R_{dc}$ and the radius $r_i$.
@@ -90,7 +89,6 @@ Earth parameters are given with permeability $\mu_e$, permittivity $\epsilon_e$ 
 
 In order to represent the transmission line using ABCD parameters, it is necessary to calculate series impedance and shunt admittance matrices [^3]. Both matrices are of the size $n \times n$, where $n = \sum\limits_{i=1}^{n_c} n^i_{bc} + n_g$. The impedance matrix has the following form: 
 ```math
-
  \mathbf{Z} = \operatorname{diag}(Z_i) + 
 \begin{bmatrix}
 Z_{0,11} & \cdots & Z_{0,1n} \\
@@ -98,21 +96,8 @@ Z_{0,11} & \cdots & Z_{0,1n} \\
 Z_{0,n1} & \cdots & Z_{0,nn}
 \end{bmatrix}
 ```
- where $Z_i = \frac{m\rho_i}{2\pi r_i} \, \coth(0.733mr_i) + \frac{0.3179 \rho_i}{\pi r_i^2}$for the $i$-th conductor/sub-conductor/ground wire and $r_i$ is its radius, resistivity $\rho_i = R^i_{dc} \, \pi r_i^2$ and $m = \sqrt{j\omega \,\frac{\mu_0 \mu_{r,i}}{\rho_i}}$; The components $Z_{0, ij} = \frac{j\omega \, \mu_0}{2\pi} \, \log\left( \frac{\hat{D}_{ij}}{d_{ij}}\right)$ for
-```math
-\begin{aligned}
-\nonumber &d_{ij} = \left\{\begin{array}{ll}
-\sqrt{(x_i-x_j)^2 + (y_i-y_j)^2}, & \quad i \neq j, \\
-r_i, & \quad i = j,
-\end{array} \right. \\
-\nonumber &D_{ij} = \left\{\begin{array}{ll}
-\sqrt{(x_i-x_j)^2 + (y_i+y_j)^2}, & \quad i \neq j, \\
-2y_i, & \quad i = j,
-\end{array} \right. \\
-\nonumber &\hat{D}_{ij} = \sqrt{(y_i + y_j + 2d_e)^2 + (x_i-x_j)^2}, \\
-&d_e = \sqrt{\frac{1}{j\omega \, \mu_e (\sigma_e + j\omega \, \epsilon_e)}}.
-\end{aligned}
-```
+ where \[ Z_i = \frac{m\rho_i}{2\pi r_i} \, \coth(0.733mr_i) + \frac{0.3179 \rho_i}{\pi r_i^2}, \quad \text{for the } i\text{-th conductor/sub-conductor/ground wire}. \] \[ r_i \text{ is its radius, resistivity } \rho_i = R^i_{dc} \, \pi r_i^2, \quad m = \sqrt{j\omega \,\frac{\mu_0 \mu_{r,i}}{\rho_i}}; \] \[ \text{The components } Z_{0, ij} = \frac{j\omega \, \mu_0}{2\pi} \, \log\left( \frac{\hat{D}_{ij}}{d_{ij}}\right) \text{ for } \ldots \] for
+\[ \begin{aligned} d_{ij} &= \begin{cases} \sqrt{(x_i-x_j)^2 + (y_i-y_j)^2}, & \text{if } i \neq j, \\ r_i, & \text{if } i = j, \end{cases} \\ D_{ij} &= \begin{cases} \sqrt{(x_i-x_j)^2 + (y_i+y_j)^2}, & \text{if } i \neq j, \\ 2y_i, & \text{if } i = j, \end{cases} \\ \hat{D}_{ij} &= \sqrt{(y_i + y_j + 2d_e)^2 + (x_i-x_j)^2}, \\ d_e &= \sqrt{\frac{1}{j\omega \mu_e (\sigma_e + j\omega \epsilon_e)}}. \end{aligned} \]
 The shunt admittance is a matrix formed as
 ```math
 \mathbf{Y} = s \, \mathbf{P}^{-1} + \mathbf{G}
@@ -132,11 +117,14 @@ PowerImpedanceACDC.overhead_line
 OHL grounded with a resistance of 0.001 Ohm:
 
 ```math
-overheadline=(length = 90e3, conductors=Conductors(organization = :flat,
-n^{b} = 3, n^{sb} = 1, R^{dc} = 0.063, r^{c} = 0.015, y^{bc} = 30, \delta y^{bc} = 0, \delta x^{bc} = 10,  \delta \tilde{x}^{bc} = 0, d^{sb} = 0, d^{sag} = 10),\\
-groundwires = Groundwires(n^{g} = 2, R^{gdc} = 0.92, r^{g} = 0.0062,\delta x^{g} = 6.5, \delta y^{g} = 7.5, 
-d^{gsag}   = 10),
-earth parameters = (1,1,100), transformation = true)
+\begin{aligned}
+\text{overheadline} = (&\text{length} = 90 \times 10^3, \, 
+\text{conductors} = \text{Conductors}(\text{organization} = \text{:flat}, \, 
+n^b = 3, \, n^{sb} = 1, \, R^{dc} = 0.063, \, r^c = 0.015, \, y^{bc} = 30, \, \\
+&\delta y^{bc} = 0, \, \delta x^{bc} = 10, \, \delta \tilde{x}^{bc} = 0, \, d^{sb} = 0, \, d^{sag} = 10), \, \\
+&\text{groundwires} = \text{Groundwires}(n^g = 2, \, R^{gdc} = 0.92, \, r^g = 0.0062, \, \delta x^g = 6.5, \, \delta y^g = 7.5, \, d^{gsag} = 10), \, \\
+&\text{earth parameters} = (1, 1, 100), \, \text{transformation} = \text{true}).
+\end{aligned}
 ```
 A Bode plot is provided in Fig. 3, showing the short-circuit impedance matrix for the two-OHTL system defined in the previous example.
 
@@ -162,51 +150,52 @@ procedure described in [^5] is applied.
 -   Conductor surface impedance
 
     A hollow conductor surface impedance is given by: 
-    ```math
-    \begin{aligned}
-    \nonumber Z_{aa} = \frac{\rho_c m}{2\pi r^c_i} \, \coth(m(r^c_o - r^c_i)) + \frac{\rho^c}{2\pi r^c_i \, (r^c_i + r^c_o)} \; \left[\frac{\Omega}{\text{m}}\right]  & \text{for inner surface}, \\
-    \nonumber Z_{bb} = \frac{\rho^c m}{2\pi r^c_o} \, \coth(m(r^c_o - r^c_i)) + \frac{\rho^c}{2\pi r^c_o \, (r^c_i + r^c_o)} \; \left[\frac{\Omega}{\text{m}}\right]  & \text{for outer surface}, \\
-    Z_{ab} =  \frac{\rho^c m}{\pi (r^c_i + r^c_o)} \, \operatorname{csch}(m(r^c_o - r^c_i)) \; \left[\frac{\Omega}{\text{m}}\right],
-    \end{aligned}
-    ``` 
-    where $m = \sqrt{j\omega \mu^c_r}$ For a non-hollow conductor, the outer surface impedance is 
-    ```math
-    \begin{aligned}
-    Z_{bb} = \frac{\rho^c m}{2\pi r^c_o} \, \coth(0.733 mr^c_o) + \frac{0.3179 \rho^c}{\pi {r^c_o}^2} \; \left[\frac{\Omega}{\text{m}}\right].
-    \end{aligned}
-    ```
+ ```math
+\begin{aligned}
+Z_{aa} &= \frac{\rho_c m}{2\pi r^c_i} \, \coth(m(r^c_o - r^c_i)) + \frac{\rho^c}{2\pi r^c_i \, (r^c_i + r^c_o)} \; \left[\frac{\Omega}{\text{m}}\right]  & \text{(for inner surface)}, \\
+Z_{bb} &= \frac{\rho^c m}{2\pi r^c_o} \, \coth(m(r^c_o - r^c_i)) + \frac{\rho^c}{2\pi r^c_o \, (r^c_i + r^c_o)} \; \left[\frac{\Omega}{\text{m}}\right]  & \text{(for outer surface)}, \\
+Z_{ab} &=  \frac{\rho^c m}{\pi (r^c_i + r^c_o)} \, \operatorname{csch}(m(r^c_o - r^c_i)) \; \left[\frac{\Omega}{\text{m}}\right].
+\end{aligned}
+``` 
+ where $m = \sqrt{j\omega\mu^c_r}$ For a non-hollow conductor, the outer surface impedance is 
+ ```math
+    Z_{bb} = \frac{\rho^c m}{2\pi r^c_o} \, \coth(0.733 m r^c_o) + \frac{0.3179 \rho^c}{\pi {r^c_o}^2} \; \left[\frac{\Omega}{\text{m}}\right].
+ ```
 
 -   The insulator layer between two conductors has an impedance
- ```math
-   Z_i = \frac{j\omega \mu_0 \mu^i_r}{2\pi} \, \log\left(\frac{r^i_o}{r^i_i}\right).
-   ```
+    ```math
+    Z_i = \frac{j\omega \mu_0 \mu^i_r}{2\pi} \, \log\left(\frac{r^i_o}{r^i_i}\right).
+    ```
 
 -   The earth return impedance of the cable and mutual between cables is
-    ```math
-    \begin{aligned}
-    Z_g = \frac{j\omega \, \mu_g}{2\pi} \, \left(-\log\left(\frac{\gamma m D}{2}\right) + \frac{1}{2} - \frac{2}{3} \, mH\right),
-    \end{aligned}
+     ```math
+    Z_g = \frac{j\omega \, \mu_g}{2\pi} \, \left(-\log\left(\frac{\gamma m D}{2}\right) + \frac{1}{2} - \frac{2}{3} \, mH\right).
     ```
     for 
     ```math
     \begin{aligned}
-    \nonumber &D = \left\{ \begin{array}{ll}
+    D =& \left\{ 
+    \begin{array}{ll}
     \sqrt{(x_i - x_j)^2 + (y_i - y_j)^2} & \quad \text{for cables } i \neq j, \\
     r_i & \quad \text{radius of the cable }i,
-    \end{array} \right. \\
-    \nonumber &H = \left\{ \begin{array}{ll}
+    \end{array} 
+    \right. \\
+    H = &\left\{ 
+    \begin{array}{ll}
     y_i + y_j & \quad \text{for cables } i \neq j, \\
     2y_i & \quad \text{for the cable }i,
-    \end{array} \right. \\
-    \end{aligned}
+    \end{array} 
+    \right. \\
+        \end{aligned}
     ```
      and $\gamma \approx 0.5772156649$ being Euler's constant.
 
 According to [^6] [^7], one cable is represented with its series impedance $\mathbf{Z}_{ii}$ matrix. Each matrix $\mathbf{Z}_{ii}$ has the size $n_c \times n_c$ and its entries for $j \in \{1, \ldots, n_c-1\}$ are given by
  ```math
- \begin{aligned} \nonumber \mathbf{Z}_{ii} \left\langle j,j \right\rangle = Z^j_{bb} + Z^j_i + Z^{j+1}_{aa}, \\ 
-\nonumber \mathbf{Z}_{ii} \left\langle j,j+1 \right\rangle = Z_{ii}\left\langle j+1,j \right\rangle = - Z^{j+1}_{ab}, \\ 
-\mathbf{Z}_{ii} \left\langle n_c, n_c \right\rangle = Z^{n_c}_{bb} + Z^{n_c}_i + Z^{ii}_g, 
+\begin{aligned}
+\mathbf{Z}_{ii} \langle j,j \rangle &= Z^j_{bb} + Z^j_i + Z^{j+1}_{aa}, \\
+\mathbf{Z}_{ii} \langle j,j+1 \rangle &= Z_{ii} \langle j+1,j \rangle = - Z^{j+1}_{ab}, \\
+\mathbf{Z}_{ii} \langle n_c, n_c \rangle &= Z^{n_c}_{bb} + Z^{n_c}_i + Z^{ii}_g,
 \end{aligned}
 ```
 and otherwise the matrix entries are 0.
