@@ -13,13 +13,13 @@ Classical circuit theory applied to power systems relies on the description of t
 
 Although the admittance representation of the system and its components has a simple definition and a physical dimension, system and component configurations exist without impedance or admittance parameters defined. In Fig. [1].a, where the port voltage and current have subscript "$p$" for an input port and "$s$" for the output port, a case is depicted where the series impedance cannot be represented using impedance parameters because of the open connection at the input and at the output port. Similarly, the example from Fig. [1].b shows the case of a shunt admittance. It cannot be described using admittance parameters, since the short connection between the ports would give an infinite value for the interconnection admittance. A hybrid port representation could be applied in these cases, but its usage for determining input and output impedance of the network is everything but intuitive.
 
-![Examples](C:/Users/asaad/.julia/dev/hvdcstability.jl/docs/src/pictures/abcd/examples.png)
+![Examples](pictures\abcd\examples.png)
 *Fig.1: Examples of the circuit which is not defined: (a) Impedance matrix; (b) admittance matrix.*
 
 To overcome the challenge of nonexistent $Z$ or $Y$ parameter representation, we propose a generalised algorithm for representing the power system, and its constituting components using multiport ABCD parameters instead Fig. [2]. Multiport networks can include polyphase AC networks, multi-pole DC networks, etc. The motivation for the choice of the ABCD parameters' system representation stems from the fact that ABCD parameters provide a direct connection between the voltages and currents at the input ports, and voltages and currents at the output ports.
 
 ![Polyphase power system using multiport ABCD
-parameters.](C:/Users/asaad/.julia/dev/hvdcstability.jl/docs/src/pictures/abcd/multiport_network.png)
+parameters.](pictures\abcd\multiport_network.png)
 *Fig.2: Polyphase power system using ABCD parmaters.*
 
 As explained, admittance-based representations of networks are becoming a promising approach gaining popularity to be used in impedance-based stability assessments to investigate harmonic stability with power electronic converters [^15], e.g. for Voltage Source Converter High Voltage Direct Current (VSC HVDC) systems[^8] [^5]. The use of ABCD parameters for such a stability assessment, however, is only recently starting to get attention in literature. Besides [^5], where the method was proposed to build small network models for analyzing high-frequencyinteractions in the kHz-range, recently, also [^16] assessed interactions, but within the bandwidth of the converter controllers (up to several 100 Hz), building on the work from [^17] to create a network equivalent containing a frequency-dependent model of a single overhead line.
@@ -72,7 +72,7 @@ As with components in an electrical power systems, their multiport ABCD paramete
     ```
 
     ![Series connected multiport
-    networks.png](C:/Users/asaad/.julia/dev/hvdcstability.jl/docs/src/pictures/abcd/serial_connection.png)
+    networks.png](pictures\abcd\serial_connection.png)
     *Fig.3: Series connected multiport network*
 ```math
 ```
@@ -119,7 +119,7 @@ As with components in an electrical power systems, their multiport ABCD paramete
     where $i,j \in \{1,2\}$ and $i$ denotes the invertible matrix $\mathbf{B}_i$ with $j \neq i$.
 
     ![Parallel connected multiport
-    networks.](C:/Users/asaad/.julia/dev/hvdcstability.jl/docs/src/pictures/abcd/parallel_connection.png)
+    networks.](pictures\abcd\parallel_connection.png)
     *Fig.4: Parallel connected multiport network*
 
 It should be noted that the term 'multiport' network encompasses both single component with one or more input and output ports, as well as a subnetwork with defined input and output 'ports' (or nodes).

@@ -8,7 +8,7 @@ Z_{n1} & Z_{n2} & \cdots & Z_{nn}\end{bmatrix}
 An example of an impedance with two input ports and twooutput ports is given in Fig.[1].
 
 ![Model of the 2 input ports/2 output ports
-impedance.](C:/Users/asaad/.julia/dev/hvdcstability.jl/docs/src/pictures/impedance/impedance_model.png)
+impedance.](pictures\impedance\impedance_model.png)
 *Fig.1: Model of the 2 input ports/2 output ports impedance.*
 
 To represent impedances as multiport components with ABCD parameters,the following equation constructed using the Modified Nodal Analysis

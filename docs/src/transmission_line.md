@@ -70,17 +70,18 @@ The transmission line model is constructed using the procedure from [^3] [^4]. T
 
 Each line/conductor positioned as $x_c$ relatively starting from thecentral tower position and $y_c$ vertically, measured from ground, withthe sag at the midpoint between towers $d_{sag}$, see Fig.[2] modified vertical position is used in calculations as$\hat{y}_c = y_c - \frac{2}{3} \, d_{sag}$. Conductor is formed using $n_{sb}$ sub-conductors grouped in the bundle, where all sub-conductorsare grouped using symmetrical equidistant pattern with the distance between the two nearest sub-conductors being $d_{bc}$, or a bundlespacing. Using conductor position, the position of the eachsub-conductor can be estimated. Knowing the angle between two sub-conductors on the circle and its radius
 ```math
-\nonumber \varphi = \frac{360^\circ}{n_{sb}}, \\
+ \varphi = \frac{360^\circ}{n_{sb}}, \\
 r = \frac{d_{sb}}{2 \sin(\varphi/2)}, 
 ```
  the position can be estimated starting from the angle $\varphi_s = \frac{\pi}{2}$ if the number of sub-conductors odd, orfrom $\varphi_s = \frac{\pi + \varphi}{2}$ for an even number of sub-conductors, as follows: 
-``` math
+
+```math
  
-\nonumber x_{bc} = x_c + r \cos(\varphi_s + k \, \varphi), \\ y_{bc} = y_c + r \sin(\varphi_s + k \, \varphi) - \frac{2}{3} \, d_{sag},  
+x_{bc} = x_c + r \cos(\varphi_s + k \, \varphi), \\ y_{bc} = y_c + r \sin(\varphi_s + k \, \varphi) - \frac{2}{3} \, d_{sag},  
 ```
  for $k \in \{1, 2, ..., n_{bc}\}$. If the number of sub-conductors is equal to one, its position is given by $(x_c, \hat{y}_c)$. Each conductor is characterized with the relative permeability of the material $\mu_r$, the conductor dc resistance $R_{dc}$ and the radius $r_i$.
 
-![Overhead line modelling: a) tower and relative conductor positions; b)sub-conductor bundle.](C:/Users/asaad/.julia/dev/hvdcstability.jl/docs/src/pictures/transmission_line/transmission_line.png)
+![Overhead line modelling: a) tower and relative conductor positions; b)sub-conductor bundle.](pictures\transmission_line\transmission_line.png)
 *Fig.2: Overhead line modelling: a) tower and relative conductor positions; b)sub-conductor bundle.*
 
 Ground wires are modeled similarly, represented with their relativeposition $(x_g,y_g)$, radius $r_g$, dc resistance $R_{gdc}$ and relativepermeability of the material $\mu_r$.
@@ -89,17 +90,17 @@ Earth parameters are given with permeability $\mu_e$, permittivity $\epsilon_e$ 
 
 In order to represent the transmission line using ABCD parameters, it is necessary to calculate series impedance and shunt admittance matrices [^3]. Both matrices are of the size $n \times n$, where $n = \sum\limits_{i=1}^{n_c} n^i_{bc} + n_g$. The impedance matrix has the following form: 
 ```math
-\begin{aligned} \mathbf{Z} = \operatorname{diag}(Z_i) + 
+
+ \mathbf{Z} = \operatorname{diag}(Z_i) + 
 \begin{bmatrix}
 Z_{0,11} & \cdots & Z_{0,1n} \\
 \vdots & \ddots & \vdots \\
 Z_{0,n1} & \cdots & Z_{0,nn}
 \end{bmatrix}
-\end{aligned}
 ```
  where $Z_i = \frac{m\rho_i}{2\pi r_i} \, \coth(0.733mr_i) + \frac{0.3179 \rho_i}{\pi r_i^2}$for the $i$-th conductor/sub-conductor/ground wire and $r_i$ is its radius, resistivity $\rho_i = R^i_{dc} \, \pi r_i^2$ and $m = \sqrt{j\omega \,\frac{\mu_0 \mu_{r,i}}{\rho_i}}$; The components $Z_{0, ij} = \frac{j\omega \, \mu_0}{2\pi} \, \log\left( \frac{\hat{D}_{ij}}{d_{ij}}\right)$ for
 ```math
-  \begin{aligned}
+\begin{aligned}
 \nonumber &d_{ij} = \left\{\begin{array}{ll}
 \sqrt{(x_i-x_j)^2 + (y_i-y_j)^2}, & \quad i \neq j, \\
 r_i, & \quad i = j,
@@ -141,7 +142,7 @@ A Bode plot is provided in Fig. 3, showing the short-circuit impedance matrix fo
 
 
 ![Validation of overhead power
-line](C:/Users/asaad/.julia/dev/hvdcstability.jl/docs/src/pictures/transmission_line/transmission_line_example1.png )
+line](pictures\transmission_line\transmission_line_example1.png)
 *Fig.3 Overhead line at the DC side example*
 ```math
 %![Validation error of overhead power
@@ -152,7 +153,7 @@ The cable groups are implemented focusing on the availableconfigurations of the 
 
 Cables can be insulated or pipe-type coaxial cables. At the moment, onlya group of coaxial cables is implemented in the package. A cable group consists of $n$ cables, each one have maximum three conducting layers and three insulation layers, as can be seen from Fig. [4]. The conducting layers of the cable are denoted as core, sheath and armor. Between the conducting layers, there are insulators, except for the last conductor where the insulator is not a strict necessity, but it is common. For each conductor the following set of parameters is given: $r^c_i$ and $r^c_o$ as conductor inner and outer radius in meters, conductor relative permeability $\mu^c_r$ and conductor resistivity $\rho_c$ (in [$\Omega$.m]). The insulator is described using the following parameters: $r^i_i$ and $r^i_o$ are the insulator inner and outer radius in meters, $\epsilon^i$ is the insulator relative permittivity and $\mu^i_r$ the insulator relative permeability.
 
-![Coaxial cable.](C:/Users/asaad/.julia/dev/hvdcstability.jl/docs/src/pictures/transmission_line/cable.png)
+![Coaxial cable.](pictures\transmission_line\cable_example.png)
 *Fig.4: Coaxial cable*
 
 Additionally, the configuration parameters can be modified by adding two semiconducting layers in the insulator 1, and implementing the sheathbconsisting of the wire screen and outer sheath layer. In that case, the
@@ -259,7 +260,7 @@ earth\_parameters = (1,1,25), transformation = true)
 
 ```
 A Bode plot is provided in Fig. [5] for the short-connected cable defined in the previous example with a length of 100 km.
-![Validation of cable](C:/Users/asaad/.julia/dev/hvdcstability.jl/docs/src/pictures/transmission_line/cable_example.png)
+![Validation of cable](pictures\transmission_line\cable_example.png)
 *Fig.5: Cable example for line length 100 km.*
 ```math
 %![Validation error of
