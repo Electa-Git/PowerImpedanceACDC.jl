@@ -89,12 +89,12 @@ Earth parameters are given with permeability $\mu_e$, permittivity $\epsilon_e$ 
 
 In order to represent the transmission line using ABCD parameters, it is necessary to calculate series impedance and shunt admittance matrices [^3]. Both matrices are of the size $n \times n$, where $n = \sum\limits_{i=1}^{n_c} n^i_{bc} + n_g$. The impedance matrix has the following form: 
 ```math
-\mathbf{Z} = \operatorname{diag}(Z_i) + 
-\begin{bmatrix}
-Z_{0,11} & \cdots & Z_{0,1n} \\
-\vdots & \ddots & \vdots \\
-Z_{0,n1} & \cdots & Z_{0,nn}
-\end{bmatrix}
+    \mathbf{Z} = \operatorname{diag}(Z_i) + 
+    \begin{bmatrix}
+    Z_{0,11} & \cdots & Z_{0,1n} \\
+    \vdots & \ddots & \vdots \\
+    Z_{0,n1} & \cdots & Z_{0,nn}
+    \end{bmatrix}
 ```
 where $Z_i = \frac{m\rho_i}{2\pi r_i} , \coth(0.733mr_i) + \frac{0.3179 \rho_i}{\pi r_i^2}, \quad \text{for the } i\text{-th conductor/sub-conductor/ground wire}.$
 
