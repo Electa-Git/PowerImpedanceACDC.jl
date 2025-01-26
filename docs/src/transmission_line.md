@@ -80,7 +80,7 @@ x_{bc} = x_c + r \cos(\varphi_s + k \, \varphi), \\ y_{bc} = y_c + r \sin(\varph
 ```
  for $k \in \{1, 2, ..., n_{bc}\}$. If the number of sub-conductors is equal to one, its position is given by $(x_c, \hat{y}_c)$. Each conductor is characterized with the relative permeability of the material $\mu_r$, the conductor dc resistance $R_{dc}$ and the radius $r_i$.
 
-![Overhead line modelling: a) tower and relative conductor positions; b)sub-conductor bundle.](pictures\transmission_line\transmission_line.png)
+![Overhead line modelling: a) tower and relative conductor positions; b)sub-conductor bundle.](pictures/transmission_line/transmission_line.png)
 *Fig.2: Overhead line modelling: a) tower and relative conductor positions; b)sub-conductor bundle.*
 
 Ground wires are modeled similarly, represented with their relativeposition $(x_g,y_g)$, radius $r_g$, dc resistance $R_{gdc}$ and relativepermeability of the material $\mu_r$.
@@ -130,7 +130,7 @@ A Bode plot is provided in Fig. 3, showing the short-circuit impedance matrix fo
 
 
 ![Validation of overhead power
-line](pictures\transmission_line\transmission_line_example1.png)
+line](pictures/transmission_line/transmission_line_example1.png)
 *Fig.3 Overhead line at the DC side example*
 ```math
 %![Validation error of overhead power
@@ -141,7 +141,7 @@ The cable groups are implemented focusing on the availableconfigurations of the 
 
 Cables can be insulated or pipe-type coaxial cables. At the moment, onlya group of coaxial cables is implemented in the package. A cable group consists of $n$ cables, each one have maximum three conducting layers and three insulation layers, as can be seen from Fig. [4]. The conducting layers of the cable are denoted as core, sheath and armor. Between the conducting layers, there are insulators, except for the last conductor where the insulator is not a strict necessity, but it is common. For each conductor the following set of parameters is given: $r^c_i$ and $r^c_o$ as conductor inner and outer radius in meters, conductor relative permeability $\mu^c_r$ and conductor resistivity $\rho_c$ (in [$\Omega$.m]). The insulator is described using the following parameters: $r^i_i$ and $r^i_o$ are the insulator inner and outer radius in meters, $\epsilon^i$ is the insulator relative permittivity and $\mu^i_r$ the insulator relative permeability.
 
-![Coaxial cable.](pictures\transmission_line\cable_example.png)
+![Coaxial cable.](pictures/transmission_line/cable_example.png)
 *Fig.4: Coaxial cable*
 
 Additionally, the configuration parameters can be modified by adding two semiconducting layers in the insulator 1, and implementing the sheathbconsisting of the wire screen and outer sheath layer. In that case, the
@@ -249,7 +249,7 @@ earth\_parameters = (1,1,25), transformation = true)
 
 ```
 A Bode plot is provided in Fig. [5] for the short-connected cable defined in the previous example with a length of 100 km.
-![Validation of cable](pictures\transmission_line\cable_example.png)
+![Validation of cable](pictures/transmission_line/cable_example.png)
 *Fig.5: Cable example for line length 100 km.*
 ```math
 %![Validation error of
