@@ -69,7 +69,7 @@ offset.](pictures/transmission_line/tl.png)
 The transmission line model is constructed using the procedure from [^3] [^4]. The overhead transmission line consists of $n_b$ including sub-conductors, stranding, etc. and$n_g$ ground wires.
 
 Each line/conductor positioned as $x_c$ relatively starting from thecentral tower position and $y_c$ vertically, measured from ground, withthe sag at the midpoint between towers $d_{sag}$, see Fig.[2] modified vertical position is used in calculations as$\hat{y}_c = y_c - \frac{2}{3} \, d_{sag}$. Conductor is formed using $n_{sb}$ sub-conductors grouped in the bundle, where all sub-conductorsare grouped using symmetrical equidistant pattern with the distance between the two nearest sub-conductors being $d_{bc}$, or a bundlespacing. Using conductor position, the position of the eachsub-conductor can be estimated. Knowing the angle between two sub-conductors on the circle and its radius
- ```math
+```math
 \nonumber \varphi = \frac{360^\circ}{n_{sb}}, \\
 r = \frac{d_{sb}}{2 \sin(\varphi/2)}, 
 ```
