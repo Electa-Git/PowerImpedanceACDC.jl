@@ -8,7 +8,7 @@ Used for plotting determined impedance or a frequency dependent data as a bode
 plot. Function takes frequency points in the form of `omega_range` or as mapped
 values `omega`. For a nice diagrams, the labels can be given as `titles`.
 
-It can be specified how to plot data:
+It can be specified how to plot data in `axis_type`:
 - :loglog - logarithmic frequency scale and logarithmic impedance in dB
 - :linlog - linear frequency scale and logarithmic impedance in dB
 - :loglin - logarithmic frequency scale and linear impedance (magnitude)

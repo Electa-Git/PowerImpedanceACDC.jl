@@ -1,4 +1,4 @@
-# PowerImpedanceACDC Result Data Format
+# Impedance & Stability
 
 PowerImpedanceACDC enables saving the node impedance and components data as plots and
 in the text file.
@@ -6,19 +6,31 @@ in the text file.
 ```@meta
 CurrentModule = PowerImpedanceACDC
 ```
+## Determine impedance
 
-## Component data
-Component data can be saved in text files using a function:
+## Saving data
+Component data can be saved in text files using
 ```@docs
 PowerImpedanceACDC.save_data
 ```
 
-Component specific data can be plotted using a function:
+
+
+## Plotting options
+
+### Component data
+Component specific data can be plotted using
 ```@docs
 PowerImpedanceACDC.plot_data
 ```
 
-## Plotting
+### Bode plot
 ```@docs
 PowerImpedanceACDC.bode
+```
+
+### Nyquist plot
+
+```@docs
+PowerImpedanceACDC.nyquistplot
 ```

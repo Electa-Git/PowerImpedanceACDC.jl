@@ -13,3 +13,6 @@ PowerImpedanceACDC.eval_abcd
 ```@docs
 PowerImpedanceACDC.make_z
 ```
+```@docs
+PowerImpedanceACDC.shunt_reactor
+```
