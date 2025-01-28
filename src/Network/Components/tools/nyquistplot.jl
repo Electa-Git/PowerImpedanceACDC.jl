@@ -13,7 +13,10 @@ and arrows indicating the direction of each eigenlocus.
   where `λₙ` is the number of eigenvalues at each frequency and `omegaₙ` is the number of frequency points.
 - `omega::Vector{Float64}`: A vector of frequency points (in radians per second) at which the eigenvalues of `L` are evaluated.
 - `zoom::String`: (optional) A string to control the zoom level of the Nyquist plot. If `"yes"`, the plot zooms in around the point (-1, 0j).
-- `SM::String`: (optional) An unused parameter (reserved for future use or modifications).
+- `SM::String`: (optional) String determining the returned stability margin.
+    - "PM" for phase margin
+    - "GM" for gain margin
+    - "VM" for vector margin
 - `title::String`: (optional) The title of the plot. Default is `"Nyquist plot"`.
 
 # Returns
@@ -36,6 +39,7 @@ L = rand(Complex{Float64}, 5, 5, 100)  # 5 eigenvalues, 100 frequency points
 omega = 1:0.1:10  # Frequency range from 1 to 10 rad/s
 
 nyquistplot(L, omega, zoom="yes", title="Custom Nyquist Plot")
+```
 """
 function nyquistplot(L, omega; zoom :: String = "", SM :: String = "", title :: String = "Nyquist plot")
 
