@@ -40,8 +40,8 @@ export tlc
 end
 
 """
-    function mmc(;args...)
-It constructs MMC operating both as a rectifier and an inverter. MMC is constructed as a struct with the
+    function tlc(;args...)
+It constructs tlc operating both as a rectifier and an inverter. TLC is constructed as a struct with the
 following fields.
 ```julia
 ω₀ :: Union{Int, Float64} = 100*π
@@ -81,8 +81,6 @@ following fields.
     vACbase :: Float64 = 0 # AC voltage base for impedance/admittance calculation
     iACbase :: Float64 = 0 # AC current base for impedance/admittance calculation
 """
-
-
 function tlc(;args...)
     converter = TLC()
 
