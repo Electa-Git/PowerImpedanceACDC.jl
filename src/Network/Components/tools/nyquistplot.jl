@@ -1,6 +1,6 @@
 export nyquistplot
 """
-    nyquistplot(L, omega; zoom::String = "", SM::String = "", title::String = "Nyquist plot")
+    nyquistplot(L, omega; zoom::String = "", SM::String = "no", title::String = "Nyquist plot")
 
 Generate a Nyquist plot for the eigenvalues of a loop gain matrix `L` at different frequencies `omega`.
 
@@ -14,6 +14,7 @@ and arrows indicating the direction of each eigenlocus.
 - `omega::Vector{Float64}`: A vector of frequency points (in radians per second) at which the eigenvalues of `L` are evaluated.
 - `zoom::String`: (optional) A string to control the zoom level of the Nyquist plot. If `"yes"`, the plot zooms in around the point (-1, 0j).
 - `SM::String`: (optional) String determining the returned stability margin.
+    - "no" `default` for no stability margin
     - "PM" for phase margin
     - "GM" for gain margin
     - "VM" for vector margin
@@ -41,7 +42,7 @@ omega = 1:0.1:10  # Frequency range from 1 to 10 rad/s
 nyquistplot(L, omega, zoom="yes", title="Custom Nyquist Plot")
 ```
 """
-function nyquistplot(L, omega; zoom :: String = "", SM :: String = "", title :: String = "Nyquist plot")
+function nyquistplot(L, omega; zoom :: String = "", SM :: String = "no", title :: String = "Nyquist plot")
 
     # Determine eigenvalues of the loop gain matrix at each frequency point 
     Λ = eigvals.(L)

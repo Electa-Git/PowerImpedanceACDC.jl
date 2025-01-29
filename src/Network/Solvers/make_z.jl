@@ -3,10 +3,40 @@ export make_z
 
 
 """
-function make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
-                    start_pins::Array{Symbol}, end_pins::Array{Symbol})
+    make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}}, 
+           start_pins::Array{Symbol}, end_pins::Array{Symbol}, s::Complex)
 
-    Based on the individual component equations, this function obtains the impedance between the start and end pins.
+Computes the impedance matrix (Z-matrix) of a given electrical network  
+between specified start and end pins using component equations and Kirchhoff’s laws.
+
+# Arguments
+- `net::Network`: The electrical network model for which impedance is calculated.
+- `dict::Dict{Symbol, Array{Union{Symbol,Int}}}`: A dictionary containing:
+  - `:node_list`: List of network nodes.
+  - `:element_list`: List of elements in the network.
+  - `:output_list`: List of output (grounded) nodes.
+- `start_pins::Array{Symbol}`: The input pins where current is injected.
+- `end_pins::Array{Symbol}`: The output pins where voltage is measured.
+- `s::Complex`: Complex frequency variable (`s = jω` for steady-state AC analysis).
+
+# Behavior
+- Constructs a system matrix incorporating Kirchhoff’s Current Law (KCL)  
+  and individual component equations using their ABCD parameters.
+- Handles various elements, including converters and synchronous machines,  
+  by forming the appropriate impedance representation.
+- Solves a linear system to obtain the impedance between the specified pins.
+
+# Output
+- Returns `Z`, the impedance matrix relating input currents to output voltages.
+
+# Exceptions
+- Ensures valid indexing when accessing nodes and elements in the network.
+
+# Example
+```julia
+net = create_network(...)  # Assume a valid network object
+Z_matrix = make_z(net, dict, start_pins=["N1"], end_pins=["N2"], s=1im*2π*60)
+```
 """
 function make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                     start_pins::Array{Symbol}, end_pins::Array{Symbol}, s :: Complex)

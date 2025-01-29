@@ -25,12 +25,29 @@ PowerImpedanceACDC.plot_data
 ```
 
 ### Bode plot
+I think second option is the newer version with added functionalities of Julia plotting package, so first one can be deleted.
 ```@docs
 PowerImpedanceACDC.bode
+```
+
+```@docs
+PowerImpedanceACDC.bodeplot
 ```
 
 ### Nyquist plot
 
 ```@docs
 PowerImpedanceACDC.nyquistplot
+```
+
+```@docs
+PowerImpedanceACDC.EVD
+```
+
+```@docs
+PowerImpedanceACDC.passivity
+```
+
+```@docs
+PowerImpedanceACDC.small_gain
 ```
