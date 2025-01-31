@@ -15,11 +15,11 @@ export tlc
     Vₘ :: Union{Int, Float64} = 333             # AC voltage, amplitude [kV]
     Vᵈᶜ :: Union{Int, Float64} = 640            # DC-bus voltage [kV]
 
-    Lₐᵣₘ :: Union{Int, Float64}  = 0        # arm inductance [H]
-    Rₐᵣₘ :: Union{Int, Float64}  = 0        # equivalent arm resistance
+    Lₐᵣₘ :: Union{Int, Float64}  = 0        # filter inductance [H]
+    Rₐᵣₘ :: Union{Int, Float64}  = 0        # equivalent filter resistance
 
-    Lᵣ :: Union{Int, Float64}  = 60e-3          # inductance of the phase reactor [H]
-    Rᵣ :: Union{Int, Float64}  = 0.535          # resistance of the phase reactor [Ω]
+    Lᵣ :: Union{Int, Float64}  = 60e-3         # inductance of the converter transformer at the converter side [H]
+    Rᵣ :: Union{Int, Float64}  = 0.535         # resistance of the converter transformer at the converter side [H]
 
     controls :: OrderedDict{Symbol, Controller} = OrderedDict{Symbol, Controller}()
     equilibrium :: Array{Union{Int, Float64}} = [0]
