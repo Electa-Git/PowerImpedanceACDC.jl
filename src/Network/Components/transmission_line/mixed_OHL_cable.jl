@@ -4,12 +4,7 @@ export mixed_OHL_cable
     parts :: Dict{Symbol, Transmission_line} = Dict{Symbol, Transmission_line}()
 end
 
-"""
-    function mixed_OHL_cable(;args...)
-This function creates mixed OHL-cable component. The component consists of dictionary
-with overhead line and cable definitions. It creates one component by concatenating
-overhead line/cable sections. Overhead line and cable definitions are as already defined.
-"""
+
 function mixed_OHL_cable(;args...)
     m = Mixed_OHL_cable()
     pins = 0
