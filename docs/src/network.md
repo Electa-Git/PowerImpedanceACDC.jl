@@ -65,6 +65,9 @@ PowerImpedanceACDC.composite_element
 ```
 
 ## Check port impedance and system stability
+```@docs
+PowerImpedanceACDC.make_y_matrix 
+```
 
 ```@docs
 PowerImpedanceACDC.determine_impedance

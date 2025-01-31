@@ -20,11 +20,11 @@ makedocs(
             "Source" => "source.md",
             "Impedance" => "impedance.md",
             "Transformer" => "transformer.md",
-            "Shunt reactor" => "shunt.md",
             "Transmission line" => "transmission_line.md",
             "MMC" => "MMC.md",
             "TLC" => "TLC.md"
             ]
+        "Legacy" => "legacy.md"
       
     ]
 )

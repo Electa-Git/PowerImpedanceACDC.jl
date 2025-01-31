@@ -1,5 +1,63 @@
 export EVD
 
+"""
+    EVD(Zcl_bus::Matrix{ComplexF64}, freq::Vector{Float64}; determinant::Bool=false)
+
+Performs Eigenvalue Decomposition (EVD) on the closed-loop bus impedance matrix (`Zcl_bus`) 
+across a range of frequencies (`freq`). The function analyzes oscillatory modes, 
+determines stability, and computes observability, controllability, and participation factors.
+
+## Parameters
+- `Zcl_bus::Matrix{ComplexF64}`: The closed-loop bus impedance matrix as a function of frequency.
+- `freq::Vector{Float64}`: The vector of frequency points at which `Zcl_bus` is evaluated.
+- `determinant::Bool=false`: If `true`, the function plots the determinant of `Zcl_bus` over frequency.
+
+## Returns
+A named tuple containing:
+- `eigenvalues::Matrix{ComplexF64}`: Eigenvalues of `Zcl_bus` at each frequency.
+- `eigenvectors::Matrix{ComplexF64}`: Corresponding right eigenvectors.
+- `observability::Matrix{Float64}`: Observability factors for each eigenvalue.
+- `controllability::Matrix{Float64}`: Controllability factors for each eigenvalue.
+- `participation::Matrix{Float64}`: Participation factors for each eigenvalue.
+- `dominant_mode::Int`: Index of the most critical oscillation mode.
+- `critical_freq::Float64`: Frequency at which instability is detected.
+- `pmd_stability::Bool`: Stability indicator based on Positive Mode Damping (PMD).
+- `pnd_stability::Bool`: Stability indicator based on Positive Net Damping (PND).
+
+## Methodology
+1. **Eigenvalue Computation**:
+   - Computes eigenvalues (`Λ`) and eigenvectors (`Φ`) for `Zcl_bus` across frequencies.
+   - Ensures continuity in eigenvalue sorting using the Hungarian Algorithm (Munkres method).
+   - Normalizes eigenvectors for consistency.
+
+2. **Critical Eigenvalue Identification**:
+   - Extracts real (`λ_real`), imaginary (`λ_imag`), and magnitude (`λ_mag_dB`) components.
+   - Identifies the dominant oscillation mode based on peak eigenvalue magnitude.
+
+3. **Observability, Controllability & Participation Factors**:
+   - Computes observability (`O`), controllability (`C`), and participation (`P`) factors.
+   - Determines buses with the highest contributions to oscillation modes.
+
+4. **Stability Analysis**:
+   - **Positive Mode Damping (PMD)**: Evaluates stability by checking the slope of `λ_imag`.
+   - **Positive Net Damping (PND)**: Detects instability based on zero-crossings of `λ_imag`.
+
+5. **Plotting**:
+   - Plots magnitude, real, and imaginary parts of eigenvalues vs. frequency.
+   - If `determinant=true`, plots the determinant of `Zcl_bus`.
+
+## Example Usage
+```julia
+Zcl_bus = rand(5, 5) .+ im * rand(5, 5)  # Random complex impedance matrix
+freq = range(0, stop=100, length=100)   # Frequency vector from 0 to 100 Hz
+result = EVD(Zcl_bus, freq, determinant=true)
+
+println("Dominant Mode: ", result.dominant_mode)
+println("Critical Frequency: ", result.critical_freq)
+println("PMD Stability: ", result.pmd_stability)
+println("PND Stability: ", result.pnd_stability)
+```
+"""
 function EVD(Zcl_bus, omega, fmin, fmax,determinant=false)
 
     f = real(omega)./(2*pi)

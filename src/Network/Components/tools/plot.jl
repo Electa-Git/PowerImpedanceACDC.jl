@@ -1,21 +1,47 @@
 export bode, save_plot
 
 """
-    function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
-        titles :: Array{String} = [""], omega = [], axis_type = :loglog,
-        save_data = false)
-Used for plotting determined impedance or a frequency dependent data as a bode
-plot. Function takes frequency points in the form of `omega_range` or as mapped
-values `omega`. For a nice diagrams, the labels can be given as `titles`.
+    bode(impedance::Array{Any}; omega_range=(-3, 5, 100), 
+         titles::Array{String}=[""], omega=[], axis_type=:loglog, 
+         save_data=false)
 
-It can be specified how to plot data:
-- :loglog - logarithmic frequency scale and logarithmic impedance in dB
-- :linlog - linear frequency scale and logarithmic impedance in dB
-- :loglin - logarithmic frequency scale and linear impedance (magnitude)
-- :logrealimag - logarithmic frequency scale and real/imaginary part
-- :linrealimag - linear frequency scale and real/imaginary part
+Plots impedance or frequency-dependent data as a Bode plot. The function supports various axis configurations and options for saving data.
 
-Data can be saved by setting `save_data = true`.
+# Arguments
+- `impedance::Array{Any}`: A multidimensional array containing the impedance data to plot. Each element corresponds to a frequency-dependent impedance value.
+- `omega_range::Tuple{Real, Real, Int}` (default `(-3, 5, 100)`): A tuple specifying the range of logarithmic frequency values:
+  - `min_ω`: Minimum log-frequency (base 10).
+  - `max_ω`: Maximum log-frequency (base 10).
+  - `n_ω`: Number of frequency points.
+- `titles::Array{String}` (default `[""]`): Optional titles or labels for the impedance data in LaTeX math format. Labels are matched to the data in `impedance`.
+- `omega::Vector{Real}` (default `[]`): Optional precomputed frequency points. If provided, this overrides `omega_range`.
+- `axis_type::Symbol` (default `:loglog`): Specifies the type of plot axes. Options:
+  - `:loglog`: Logarithmic frequency and logarithmic impedance (in dB).
+  - `:linlog`: Linear frequency and logarithmic impedance (in dB).
+  - `:loglin`: Logarithmic frequency and linear impedance (magnitude).
+  - `:linlin`: Linear frequency and linear impedance (magnitude).
+  - `:logrealimag`: Logarithmic frequency with real and imaginary parts.
+  - `:linrealimag`: Linear frequency with real and imaginary parts.
+- `save_data::Bool` (default `false`): Whether to save the computed data (`frequency`, `magnitude`, `phase`) to a text file.
+
+# Behavior
+- Computes frequency points using `omega_range` if `omega` is not provided.
+- Generates Bode plots with two subplots: one for the magnitude and one for the phase (or real/imaginary components, depending on `axis_type`).
+- The `save_data` option writes frequency, magnitude, and phase data to a CSV file, with filenames timestamped.
+
+# Plot Customization
+- Titles/labels for the plots can be provided via `titles`.
+- Handles various axis types to support different visual representations.
+
+# Exceptions
+- Throws `ArgumentError` if an invalid `axis_type` is provided.
+
+# Example
+```julia
+impedance = [rand(ComplexF64, 2, 2) for _ in 1:100]
+bode(impedance; omega_range=(-2, 4, 50), 
+     titles=["Z₁₁", "Z₁₂", "Z₂₁", "Z₂₂"], 
+     axis_type=:loglog, save_data=true)
 """
 function bode(impedance :: Array{Any}; omega_range = (-3, 5, 100),
     titles :: Array{String} = [""], omega = [], axis_type = :loglog,
