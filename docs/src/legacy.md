@@ -17,9 +17,6 @@ PowerImpedanceACDC.make_z
 PowerImpedanceACDC.shunt_reactor
 ```
 
-```@docs
-PowerImpedanceACDC.cable
-```
 
 ```@docs
 PowerImpedanceACDC.dc_source

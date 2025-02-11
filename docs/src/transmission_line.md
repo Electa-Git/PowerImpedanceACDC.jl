@@ -96,7 +96,7 @@ In order to represent the transmission line using ABCD parameters, it is necessa
     Z_{0,n1} & \cdots & Z_{0,nn}
     \end{bmatrix}
 ```
-where $Z_i = \frac{m\rho_i}{2\pi r_i} , \coth(0.733mr_i) + \frac{0.3179 \rho_i}{\pi r_i^2} $ for the i-th conductor/sub-conductor/ground wire.
+where $Z_i = \frac{m\rho_i}{2\pi r_i} , \coth(0.733mr_i) + \frac{0.3179 \rho_i}{\pi r_i^2}$ for the i-th conductor/sub-conductor/ground wire.
 
 $r_i$ is its radius, resistivity, $\rho_i = R^i_{dc} , \pi r_i^2, \quad m = \sqrt{j\omega ,\frac{\mu_0 \mu_{r,i}}{\rho_i}};$
 
@@ -128,9 +128,9 @@ PowerImpedanceACDC.overhead_line
 ### Example
 OHL grounded with a resistance of 0.001 Ohm:
 
-```math
-\begin{aligned}
-\text{overheadline} = (&\text{length} = 90 \times 10^3, \, 
+```julia
+
+overheadline = (&\text{length} = 90 \times 10^3, \, 
 \text{conductors} = \text{Conductors}(\text{organization} = \text{:flat}, \, 
 n^b = 3, \, n^{sb} = 1, \, R^{dc} = 0.063, \, r^c = 0.015, \, y^{bc} = 30, \, \\
 &\delta y^{bc} = 0, \, \delta x^{bc} = 10, \, \delta \tilde{x}^{bc} = 0, \, d^{sb} = 0, \, d^{sag} = 10), \, \\
@@ -155,9 +155,7 @@ Cables can be insulated or pipe-type coaxial cables. At the moment, onlya group 
 Additionally, the configuration parameters can be modified by adding two semiconducting layers in the insulator 1, and implementing the sheathbconsisting of the wire screen and outer sheath layer. In that case, the
 procedure described in [^5] is applied.
 
--   Conductor surface impedance
-
-    A hollow conductor surface impedance is given by: 
+A hollow conductor surface impedance is given by: 
  ```math
 \begin{aligned}
 Z_{aa} &= \frac{\rho_c m}{2\pi r^c_i} \, \coth(m(r^c_o - r^c_i)) + \frac{\rho^c}{2\pi r^c_i \, (r^c_i + r^c_o)} \; \left[\frac{\Omega}{\text{m}}\right]  & \text{(for inner surface)}, \\
@@ -165,38 +163,36 @@ Z_{bb} &= \frac{\rho^c m}{2\pi r^c_o} \, \coth(m(r^c_o - r^c_i)) + \frac{\rho^c}
 Z_{ab} &=  \frac{\rho^c m}{\pi (r^c_i + r^c_o)} \, \operatorname{csch}(m(r^c_o - r^c_i)) \; \left[\frac{\Omega}{\text{m}}\right].
 \end{aligned}
 ``` 
- where $m = \sqrt{j\omega\mu^c_r}$ For a non-hollow conductor, the outer surface impedance is 
- ```math
-    Z_{bb} = \frac{\rho^c m}{2\pi r^c_o} \, \coth(0.733 m r^c_o) + \frac{0.3179 \rho^c}{\pi {r^c_o}^2} \; \left[\frac{\Omega}{\text{m}}\right].
- ```
-
--   The insulator layer between two conductors has an impedance
-    ```math
-    Z_i = \frac{j\omega \mu_0 \mu^i_r}{2\pi} \, \log\left(\frac{r^i_o}{r^i_i}\right).
-    ```
-
--   The earth return impedance of the cable and mutual between cables is
-     ```math
-    Z_g = \frac{j\omega \, \mu_g}{2\pi} \, \left(-\log\left(\frac{\gamma m D}{2}\right) + \frac{1}{2} - \frac{2}{3} \, mH\right).
-    ```
-    for 
-    ```math
-    \begin{aligned}
-    D =& \left\{ 
-    \begin{array}{ll}
-    \sqrt{(x_i - x_j)^2 + (y_i - y_j)^2} & \quad \text{for cables } i \neq j, \\
-    r_i & \quad \text{radius of the cable }i,
-    \end{array} 
-    \right. \\
-    H = &\left\{ 
-    \begin{array}{ll}
-    y_i + y_j & \quad \text{for cables } i \neq j, \\
-    2y_i & \quad \text{for the cable }i,
-    \end{array} 
-    \right. \\
-        \end{aligned}
-    ```
-     and $\gamma \approx 0.5772156649$ being Euler's constant.
+ where $ m=\sqrt{j\omega\mu^c_r}$. For a non-hollow conductor, the outer surface impedance is 
+```math
+Z_{bb} = \frac{\rho^c m}{2 \pi r^c_o}  \coth(0.733 m r^c_o) + \frac{0.3179 \rho^c}{\pi {r^c_o}^2} \left[\frac{\Omega}{m}\right]
+```
+The insulator layer between two conductors has an impedance
+```math
+Z_i = \frac{j\omega \mu_0 \mu^i_r}{2\pi}  \log \left(\frac{r^i_o}{r^i_i}\right)
+```
+The earth return impedance of the cable and mutual between cables is
+```math
+Z_g = \frac{j\omega \, \mu_g}{2\pi} \, \left(-\log\left(\frac{\gamma m D}{2}\right) + \frac{1}{2} - \frac{2}{3} \, mH\right).
+```
+for 
+```math
+\begin{aligned}
+D =& \left\{ 
+\begin{array}{ll}
+\sqrt{(x_i - x_j)^2 + (y_i - y_j)^2} & \quad \text{for cables } i \neq j, \\
+r_i & \quad \text{radius of the cable }i,
+\end{array} 
+\right. \\
+H = &\left\{ 
+\begin{array}{ll}
+y_i + y_j & \quad \text{for cables } i \neq j, \\
+2y_i & \quad \text{for the cable }i,
+\end{array} 
+\right. \\
+\end{aligned}
+```
+and $\gamma \approx 0.5772156649$ being Euler's constant.
 
 According to [^6] and [^7], one cable is represented with its series impedance $\mathbf{Z}_{ii}$ matrix. Each matrix $\mathbf{Z}_{ii}$ has the size $n_c \times n_c$ and its entries for $j \in \{1, \ldots, n_c-1\}$ are given by
 
