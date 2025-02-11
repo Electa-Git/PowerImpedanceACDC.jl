@@ -202,8 +202,9 @@ Z_{ab} &=  \frac{\rho^c m}{\pi (r^c_i + r^c_o)} \, \operatorname{csch}(m(r^c_o -
     ```
      and $\gamma \approx 0.5772156649$ being Euler's constant.
 
-According to [^6] [^7], one cable is represented with its series impedance $\mathbf{Z}_{ii}$ matrix. Each matrix $\mathbf{Z}_{ii}$ has the size $n_c \times n_c$ and its entries for $j \in \{1, \ldots, n_c-1\}$ are given by
- ```math
+According to [^6] and [^7], one cable is represented with its series impedance $\mathbf{Z}_{ii}$ matrix. Each matrix $\mathbf{Z}_{ii}$ has the size $n_c \times n_c$ and its entries for $j \in \{1, \ldots, n_c-1\}$ are given by
+
+```math
 \begin{aligned}
 \mathbf{Z}_{ii} \langle j,j \rangle &= Z^j_{bb} + Z^j_i + Z^{j+1}_{aa}, \\
 \mathbf{Z}_{ii} \langle j,j+1 \rangle &= Z_{ii} \langle j+1,j \rangle = - Z^{j+1}_{ab}, \\
@@ -285,5 +286,5 @@ where $ABCD_\eta$ are the ABCD parameters of an OHL or cable section, while $n$ 
 [^6]: A. Ametani, "A general formulation of impedance and admittance of cables," IEEE Transactions on Power Apparatus and Systems, no. 3, pp. 902-910, 1980.
 [^7]: P. de Arizon and H. W. Dommel, "Computation of cable impedances based on subdivision of conductors," IEEE Transactions on Power Delivery, vol. 2, no. 1, pp. 21-27, 1987.
 [^8]: F. de Léon, M. L. Márquez-Asensio, and G. Álvarez-Cordero, "Effects of conductor counter-transposition on the positive-sequence impedance and losses of cross-bonded cables," IEEE Transactions on Power Delivery, vol. 26, no. 3, pp. 2060-2063, 2011.
-[^9]:R. A. Rivas and J. R. Marti, "Calculation of frequency-dependent parameters of power cables: Matrix partitioning techniques," IEEE Transactions on Power Delivery, vol. 17, no. 4, pp. 1085-1092, 2002.
+[^9]: R. A. Rivas and J. R. Marti, "Calculation of frequency-dependent parameters of power cables: Matrix partitioning techniques," IEEE Transactions on Power Delivery, vol. 17, no. 4, pp. 1085-1092, 2002.
 
