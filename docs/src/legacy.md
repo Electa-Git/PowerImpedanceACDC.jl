@@ -16,3 +16,11 @@ PowerImpedanceACDC.make_z
 ```@docs
 PowerImpedanceACDC.shunt_reactor
 ```
+
+```@docs
+PowerImpedanceACDC.cable
+```
+
+```@docs
+PowerImpedanceACDC.dc_source
+```
