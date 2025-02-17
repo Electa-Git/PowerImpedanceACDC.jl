@@ -295,7 +295,7 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
         if in(:occ, keys(converter.controls))
             push!(exp.args,
             :(
-                timeDelayIn = [vMΔ_ref;vMΔ_ref];
+                timeDelayIn = [md;mq];
                 statesDelay = x[$index + 1 : $index + 2*$converter.padeOrderDen]; 
                 timeDelayOut = timeDelayPadeMatrices($converter.padeOrderNum,$converter.padeOrderDen,$converter.timeDelay,length(timeDelayIn));
                 
@@ -306,10 +306,10 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
                 F[$index + 1 : $index + 2*$converter.padeOrderDen] = A_delay*statesDelay + B_delay*timeDelayIn;
                 # timeDelayOut = C_delay*statesDelay + D_delay*timeDelayIn;
                 # Implement phase shifts by transforming the dq voltage references to alpha-beta
-                vM_ab_ref = (cos($converter.ω₀*$converter.timeDelay)-sin($converter.ω₀*$converter.timeDelay)*im)*(T_dq_ab*(C_delay*statesDelay + D_delay*timeDelayIn));
-                vM_dq_ref = real(T_ab_dq * conj(vM_ab_ref) + conj(T_ab_dq) * vMΔ_ab_ref);
-                vMd_ref = vM_dq_ref[1];
-                vMq_ref = vM_dq_ref[2];
+                m_ab_ref = (cos($converter.ω₀*$converter.timeDelay)-sin($converter.ω₀*$converter.timeDelay)*im)*(T_dq_ab*(C_delay*statesDelay + D_delay*timeDelayIn));
+                m_dq_ref = real(T_ab_dq * conj(m_ab_ref) + conj(T_ab_dq) * m_ab_ref);
+                md = m_dq_ref[1];
+                mq = m_dq_ref[2];
             ))
             index += 2*converter.padeOrderDen
         end
