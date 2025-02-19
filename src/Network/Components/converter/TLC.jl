@@ -161,15 +161,16 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
 
     # add voltage measurement filter
     if in(:v_meas_filt, keys(converter.controls))
+        Abutt, Bbutt, Cbutt, Dbutt =  butterworthMatrices(converter.controls[:v_meas_filt].n_f, converter.controls[:v_meas_filt].ω_f, 2);
         push!(exp.args, :(
-            Vᴳd_f = x[$index+1];
-            Vᴳq_f = x[$index+2];
-            F[$index+1] = $(converter.controls[:v_meas_filt].ω_f) * (Vᴳd - Vᴳd_f);
-            F[$index+2] = $(converter.controls[:v_meas_filt].ω_f) * (Vᴳq - Vᴳq_f);
+            voltagesIn = [Vᴳd;Vᴳq];
+            statesButt= x[$index + 1 : $index + 2*$(converter.controls[:v_meas_filt].n_f)]; 
+            F[$index + 1 : $index + 2*$(converter.controls[:v_meas_filt].n_f)] = $Abutt*statesButt + $Bbutt*voltagesIn;
+            voltagesOut=$Cbutt*statesButt+$Dbutt*voltagesIn;
+            Vᴳd_f=voltagesOut[1];
+            Vᴳq_f=voltagesOut[2];
             ))
-            indexVᴳdf = index + 1
-            indexVᴳqf = index + 2
-        index +=2
+        index += 2*(converter.controls[:v_meas_filt].n_f) 
     else
         push!(exp.args, :(
             (Vᴳd_f, Vᴳq_f) = (Vᴳd, Vᴳq);
@@ -206,12 +207,17 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
 
     # add current measurement filter
     if in(:i_meas_filt, keys(converter.controls))
+        Abutt_i, Bbutt_i, Cbutt_i, Dbutt_i =  butterworthMatrices(converter.controls[:i_meas_filt].n_f, converter.controls[:i_meas_filt].ω_f, 2);
         push!(exp.args, :(
-            (i_d_pcc_f, i_q_pcc_f) = x[$index+1:$index+2];
-            F[$index+1] = $(converter.controls[:i_meas_filt].ω_f) * (i_d_pcc_c - i_d_pcc_f);
-            F[$index+2] = $(converter.controls[:i_meas_filt].ω_f) * (i_q_pcc_c - i_q_pcc_f);
+            currentsIn = [i_d_pcc_c;i_q_pcc_c];
+            statesButt_i= x[$index + 1 : $index + 2*$(converter.controls[:i_meas_filt].n_f)]; 
+            F[$index + 1 : $index + 2*$(converter.controls[:i_meas_filt].n_f)] = $Abutt_i*statesButt_i + $Bbutt_i*currentsIn;
+            currentsOut=$Cbutt_i*statesButt_i+$Dbutt_i*currentsIn;
+            i_d_pcc_f=currentsOut[1];
+            i_q_pcc_f=currentsOut[2];
             ))
-        index +=2
+        index += 2*(converter.controls[:i_meas_filt].n_f) 
+
     else
         push!(exp.args, :(
             (i_d_pcc_f, i_q_pcc_f) = (i_d_pcc_c, i_q_pcc_c);
@@ -345,10 +351,10 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
 
     vector_inputs = [Vdc, Vᴳd, Vᴳq]
     init_x = [init_x; zeros(index-2,1)]
-    if in(:v_meas_filt, keys(converter.controls))
-        init_x[indexVᴳdf] =  Vᴳd
-        init_x[indexVᴳqf] =  1e-3 # Initialize to a small non-zero value to avoid Inf or NaN problems with nlsolve
-    end
+    # if in(:v_meas_filt, keys(converter.controls))
+    #     init_x[indexVᴳdf] =  Vᴳd
+    #     init_x[indexVᴳqf] =  1e-3 # Initialize to a small non-zero value to avoid Inf or NaN problems with nlsolve
+    # end
 
     g!(F,x) = f!(exp_equilibrium, F, x, vector_inputs)
     k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
