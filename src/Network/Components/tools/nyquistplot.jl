@@ -1,6 +1,48 @@
 export nyquistplot
+"""
+    nyquistplot(L, omega; zoom::String = "", SM::String = "no", title::String = "Nyquist plot")
 
-function nyquistplot(L, omega; zoom :: String = "", SM :: String = "", title :: String = "Nyquist plot")
+Generate a Nyquist plot for the eigenvalues of a loop gain matrix `L` at different frequencies `omega`.
+
+The function computes the eigenvalues of `L` at each frequency point, sorts the eigenvalues to create continuous eigenloci, 
+and visualizes the resulting loci on a Nyquist plot. The plot includes the unity circle, the point (-1, 0j), 
+and arrows indicating the direction of each eigenlocus.
+
+# Arguments
+- `L::Array{Complex{Float64}, 3}`: The loop gain matrix. It should have dimensions `λₙ x λₙ x omegaₙ`, 
+  where `λₙ` is the number of eigenvalues at each frequency and `omegaₙ` is the number of frequency points.
+- `omega::Vector{Float64}`: A vector of frequency points (in radians per second) at which the eigenvalues of `L` are evaluated.
+- `zoom::String`: (optional) A string to control the zoom level of the Nyquist plot. If `"yes"`, the plot zooms in around the point (-1, 0j).
+- `SM::String`: (optional) String determining the returned stability margin.
+    - "no" `default` for no stability margin
+    - "PM" for phase margin
+    - "GM" for gain margin
+    - "VM" for vector margin
+- `title::String`: (optional) The title of the plot. Default is `"Nyquist plot"`.
+
+# Returns
+The function returns a plot of the Nyquist diagram showing the eigenvalues of `L` as loci in the complex plane. 
+The plot includes a red dashed unity circle, the point (-1, 0j) marked with a red cross, and arrows indicating the direction of each eigenlocus.
+
+# Details
+- **Eigenvalue Calculation**: Eigenvalues of the loop gain matrix `L` are calculated at each frequency point in `omega`.
+- **Eigenvalue Sorting**: Eigenvalues are sorted using the Munkres algorithm to ensure continuous eigenloci across frequency points.
+- **Plotting Features**:
+  - A red dashed unity circle (magnitude = 1) is plotted.
+  - The point `(-1, 0j)` is marked with a red cross.
+  - Eigenvalue loci are plotted as solid lines for frequencies from `fmin` to `fmax`, and as dashed lines for frequencies from `-fmin` to `-fmax`.
+  - Arrows are added to indicate the direction of each eigenlocus.
+- **Zooming**: If `zoom == "yes"`, the plot zooms in around the point `(-1, 0j)`. Otherwise, the plot limits are automatically adjusted based on the eigenvalue range.
+
+# Example
+```julia
+L = rand(Complex{Float64}, 5, 5, 100)  # 5 eigenvalues, 100 frequency points
+omega = 1:0.1:10  # Frequency range from 1 to 10 rad/s
+
+nyquistplot(L, omega, zoom="yes", title="Custom Nyquist Plot")
+```
+"""
+function nyquistplot(L, omega; zoom :: String = "", SM :: String = "no", title :: String = "Nyquist plot")
 
     # Determine eigenvalues of the loop gain matrix at each frequency point 
     Λ = eigvals.(L)

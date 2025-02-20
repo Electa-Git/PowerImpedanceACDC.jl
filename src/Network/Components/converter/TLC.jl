@@ -39,6 +39,48 @@ export tlc
     iACbase :: Float64 = 0 # AC current base for impedance/admittance calculation
 end
 
+"""
+    function tlc(;args...)
+It constructs tlc operating both as a rectifier and an inverter. TLC is constructed as a struct with the
+following fields.
+```julia
+ω₀ :: Union{Int, Float64} = 100*π
+
+    P :: Union{Int, Float64} = -10              # active power [MW]
+    Q :: Union{Int, Float64} = 3                # reactive power [MVA]
+    P_dc :: Union{Int, Float64} = 100           # DC power [MW]
+    P_min :: Union{Float64, Int} = -100         # min active power output [MW]
+    P_max :: Union{Float64, Int} = 100          # max active power output [MW]
+    Q_min :: Union{Float64, Int} = -50          # min reactive power output [MVA]
+    Q_max :: Union{Float64, Int} = 50           # max reactive power output [MVA]
+
+    θ :: Union{Int, Float64} = 0
+    Vₘ :: Union{Int, Float64} = 333             # AC voltage, amplitude [kV]
+    Vᵈᶜ :: Union{Int, Float64} = 640            # DC-bus voltage [kV]
+
+    Lₐᵣₘ :: Union{Int, Float64}  = 0        # arm inductance [H]
+    Rₐᵣₘ :: Union{Int, Float64}  = 0        # equivalent arm resistance
+
+    Lᵣ :: Union{Int, Float64}  = 60e-3          # inductance of the phase reactor [H]
+    Rᵣ :: Union{Int, Float64}  = 0.535          # resistance of the phase reactor [Ω]
+
+    controls :: OrderedDict{Symbol, Controller} = OrderedDict{Symbol, Controller}()
+    equilibrium :: Array{Union{Int, Float64}} = [0]
+    A :: Array{Complex} = [0]
+    B :: Array{Complex} = [0]
+    C :: Array{Complex} = [0]
+    D :: Array{Complex} = [0]
+
+    timeDelay :: Float64 = 0
+    padeOrderNum :: Int = 0
+    padeOrderDen :: Int = 0
+
+    vACbase_LL_RMS :: Union{Int, Float64} = 220 # Voltage base in kV
+    Sbase :: Union{Int, Float64} = 500 # Power base in MW
+
+    vACbase :: Float64 = 0 # AC voltage base for impedance/admittance calculation
+    iACbase :: Float64 = 0 # AC current base for impedance/admittance calculation
+"""
 function tlc(;args...)
     converter = TLC()
 
@@ -86,8 +128,8 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Qac /= Sbase
     Pdc /= Sbase
     
-    Vᴳd = Vm * cos(θ)
-    Vᴳq = -Vm * sin(θ)
+    Vᴳd = Vm # Vᴳd = Vm * cos(θ)
+    Vᴳq = 0# Vᴳq = -Vm * sin(θ)
 
     Id = ((Vᴳd * Pac + Vᴳq * Qac) / (Vᴳd^2 + Vᴳq^2)) 
     Iq = ((Vᴳq * Pac - Vᴳd * Qac) / (Vᴳd^2 + Vᴳq^2)) 
@@ -341,7 +383,6 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
        f = eval(:((F,x,inputs) -> $expr))
        return Base.invokelatest(f, F,x,inputs)
     end
-
 
     vector_inputs = [Vdc, Vᴳd, Vᴳq]
     init_x = [init_x; zeros(index-2,1)]

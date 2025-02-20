@@ -230,10 +230,10 @@ function check_lumped_elements(net :: Network)
 end
 
 """
-function power_flow(net :: Network)
-    Forms the dictionary needed for solving the power flow problem using
-    package PowerModelsACDC. After successful power flow solving, it updates
-    the operating point of the power converter.
+    function power_flow(net :: Network)
+Forms the dictionary needed for solving the power flow problem using
+package PowerModelsACDC. After successful power flow solving, it updates
+the operating point of the power converter.
 """
 function power_flow(net :: Network)
     global global_dict

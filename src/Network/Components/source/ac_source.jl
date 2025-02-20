@@ -1,16 +1,52 @@
 export ac_source
 
 """
-    ac_source(;args...)
+    ac_source(; args...)
 
-Creates  n phase ac source with specified amplitude V,
-phase shift (in radians) θ, reference active power P, reference reactive power Q,
-maximum and minimum generated active and reactive powers.
+Creates an `n`-phase AC voltage source with configurable amplitude, phase shift, active and reactive power settings, 
+and optional series impedance. The source is defined with input and output pins that can be connected to a network.
 
-Pins: `1.x` and `2.x` for x ∈ {1, ..., pins}
+## Description
+The AC source model provides:
+- A configurable voltage magnitude `V` (in kV).
+- Phase shift `θ` (in radians).
+- Active and reactive power reference values (`P`, `Q` in MW/MVAr).
+- Limits on generated power (`P_min`, `P_max`, `Q_min`, `Q_max`).
+- Series impedance `Z` (in Ω).
+- Connection pins (`1.x` and `2.x` for x ∈ {1, ..., `pins`}).
 
-Plus pin is connected to `1.x` and minus to `2.x`. To ground the source,
-connect the pin to the ground while constructing the network.
+To ground the source, connect a pin to the ground when constructing the network.
+
+## Parameters
+```julia
+Z     :: Union{Float64, Int, Basic} = 0  # Source series impedance [Ω]
+V     :: Union{Float64, Int} = 0        # Voltage magnitude (or DC voltage) [kV]
+P     :: Union{Float64, Int} = 0        # Reference active power output [MW]
+Q     :: Union{Float64, Int} = 0        # Reference reactive power output [MVAr]
+P_min :: Union{Float64, Int} = 0        # Minimum active power output [MW]
+P_max :: Union{Float64, Int} = 0        # Maximum active power output [MW]
+Q_min :: Union{Float64, Int} = 0        # Minimum reactive power output [MVAr]
+Q_max :: Union{Float64, Int} = 0        # Maximum reactive power output [MVAr]
+pins  :: Int = 1                        # Number of pins for multiphase systems
+ABCD  :: Array{Basic} = Basic[]         # ABCD matrix representation (if applicable)
+```
+
+## Returns
+- `Element`: An `Element` instance representing the AC source with specified parameters.
+
+## Example Usage
+```julia
+# Define a single-phase AC source with 1kV voltage, 50 MW active power, and 20 MVAr reactive power
+source = ac_source(V = 1.0, P = 50, Q = 20, P_min = 10, P_max = 100, Q_min = 5, Q_max = 50)
+
+# Define a three-phase AC source with impedance
+three_phase_source = ac_source(V = 1.0, P = 50, Q = 20, Z = 0.1, pins = 3)
+```
+
+## Notes
+- The `ac_source` function initializes a `Source` object and assigns parameter values.
+- `transformation` is an internal parameter used in element construction.
+- Throws an `ArgumentError` if an unknown parameter is passed.
 """
 function ac_source(;args...)
     source = Source()

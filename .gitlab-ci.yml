@@ -1,7 +1,9 @@
-docs:
-  image: julia:1.11
+pages:
+  image: robbevde/gitlab_pages:1.0.
   stage: deploy
   script:
+    - echo "Linux version"
+    - cat /etc/os-release
     - echo "==[ CI/CD Environment Information ]=="
     - echo "GitLab Runner Version is ($CI_RUNNER_VERSION)"
     - echo "GitLab Runner Description is $CI_RUNNER_DESCRIPTION"
@@ -29,10 +31,9 @@ docs:
     - echo "Inside Container is $(whoami)@$(hostname)"
     - echo "Home Directory Structure:"
     - ls -la ~
-    
     - echo "==[ Starting Julia Documentation Build ]=="
     - |
-      julia --project=docs -e '
+      julia --project=docs --compiled-modules=existing -e '
         using Pkg
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
@@ -40,24 +41,13 @@ docs:
         using PowerImpedanceACDC
         doctest(PowerImpedanceACDC)
         include("docs/make.jl")'
-    
-    - echo "==[ Post-Build Check  docs Directory Structure ]=="
+    - echo "==[ Post-Build Check docs Directory Structure ]=="
     - find docs
-    
     - echo "==[ Moving Documentation Files to public/ Directory ]=="
     - mkdir -p public
     - mv docs/build/* public/
     - echo "==[ Final public Directory Structure ]=="
     - find public
-    
   artifacts:
     paths:
       - public
-  
-  only:
-    - main
-
-
-
-
-

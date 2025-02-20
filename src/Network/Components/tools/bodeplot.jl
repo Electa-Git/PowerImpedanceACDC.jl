@@ -1,5 +1,32 @@
 export bodeplot
+"""
+    bodeplot(L, omega; legend=[""])
 
+Generates a Bode plot (magnitude and phase response) of a given frequency response data.
+
+# Arguments
+- `L`: Array of complex values representing the frequency response of the system.
+- `omega`: Array of angular frequencies (rad/s).
+- `legend`: (Optional) Array of legend labels for the plots. Default is `[""]`.
+
+# Behavior
+- Computes magnitude (in dB) and phase (in degrees) of `L`.
+- Uses a logarithmic scale for frequency (`f = ω / 2π` in Hz).
+- Dynamically adjusts y-axis limits for both magnitude and phase plots.
+- Supports multiple curves if `L` is a matrix with multiple columns.
+
+# Output
+- Displays a two-panel Bode plot:
+  1. Magnitude response (dB) vs. Frequency (log scale).
+  2. Phase response (degrees) vs. Frequency (log scale).
+
+# Example
+```julia
+ω = 2π .* logspace(-1, 3, 100)  # Logarithmically spaced frequency points
+H = 1 ./ (1 .+ im .* ω / 100)  # Example transfer function response
+bodeplot(H, ω, legend=["Low-pass Filter"])
+```
+"""
 function bodeplot(L, omega; legend = [""])
 
     f = omega/(2*π)
