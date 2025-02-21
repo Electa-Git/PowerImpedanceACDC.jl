@@ -38,7 +38,7 @@ end
     P :: Array{Basic} = []
     Z :: Array{Basic} = []
 
-    eliminate :: Bool = true
+    
 end
 
 """
@@ -77,7 +77,7 @@ struct Groundwires
     Rᵍᵈᶜ :: Union{Int, Float64} = 0      # groundwire DC resistance [Ω/m]
     μᵣᵍ :: Union{Int, Float64} = 1       # relative groundwire permeability
     positions :: Tuple{Vector{Union{Int, Float64}}, Vector{Union{Int, Float64}}} = ([],[])    # add absolute positions manually
-    eliminate :: Bool = true
+
 end
 ```
 - earth\\_parameters - with default value `(1,1,1)` and meaning (μᵣ\\_earth, ϵᵣ\\_earth, ρ\\_earth) in units ([], [], [Ωm])

@@ -1,4 +1,4 @@
-__precompile__()
+
 
 export save_data, plot_data
 
@@ -35,11 +35,11 @@ mutable struct Element
     # definition of pins
     if !isdefined(elem, :transformation)
         elem.transformation = false
-    elseif (elem.transformation)
+    elseif (elem.transformation) #TODO: Not generalizable, only makes sense for 3-phase systems
         elem.input_pins -= 1
         elem.output_pins -= 1
     end
-    if !isdefined(elem, :pins)
+    if !isdefined(elem, :pins) # Initialize pins field with empty symbol, if not defined 
       elem.pins = merge(Dict{Symbol, Symbol}(Symbol(string("1.",i)) => Symbol() for i in 1:nip(elem)),
                         Dict{Symbol, Symbol}(Symbol(string("2.",i)) => Symbol() for i in 1:nop(elem)))
     end
