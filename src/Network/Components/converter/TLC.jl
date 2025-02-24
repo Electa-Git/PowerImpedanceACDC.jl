@@ -140,9 +140,9 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     exp = Expr(:block)
     # Represent measurements here before possible voltage filtering
     if in(:pll, keys(converter.controls))
-        index_PLL_angle = index + 3
+        index_PLL_angle = index + 1*(converter.controls[:pll].n_f) +2
         if in(:v_meas_filt, keys(converter.controls))
-            index_PLL_angle +=2
+            index_PLL_angle +=  2*(converter.controls[:v_meas_filt].n_f)  
         end        
         push!(exp.args, :(
             T_θ = [cos(x[$index_PLL_angle]) -sin(x[$index_PLL_angle]); sin(x[$index_PLL_angle]) cos(x[$index_PLL_angle])];
@@ -181,11 +181,16 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     # add PLL
     if in(:pll, keys(converter.controls))
         if (converter.controls[:pll].ω_f != 0) # A PLL filter is implemented
-            push!(exp.args, :(
-                vₚₗₗ = x[$index+1];
-                F[$index+1] = $(converter.controls[:pll].ω_f) * (Vᴳq_f - vₚₗₗ);
+            Abutt_pll, Bbutt_pll, Cbutt_pll, Dbutt_pll =  butterworthMatrices(converter.controls[:pll].n_f, converter.controls[:pll].ω_f, 1);
+            push!(exp.args, :(               
+                statesButt_pll= x[$index + 1 : $index + 1*$(converter.controls[:pll].n_f)]; 
+                F[$index + 1 : $index + 1*$(converter.controls[:pll].n_f)] = $Abutt_pll*statesButt_pll + $Bbutt_pll*Vᴳq_f;
+                vₚₗₗ=dot($Cbutt_pll,statesButt_pll)+$Dbutt_pll*Vᴳq_f;# Get rid of 1-element array
             ))
-            index +=1
+
+           
+            index += 1*(converter.controls[:pll].n_f)
+            
         else
             push!(exp.args, :(
                 vₚₗₗ = Vᴳq
