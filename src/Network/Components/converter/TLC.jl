@@ -34,6 +34,7 @@ export tlc
 
     vACbase_LL_RMS :: Union{Int, Float64} = 220 # Voltage base in kV
     Sbase :: Union{Int, Float64} = 500 # Power base in MW
+    vDCbase :: Union{Int, Float64} = 640        # DC voltage base [kV]
 
     vACbase :: Float64 = 0 # AC voltage base for impedance/admittance calculation
     iACbase :: Float64 = 0 # AC current base for impedance/admittance calculation
@@ -59,6 +60,7 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     wbase = 100*pi
     vAC_base = converter.vACbase_LL_RMS*sqrt(2/3)
     Sbase = converter.Sbase
+    vDC_base = converter.vDCbase
     iAC_base = 2*Sbase/3/vAC_base
     zAC_base = (3/2)*vAC_base^2/Sbase
     lAC_base = zAC_base/wbase
@@ -81,7 +83,7 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     converter.P_dc = Pdc # Has the same sign as Pac
 
     Vm /= vAC_base
-    Vdc /= (2*vAC_base)
+    Vdc /= vDC_base
     Pac /= Sbase
     Qac /= Sbase
     Pdc /= Sbase
