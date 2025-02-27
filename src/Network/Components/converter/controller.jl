@@ -9,7 +9,7 @@ abstract type Controller end
     Kₚ :: Union{Int, Float64}  = 0                     # proportional gain [pu]
     Kᵢ :: Union{Int, Float64}  = 0                     # integral gain [pu/s]
     ref :: Array{Union{Int, Float64}}  = [0]           # reference value
-    n_f :: Int = 0                                     # Butterworth Filter order [-]
+    n_f :: Int = 1                                     # Butterworth Filter order [-]
     ω_f  :: Union{Int, Float64}  = 0                   # Filter cutoff frequency [rad/s]
 end
 
