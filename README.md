@@ -1,27 +1,47 @@
-# HVDCstability
+# PowerImpedanceACDC
+PowerImpedanceACDC is a Julia-based implementation for the frequendy-domain analysis of modern power systems.
+The core functionalities are admittance characterization and small-signal stability assessment.
+The analysis relies on analytical models validated against the EMT simulation software PSCAD.
+The implemented components are:
+- Modular Multilevel Converter with various controls (Grid-Following and Grid-Forming)
+- Two-level converter with various controls
+- Oherhead lines and underground cables
+- Transformers
+- Impedance
+- AC-source
 
-Dev:
-[![Build Status](https://api.travis-ci.com/Electa-Git/HVDCstability.jl.svg?token=8MGGs8A1RyNuFsSbtpur&branch=master)](https://travis-ci.com/Electa-Git/HVDCstability.jl)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://electa-git.github.io/HVDCstability.jl/latest/)
+Following features are currently implemented:
+- Impedance/admittance identifaction
+- Stability assessment via Generalized Nyquist Criteria applicable to standalone-stable MIMO systems
+- Oscillation mode identification via eigenvalue decomposition (EVD) and bus participation factors
+- Passivity assessment and Singular Value Decomposition functions 
 
-Tutorial about simulator construction and usage can be found on [link](https://github.com/Electa-Git/HVDCstability.jl/blob/master/Simulator_tutorial.pdf).
 
-## Download and install
-To download the package, clone it using git. Afterwards just extract it and open the project inside julia.
-The package can be added to all julia packages using the following command.
+## Installation
+The latest stable release of PowerModels can be installed using the Julia package manager with
+```julia
+] add PowerModels
 ```
-using Pkg
-Pkg.add(PackageSpec(path = pwd()))
+
+## Citation
+If you find PowerImpedanceACDC useful in your work, we kindly request that you cite the following:
 ```
-In order to run the package it is necessary to install supporting packages: `Parameters`, `DataStructures`
-`FileIO`, `DelimitedFiles`, `Plots`, `LaTeXStrings`, `DSP`, `Compat`, `SymEngine`, `LinearAlgebra`, `NLsolve`, `ForwardDiff`, `PowerModels`, `PowerModelsACDC`, `Ipopt` and `JuMP`. Each of them can be added by calling:
+@misc{PowerImpedanceACDC2025,
+  author       = "Electa",
+  title        = "PowerImpedanceACDC. Impedance-based stability analyses.",
+  month        = "March",
+  year         = "2025",
+}
 ```
-using Pkg
-Pkg.add("package_name")
-```
-test
-To remove the package, call the following command:
-```
-using Pkg
-Pkg.rm("HVDCstability")
-```
+
+## Contributors
+- Aleksandra Lekic & Özgür Can Sakinci: main developers
+- F. Garcia, J. Kircheis, A. Saad, R. Vander Eeckt: additional functionalities and validation
+
+## License
+This is a free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. Z-tool is distributed in the hope that it will be useful, but without any warranty; without even the implied warranty of merchantability or fitness for a particular purpose. See the GNU General Public License for more details.
+
+## Future work
+- $V_{ac}$-droop for two-level converter
+- $V_{ac}$-control for both converters
+- 

@@ -1,12 +1,12 @@
-using PowerImpedanceACDC,DelimitedFiles
+using PowerImpedanceACDC,DelimitedFiles, Plots
 
 transmissionVoltage = 380 / sqrt(3)
 pHVDC1 = 600
-qC1 = -100
+qC1 = 100
 qC2 = 100
 # The P and Q defined here are what is injected into the network. 
 
-@time net = @network begin
+net = @network begin
 
         voltageBase = transmissionVoltage
     
@@ -22,9 +22,6 @@ qC2 = 100
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
                 q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
                 dc = PI_control(Kₚ = 5, Kᵢ = 15),
-                timeDelay = 0.000001,
-                padeOrderNum = 3,                    
-                padeOrderDen = 3 
                 )
         # MMC2 controls P&Q. It is connected to bus 7. Define the transformer impedance parameters at the converter side!
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
@@ -54,14 +51,6 @@ qC2 = 100
                 groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
                 earth_parameters = (1,1,100), transformation = true)
 
-        # tl78 = cable(length = 30e3, positions = [(-0.5,1.9), (0,1.9), (0.5,1.9)],
-        #         C1 = Conductor(rₒ = 24.25e-3, ρ = 1.72e-8),
-        #         I1 = Insulator(rᵢ = 24.25e-3, rₒ = 41.75e-3, ϵᵣ = 2.3),
-        #         C2 = Conductor(rᵢ = 41.75e-3, rₒ = 46.25e-3, ρ = 22e-8),
-        #         I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
-        #         C3 = Conductor(rᵢ = 49.75e-3, rₒ = 60.55e-3, ρ = 18e-8, μᵣ = 10),
-        #         I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true, earth_parameters = (1,1,100))
-
         tl78 = overhead_line(length = 90e3,
                 conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
                                 Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
@@ -74,8 +63,7 @@ qC2 = 100
         g4[1.1] ⟷ tl1[1.1] ⟷ BusRd
         g4[1.2] ⟷ tl1[1.2] ⟷ BusRq
 
-        # g4[1.1] ⟷ c1[2.1] ⟷ BusRd
-        # g4[1.2] ⟷ c1[2.2] ⟷ BusRq
+
 
         g4[2.1] ⟷ gndd
         g4[2.2] ⟷ gndq
@@ -89,10 +77,6 @@ qC2 = 100
         g1[1.1] == tl78[2.1] == Bus7d
         g1[1.2] == tl78[2.2] == Bus7q
 
-        # Nothing at the AC side
-        # g1[1.1] == c2[2.1] == Bus7d
-        # g1[1.2] == c2[2.2] == Bus7q
-
         g1[2.1] == gndd
         g1[2.2] == gndq
 
@@ -100,18 +84,16 @@ qC2 = 100
 end
 
 # Determine impedance seen at the AC side of the HVDC link
-@time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus7d,:Bus7q], 
+imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus7d,:Bus7q], 
 output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
 
-# @time imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g4], input_pins=Any[:BusRd,:BusRq], 
-# output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
+println(typeof(imp_ac))
+println(typeof(imp_ac[1,:]))
+println(typeof(Array(imp_ac[1,:])))
 
-# Save the impedance and frequency data of estimarted impedance at the AC side of the HVDC link
-writedlm("./imp_P2P.csv",  imp_ac, ',')
-writedlm("./w_P2P.csv",  omega_ac, ',')
+Z_dd = getindex.(imp_ac,1,1)
 
-# Save the A,B,C,D matrices of the MMC at the remote end
-writedlm("./A_p2p.csv",  net.elements[:c1].element_value.A, ',')
-writedlm("./B_p2p.csv",  net.elements[:c1].element_value.B, ',')
-writedlm("./C_p2p.csv",  net.elements[:c1].element_value.C, ',')
-writedlm("./D_p2p.csv",  net.elements[:c1].element_value.D, ',')
+impedance_bode = bodeplot(Z_dd, omega_ac)
+display(impedance_bode)
+
+
