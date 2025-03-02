@@ -41,7 +41,7 @@ array and the second one is frequency array.
 """
 function determine_impedance(network :: Network; input_pins :: Array{Any},
     output_pins :: Array{Any}, elim_elements :: Array{Symbol},
-    omega_range = (-3, 5, 100), parameters_type = :ABCD)
+    omega_range = (-3, 5, 100))
 
     """
     function make_lists(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
@@ -134,27 +134,12 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
     omegas= 2*pi* 10 .^range(min_ω, max_ω, length= n_ω) 
     # omegas= 2*pi* [1e0:20:1e5;] # Only for debugging
 
-    # make closing impedance
-    p = length(unique(output_pins))
-    Zₜ = zeros(Complex, p, p)
+    # Solving the network equations for the impedance between input and output pins with Z parameters. Default.
     impedance = []
-
-    if parameters_type == :ABCD
-        for omega in omegas
-            # abcd = make_abcd(network, dict, input_pins, output_pins, omega*1im)
-            # z = closing_impedance(abcd, Zₜ)
-            # push!(impedance, z)
-            push!(impedance, make_z(network, dict, input_pins, output_pins, omega*1im))
-        end
-    else
-        dict[:node_list] = [dict[:node_list]; dict[:output_list]]
-        delete!(dict, :output_list)
-        for omega in omegas
-            z = make_y(network, dict, input_pins, output_pins, omega*1im)
-            z = kron(z, Int[i for i in 1:length(input_pins)])
-            push!(impedance, z)
-        end
+    for omega in omegas
+        push!(impedance, make_z(network, dict, input_pins, output_pins, omega*1im))
     end
+
 
     return impedance, omegas
 end
