@@ -86,7 +86,7 @@ function make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                 end
             end
         else
-            if isa(net.elements[element].element_value, SynchronousMachine)
+            if isa(net.elements[element].element_value, SynchronousMachine) # Synchronous machine, ABCD representation exists
                 # TODO: Generalize this. Check instead if the component has an ABCD or a Y representation.
                 pₚ = 2          # element input pins
                 pₛ = 2          # element output pins
@@ -100,7 +100,7 @@ function make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
                 b = Z
                 c = convert(Array{ComplexF64}, zeros(2,2))
                 d = I
-            else
+            else #Passive elements, ABCD representation exists
                 ABCD = get_abcd(net.elements[element], s) 
 
                 pₚ = Int(size(ABCD,1)/2)                                                # element input pins
@@ -150,7 +150,7 @@ function make_z(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
         nₑₛ += np_abcd(net.elements[element])   # update output element position
     end
 
-    sol = sysmatrix \ inmatrix
+    sol = sysmatrix \ inmatrix # Solving network equations for impedance
     Z = zeros(ComplexF64,size(inmatrix,2),size(inmatrix,2))
     for j in 1:size(inmatrix,2)
         k = findfirst(p -> p == start_pins[j], dict[:node_list])
