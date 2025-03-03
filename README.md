@@ -16,7 +16,8 @@ Following features are currently implemented:
 - Oscillation mode identification via eigenvalue decomposition (EVD) and bus participation factors
 - Passivity assessment and Singular Value Decomposition functions 
 
-
+Following figure, shows the admittances of an HVDC link with 2 MMC's, validated against PSCAD. In the example folder you can find the example together with some explanations.
+![Validation against PSCAD](docs/src/pictures/P2P_validation.png)
 ## Installation
 The latest stable release of PowerModels can be installed using the Julia package manager with
 ```julia
