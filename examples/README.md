@@ -110,4 +110,5 @@ impedance_bode = bodeplot(Z_dd, omega_ac)
 display(impedance_bode)
 ```
 Which gives this bodeplot for the P2P HVDC link:
-![Bode plot](..\examples\pictures\impedance_bode_plot.png)
+
+![Bode plot](examples/pictures/impedance_bode_plot.png)
