@@ -44,7 +44,7 @@ net = @network begin
 
         g4 = ac_source(V = transmissionVoltage, P = pHVDC1, P_min = -2000, P_max = 2000, Q_max = 1000, Q_min = -1000, pins = 3, transformation = true)
 
-        # TL at the remote end
+
         tl1 = overhead_line(length = 25e3,
                 conductors = Conductors(organization = :flat, nᵇ = 3, nˢᵇ = 1, Rᵈᶜ = 0.063, rᶜ = 0.015,  yᵇᶜ = 30,
                                 Δyᵇᶜ = 0, Δxᵇᶜ = 10,  Δ̃xᵇᶜ = 0, dˢᵇ = 0,  dˢᵃᵍ = 10),
@@ -57,25 +57,25 @@ net = @network begin
                 groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
                 earth_parameters = (1,1,100), transformation = true)
 
-        c1[2.1] ⟷ tl1[2.1]
-        c1[2.2] ⟷ tl1[2.2]
+        c1[2.1] ⟷ tl1[2.1] ⟷ B3d
+        c1[2.2] ⟷ tl1[2.2] ⟷ B3q
 
-        g4[1.1] ⟷ tl1[1.1] ⟷ BusRd
-        g4[1.2] ⟷ tl1[1.2] ⟷ BusRq
+        g4[1.1] ⟷ tl1[1.1] ⟷ B2d
+        g4[1.2] ⟷ tl1[1.2] ⟷ B2q
 
 
 
         g4[2.1] ⟷ gndd
         g4[2.2] ⟷ gndq
         
-        c1[1.1] ⟷ dc_line[1.1]
-        c2[1.1] ⟷ dc_line[2.1]
+        c1[1.1] ⟷ dc_line[1.1] ⟷ B4
+        c2[1.1] ⟷ dc_line[2.1] ⟷ B5
 
-        # 30 km power line at the AC side
-        c2[2.1] == tl78[1.1]
-        c2[2.2] == tl78[1.2]
-        g1[1.1] == tl78[2.1] == Bus7d
-        g1[1.2] == tl78[2.2] == Bus7q
+
+        c2[2.1] == tl78[1.1] == B6d
+        c2[2.2] == tl78[1.2] == B6q
+        g1[1.1] == tl78[2.1] == B7d
+        g1[1.2] == tl78[2.2] == B7q
 
         g1[2.1] == gndd
         g1[2.2] == gndq
@@ -84,12 +84,8 @@ net = @network begin
 end
 
 # Determine impedance seen at the AC side of the HVDC link
-imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:Bus7d,:Bus7q], 
+imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:B7d,:B7q], 
 output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
-
-println(typeof(imp_ac))
-println(typeof(imp_ac[1,:]))
-println(typeof(Array(imp_ac[1,:])))
 
 Z_dd = getindex.(imp_ac,1,1)
 
