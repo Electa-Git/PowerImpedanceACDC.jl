@@ -102,23 +102,3 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     ((dict["busdc"])[string(key_i)])["Vdcmax"] = 1.1 * ((dict["busdc"])[string(key_i)])["Vdc"]
     ((dict["busdc"])[string(key_i)])["Vdcmin"] = 0.9 * ((dict["busdc"])[string(key_i)])["Vdc"]
 end
-
-
-function plot_data(conv :: Converter, omegas)
-    Y_ac = []
-    Y_dc = []
-    Y_acdc = []
-    for omega in omegas
-        Y = (eval_parameters(conv, 1im*omega))
-        push!(Y_ac, Y[2:3,2:3])
-        push!(Y_dc, Y[1,1])
-        push!(Y_acdc, [Y[2:3,1] Y[1,2:3]])
-    end
-
-    p = bode(Y_ac, omega = omegas, titles = ["Y_{d,d}" "Y_{d,q}"; "Y_{q,d}" "Y_{q,q}"])
-    save_plot(p, "files/ac_side")
-    p = bode(Y_dc, omega = omegas, titles = ["Y_{dc}"])
-    save_plot(p, "files/dc_side")
-    p = bode(Y_acdc, omega = omegas, titles = ["Y_{d,dc}" "Y_{dc,d}"; "Y_{q, dc}" "Y_{dc,q}"])
-    save_plot(p, "files/acdc_side")
-end

@@ -41,22 +41,3 @@ function make_power_flow_dc!(tl :: Transmission_line, dict :: Dict{String, Any},
     ((dict["branchdc"])[string(key)])["r"] = real(Z)
 end
 
-
-
-function plot_data(tl :: Transmission_line, omegas)
-    Z_series = []
-    Y_shunt = []
-    for omega in omegas
-        (Z,Y) = eval_parameters(tl, 1im*omega)
-        push!(Z_series, Z)
-        push!(Y_shunt, Y)
-    end
-    n = Int(sqrt(length(Z_series[1, :])))
-
-    p = bode(Z_series, omega = omegas, titles = reshape([string("Z_{", i, "," , j, "}")
-                    for j in 1:n for i in 1:n],n,n))
-    save_plot(p, "files/z_series_bode")
-    p = bode(Y_shunt, omega = omegas, titles = reshape([string("Y_{", i, "," , j, "}")
-                    for j in 1:n for i in 1:n],n,n))
-    save_plot(p, "files/y_shunt_bode")
-end

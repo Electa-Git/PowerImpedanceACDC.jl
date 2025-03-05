@@ -62,7 +62,7 @@ function closing_impedance(ABCD :: Array{Complex}, Zₜ :: Union{Array{Complex},
     return Zₑ
 end
 
-# making 2×2 matrix from 4×4
+# making 2×2 matrix (modal domain) from 4×4 matrix (phase domain)
 function transformation_dc(ABCD :: Parameters_types)
     n = Int(size(ABCD, 1)/2)
     (a, b, c, d) = (ABCD[1:n,1:n], ABCD[1:n,n+1:end], ABCD[n+1:end,1:n], ABCD[n+1:end, n+1:end])
@@ -70,7 +70,7 @@ function transformation_dc(ABCD :: Parameters_types)
     ABCD = [(a[1,1]+a[2,2]-a[1,2]-a[2,1])/2 (b[1,1]+b[2,2]-b[1,2]-b[2,1])
             (c[1,1]+c[2,2]-c[1,2]-c[2,1])/4 (d[1,1]+d[2,2]-d[1,2]-d[2,1])/2]
 end
-
+# making 4×4 matrix (dq domain) from 6x6 matrix (phase domain)
 function transformation_dq(ABCD₁, ABCD₂)
     n = Int(size(ABCD₁, 1)/2)
     (a₁, b₁, c₁, d₁) = (ABCD₁[1:n,1:n], ABCD₁[1:n,n+1:end], ABCD₁[n+1:end,1:n], ABCD₁[n+1:end, n+1:end])

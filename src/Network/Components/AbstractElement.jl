@@ -1,17 +1,12 @@
-
-
-export plot_data
-
-
-
 """
 Struct guarantees representation of the component like a multiport
 network using ABCD parameters. It consists of:
 - element unique symbol inside constructed network - `symbol`
-- dictionary that maps pins inside the network - `pins`
+- dictionary that maps pins inside the network (to network nodes) - `pins`
 - number of input pins - `input_pins`
 - number of output pins - `output_pins`
 - component definition - `element_value`
+- transformation flag - `transformation`
 """
 mutable struct Element
   symbol::Symbol
@@ -19,7 +14,6 @@ mutable struct Element
   input_pins :: Int
   output_pins :: Int
   element_value :: Any  # component defined type
-
   transformation :: Bool
 
   function Element(;args...)
@@ -151,18 +145,5 @@ function is_three_phase(element :: Element)
     return false
 end
 
-
-function plot_data(element :: Element; omega_range = (-3, 5, 1000),
-    scale = :log)
-    (min_ω, max_ω, n_ω) = omega_range
-    n = (max_ω - min_ω) / n_ω
-    if (scale == :log)
-        omegas = [exp10(min_ω)*10^(i*n) for i in 1:Int(n_ω)]
-    else
-        omegas = [min_ω+i*n for i in 1:Int(n_ω)]
-    end
-
-    plot_data(element.element_value, omegas)
-end
 
 
