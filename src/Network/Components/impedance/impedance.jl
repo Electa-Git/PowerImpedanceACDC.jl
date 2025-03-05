@@ -7,7 +7,7 @@ end
 
 
 """
-    impedance(;z :: Union{Int, Float64, Basic, Array{Basic}} = 0, pins :: Int = 0)
+    impedance(;z :: Union{Int, Float64, Basic, Array{Basic}, Array{Int}} = 0, pins :: Int = 0)
 Creates impedance with specified number of input/output pins `pins`. The impedance expression
  `exp` has to be given in Ω and can have both numerical and symbolic value (example: `z = s-2`).
 
@@ -29,7 +29,7 @@ impedance(z = [1,s,3,4], pins = 2) # 2×2 impedance with all values defined
 ```
 
 """
-function impedance(;z :: Union{Int, Float64, Basic, Array{Basic}} = 0, pins :: Int = 0,
+function impedance(;z :: Union{Int, Float64, Basic, Array{Basic}, Array{Int}} = 0, pins :: Int = 0,
         transformation = false)  #z define the value of the impedance pins define the n of pin -> integer
     if !isempty(z) #if z has a value -> enter
         if (pins != 0) #if pins has a value different from 0 -> enter
