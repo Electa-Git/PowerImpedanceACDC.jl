@@ -1,6 +1,6 @@
 
 
-export save_data, plot_data
+export plot_data
 
 
 
@@ -151,42 +151,7 @@ function is_three_phase(element :: Element)
     return false
 end
 
-####################### Save/plot ##################################
-"""
-    function save_data(element :: Element, file_name :: String; omega_range = (-3, 5, 1000),
-        scale = :log)
-Used for saving data of the specific component defined as `Element`. The function calls component
-specific function. The data is saved in csv textual file.
 
-Additional parameter `omega_range` provides possibility to manually add the
-frequency scale for saving data. Scale can be given as logarithmic (`:log`) and
-linear (`:lin`).
-"""
-function save_data(element :: Element, file_name :: String; omega_range = (-3, 5, 1000),
-    scale = :log)
-    (min_ω, max_ω, n_ω) = omega_range #creation of the omega_range -> for Francesco's implementation -> min_ω and max_ω are frequencies in Hz
-    n = (max_ω - min_ω) / n_ω #number of points inside the omega range -> used only with implementation from Aleksandra, now commented
-    if (scale == :log) #logarithmic scale
-        omegas = 2*pi* 10 .^range(min_ω, max_ω, length= n_ω) #[exp10(min_ω)*10^(i*n) for i in 1:Int(n_ω)]
-    else #linear scale (from the definition here below)
-        omegas = 2*pi* range(min_ω, max_ω, length= n_ω) #omegas = [min_ω+i*n for i in 1:Int(n_ω)]
-    end
-
-    file_name = string("./",  file_name) #e.g. if filename= "hello" ->file_name= "./hello"
-    save_data(element.element_value, file_name, omegas)
-end
-
-"""
-    function plot_data(element :: Element; omega_range = (-3, 5, 1000),
-        scale = :log)
-
-It plots the component defined data with the desired frequency range.
-It differs from component to component.
-
-Additional parameter `omega_range` provides possibility to manually add the
-frequency scale for saving data. Scale can be given as logarithmic (`:log`) and
-linear (`:lin`).
-"""
 function plot_data(element :: Element; omega_range = (-3, 5, 1000),
     scale = :log)
     (min_ω, max_ω, n_ω) = omega_range

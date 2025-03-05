@@ -103,14 +103,6 @@ function make_power_flow!(converter :: Converter, dict :: Dict{String, Any},
     ((dict["busdc"])[string(key_i)])["Vdcmin"] = 0.9 * ((dict["busdc"])[string(key_i)])["Vdc"]
 end
 
-function save_data(conv :: Converter, file_name :: String, omegas)
-    open(string(file_name, "_y.txt"), "w") do f
-        for omega in omegas
-            Y = eval_parameters(conv, 1im*omega)
-            writedlm(f, [omega reshape(Y, 1, length(Y))], ",")
-        end
-    end
-end
 
 function plot_data(conv :: Converter, omegas)
     Y_ac = []
