@@ -1,4 +1,4 @@
-export shunt_reactor, eval_abcd
+export shunt_reactor
 
 @with_kw mutable struct Shunt_reactor
     ABCD :: Union{Array{Any}, Array{Basic}}  = []

@@ -856,7 +856,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
     g!(du,u,p,t) = f!(exp_steadyState, du, u, vector_inputs) # g is the state-space formulation used to obtain the steady-state operation point, copy from f, see some lines above
     println("Starting to solve for Steady-State Solution!")
     prob = SteadyStateProblem(g!, init_x)
-    sol=solve(prob,SSRootfind(TrustRegion()),maxiters=20,abstol = 1e-10,reltol = 1e-10,show_trace = Val(true), trace_level = TraceAll())
+    sol=solve(prob,SSRootfind(TrustRegion()),maxiters=20,abstol = 1e-8,reltol = 1e-8)
     
     # Command to show solver results
     # sol.trace
