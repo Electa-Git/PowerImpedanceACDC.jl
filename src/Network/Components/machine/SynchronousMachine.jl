@@ -268,15 +268,27 @@ function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed
         f = eval(:((F,x,inputs) -> $expr))
         return Base.invokelatest(f, F,x,inputs)
     end
-
-    k!(F,x) = f!(exp_init, F, x, inputs_init)
     init_init = zeros(8,1)
     init_init[4] = 1
-    k_init = nlsolve(k!, init_init , autodiff = :forward, iterations = 200, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
-    if converged(k_init)
+    g!(du,u,p,t) = f!(exp_init, du, u, inputs_init) # g is the state-space formulation used to obtain the steady-state operation point, copy from f, see some lines above
+    println("Starting to solve for Steady-State Solution!")
+    prob = SteadyStateProblem(g!, init_init)
+    sol=solve(prob,SSRootfind(TrustRegion()),maxiters=20,abstol = 1e-6,reltol = 1e-6)
+    if SciMLBase.successful_retcode(sol)
         println("SG steady-state solution found!")
+    else
+        println("SG steady-state solution not found!")
     end
-    equilibrium_init= k_init.zero #debug here
+    equilibrium_init = sol.u
+
+    # k!(F,x) = f!(exp_init, F, x, inputs_init)
+    # init_init = zeros(8,1)
+    # init_init[4] = 1
+    # k_init = nlsolve(k!, init_init , autodiff = :forward, iterations = 200, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
+    # if converged(k_init)
+    #     println("SG steady-state solution found!")
+    # end
+    # equilibrium_init= k_init.zero #debug here
     # println("Inputs for the steady state solution")
     # println(inputs_init)
     # println("Steady state solution")
