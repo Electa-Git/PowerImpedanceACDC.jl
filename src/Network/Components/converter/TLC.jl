@@ -403,13 +403,22 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     #     init_x[indexVᴳdf] =  Vᴳd
     #     init_x[indexVᴳqf] =  1e-3 # Initialize to a small non-zero value to avoid Inf or NaN problems with nlsolve
     # end
-
-    g!(F,x) = f!(exp_equilibrium, F, x, vector_inputs)
-    k = nlsolve(g!, init_x, autodiff = :forward, iterations = 100, ftol = 1e-6, xtol = 1e-3, method = :trust_region)
-    if converged(k)
+    ##################################################Steady state solution###############################################################
+    
+    g!(du,u,p,t) = f!(exp_equilibrium, du, u, vector_inputs) # g is the state-space formulation used to obtain the steady-state operation point, copy from f, see some lines above
+    println("Starting to solve for Steady-State Solution!")
+    prob = SteadyStateProblem(g!, init_x)
+    sol=solve(prob,SSRootfind(TrustRegion()),maxiters=20,abstol = 1e-8,reltol = 1e-8)
+    
+    # Command to show solver results
+    # sol.trace
+    if SciMLBase.successful_retcode(sol)
         println("TLC steady-state solution found!")
+    else
+        println("TLC steady-state solution not found!")
     end
-    converter.equilibrium = k.zero
+    
+    converter.equilibrium = sol.u
 
     number_output = 3
     number_input =3
@@ -417,7 +426,7 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     h(F,x) = f!(exp, F, x[1:end-number_input], x[end-number_input+1:end])
     ha = x -> (F = fill(zero(promote_type(eltype(x), Float64)), index + number_output); h(F, x); return F) # 
     jac = zeros(index + number_output , index + number_input)
-    ForwardDiff.jacobian!(jac, ha, [k.zero' vector_inputs'])
+    ForwardDiff.jacobian!(jac, ha, [converter.equilibrium' vector_inputs'])
     converter.A = jac[1:index, 1:index] # index indicates the number of state variables
     converter.B = jac[1:index, index+1:end]
     converter.C = jac[index+1:end, 1:index]
