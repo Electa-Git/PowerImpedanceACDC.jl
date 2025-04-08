@@ -52,16 +52,16 @@ You should have received a copy of the GNU General Public License along with thi
     include("Network/Solvers/stability.jl")
 
     # Including tools
-    include("Network/Components/tools/abcd_parameters.jl")
-    include("Network/Components/tools/kron.jl")
-    include("Network/Components/tools/plot.jl")
-    include("Network/Components/tools/nyquist.jl")
-    include("Network/Components/tools/nyquistplot.jl")
-    include("Network/Components/tools/small_gain.jl")
-    include("Network/Components/tools/stabilitymargin.jl")
-    include("Network/Components/tools/EVD.jl")
-    include("Network/Components/tools/bodeplot.jl")
-    include("Network/Components/tools/passivity.jl")
+    include("Tools/abcd_parameters.jl")
+    include("Tools/kron.jl")
+    include("Tools/plot.jl")
+    include("Tools/nyquist.jl")
+    include("Tools/nyquistplot.jl")
+    include("Tools/small_gain.jl")
+    include("Tools/stabilitymargin.jl")
+    include("Tools/EVD.jl")
+    include("Tools/bodeplot.jl")
+    include("Tools/passivity.jl")
 
     # Impedance
     include("Network/Components/impedance/impedance.jl")

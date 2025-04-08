@@ -53,11 +53,11 @@ function add!(elem::Element, sym::Symbol, value::Any)
   end
 end
 
-function get_nodes(element::Element)
+function get_nodes(element::Element) # Returns all nodes connected to the element
     return values(element.pins)
 end
 
-function get_nodes(element::Element, pin::Symbol)
+function get_nodes(element::Element, pin::Symbol) # Returns all nodes connected to the element, except the one specified by pin
     array = Symbol[]
     for (key, val) in element.pins
         (pin != key) && push!(array, val)
