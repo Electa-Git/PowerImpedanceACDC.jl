@@ -1,5 +1,5 @@
 export cable #function row 81 -> possible up to 4 conducting and insultating layers. Cable group of n cables possible.
-export Cable, Insulator, Conductor #mutable structures row 4, 13 and 23
+export Insulator, Conductor #mutable structures row 4, 13 and 23
 # first letter of the variable: Capital -> Mutable Structure (e.g. Cable, Insulator, Conductor), lowercase -> function (e.g. cable)
 @with_kw mutable struct Conductor #conducting layer //macro @with_kw which decorates a type definition and allow default values and a keyword construct
     rᵢ :: Union{Int, Float64} = 0              # inner radius

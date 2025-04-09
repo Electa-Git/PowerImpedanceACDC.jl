@@ -105,6 +105,7 @@ end
 np_abcd(e::Element) = Int((nip_abcd(e) + nop_abcd(e))/2) # number pins
 
 ########################## Y functions #############################
+# TODO: Crashes when using with MMC, TLC, SynchronousMachine. Still needed?
 function get_y(element :: Element, s :: Complex)
     abcd = get_abcd(element, s)
     return abcd_to_y(abcd)
