@@ -54,8 +54,6 @@ You should have received a copy of the GNU General Public License along with thi
     # Including tools
     include("Tools/abcd_parameters.jl")
     include("Tools/kron.jl")
-    include("Tools/plot.jl")
-    include("Tools/nyquist.jl")
     include("Tools/nyquistplot.jl")
     include("Tools/small_gain.jl")
     include("Tools/stabilitymargin.jl")
