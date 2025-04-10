@@ -34,6 +34,12 @@ end
 
 end
 
+@with_kw mutable struct FFVI <: Controller                 
+    Rᵥ :: Union{Int, Float64}  = 0                       # Virtual Resistance [pu]
+    Lᵥ :: Union{Int, Float64}  = 0                       # Virtual inductance [pu]
+end
+
+
 #############################################Additional functions used within the model#################################################
 
 function butterworthMatrices(buttOrder,ω_c,numberVars)
