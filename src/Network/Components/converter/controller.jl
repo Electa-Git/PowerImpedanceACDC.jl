@@ -1,4 +1,4 @@
-export Controller, PI_control, VSE, CCQSEM
+export Controller, PI_control, VSE, CCQSEM, FFVI
 
 abstract type Controller end
 
@@ -37,6 +37,8 @@ end
 @with_kw mutable struct FFVI <: Controller                 
     Rᵥ :: Union{Int, Float64}  = 0                       # Virtual Resistance [pu]
     Lᵥ :: Union{Int, Float64}  = 0                       # Virtual inductance [pu]
+    ref_vd :: Union{Int, Float64}  = 0                   # Vd voltage reference [pu]
+    ref_vq :: Union{Int, Float64}  = 0                   # Vq voltage reference [pu]
 end
 
 

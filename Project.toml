@@ -1,8 +1,6 @@
 name = "PowerImpedanceACDC"
 uuid = "8bb8d9d3-c57e-5130-a7c9-cb214ef560ae"
-version = "0.1"
-
-
+version = "0.1.0"
 
 [deps]
 ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
@@ -13,9 +11,7 @@ JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 Munkres = "4cefb923-2b6f-58c4-9e65-6821f26b7b51"
-NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
-PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 Peaks = "18e31ff7-3703-566c-8e60-38913d67486b"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
