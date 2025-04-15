@@ -506,7 +506,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
             end
                 push!(exp.args, :(
                 
-                q_ref = $(converter.controls[:vac_supp].Kₚ)*($(converter.controls[:vac_supp].ref[1])-Vᴳ_mag_f);
+                q_ref = $(converter.controls[:vac_supp].Kₚ)*($(converter.controls[:vac_supp].ref[1])-Vᴳ_mag_f) +$(converter.controls[:q].ref[1]);
                 
                 ))
            
