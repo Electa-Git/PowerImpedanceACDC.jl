@@ -17,7 +17,6 @@ You should have received a copy of the GNU General Public License along with thi
     using ControlSystemsBase, RobustAndOptimalControl
 
     # Plotting
-    using PGFPlotsX
     using Plots
 
     # Symbolic and numerical calculations
