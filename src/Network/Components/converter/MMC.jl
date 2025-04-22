@@ -656,14 +656,41 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
         
         elseif isa(converter.controls[:VI],FFVI) #FFVI grid-forming converter
 
+
             #FFVI implemenation
 
-            push!(exp.args, :(
+            if (converter.controls[:VI].TVR >0) && (converter.controls[:VI].ω_ₜᵥᵣ >0)#FFVI with transient damping term
 
-                vMΔd_ref_c = 2/Vdc*(($(converter.controls[:VI].ref_vd)+Vⱽd_ref) -($(converter.controls[:VI].Rᵥ)*iΔd) - (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔq) );
-                vMΔq_ref_c = 2/Vdc*($(converter.controls[:VI].ref_vq) +  (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔd) - ($(converter.controls[:VI].Rᵥ)*iΔq) );
-                (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c] # Transformation from converter dq frame to grid dq frame 
+               # State-space of washout filter
+                push!(exp.args, :(
+                    F[$index+1]=-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+1] + iΔd;
+                    iΔdₜᵥᵣ=(iΔd-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+1]);
+                    F[$index+2]=-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+2] + iΔq;
+                    iΔqₜᵥᵣ=(iΔq-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+2]);
+                    ))
+
+                # FFVI with transient damping term
+               
+                push!(exp.args, :(
+                    vMΔd_ref_c = 2/Vdc*(($(converter.controls[:VI].ref_vd)+Vⱽd_ref) -($(converter.controls[:VI].Rᵥ)*iΔd) - (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔq) - $(converter.controls[:VI].TVR)*iΔdₜᵥᵣ);
+                    vMΔq_ref_c = 2/Vdc*($(converter.controls[:VI].ref_vq) +  (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔd) - ($(converter.controls[:VI].Rᵥ)*iΔq) - $(converter.controls[:VI].TVR)*iΔqₜᵥᵣ);
+                    (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c] # Transformation from converter dq frame to grid dq frame 
                 ))
+
+
+               # Calculation of modulation indices
+
+            else # FFVI without transient damping term
+
+                push!(exp.args, :(
+                    vMΔd_ref_c = 2/Vdc*(($(converter.controls[:VI].ref_vd)+Vⱽd_ref) -($(converter.controls[:VI].Rᵥ)*iΔd) - (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔq) );
+                    vMΔq_ref_c = 2/Vdc*($(converter.controls[:VI].ref_vq) +  (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔd) - ($(converter.controls[:VI].Rᵥ)*iΔq) );
+                    (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c] # Transformation from converter dq frame to grid dq frame 
+                ))
+
+
+            end
+
         else
 
 

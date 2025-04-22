@@ -37,6 +37,8 @@ end
 @with_kw mutable struct FFVI <: Controller                 
     Rᵥ :: Union{Int, Float64}  = 0                       # Virtual Resistance [pu]
     Lᵥ :: Union{Int, Float64}  = 0                       # Virtual inductance [pu]
+    TVR :: Union{Int, Float64}  = 0                      # Transient virtual resistance (TVR) [pu]
+    ω_ₜᵥᵣ :: Union{Int, Float64}  = 0                     # Cutoff frequency of washout filter for TVR [rad/s]
     ref_vd :: Union{Int, Float64}  = 0                   # Vd voltage reference [pu]
     ref_vq :: Union{Int, Float64}  = 0                   # Vq voltage reference [pu]
 end
