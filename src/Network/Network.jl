@@ -2,7 +2,7 @@
 
 export Network, add!, connect!, disconnect!, @network,
         composite_element, eval_abcd
-export power_flow  # for testing
+export power_flow, data, result  # for testing
 
 import Base: delete!
 
@@ -239,6 +239,7 @@ function power_flow(net :: Network)
     global global_dict
     global ang_min, ang_max
     global max_gen
+    global data, result, dict_ac, dict_dc
     #TODO: Check if this has to be LN-RMS or LL-RMS. Do the necessary changes internally after validations against PSCAD.
     global_dict = PowerModelsACDC.get_pu_bases(1000, net.voltageBase[1]) # 3-PH MVA, LL-RMS, Original setting was 100,320
     global_dict["omega"] = 2π * 50

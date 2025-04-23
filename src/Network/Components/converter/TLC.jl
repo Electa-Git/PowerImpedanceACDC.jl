@@ -38,6 +38,8 @@ export tlc
 
     vACbase :: Float64 = 0 # AC voltage base for impedance/admittance calculation
     iACbase :: Float64 = 0 # AC current base for impedance/admittance calculation
+
+    debug = nothing
 end
 
 """
@@ -130,8 +132,8 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     Qac /= Sbase
     Pdc /= Sbase
     
-    Vᴳd = Vm # Vᴳd = Vm * cos(θ)
-    Vᴳq = 0# Vᴳq = -Vm * sin(θ)
+    Vᴳd = Vm * cos(θ)
+    Vᴳq = -Vm * sin(θ)
 
     Id = ((Vᴳd * Pac + Vᴳq * Qac) / (Vᴳd^2 + Vᴳq^2)) 
     Iq = ((Vᴳq * Pac - Vᴳd * Qac) / (Vᴳd^2 + Vᴳq^2)) 
@@ -215,6 +217,7 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
             Vᴳq_f=voltagesOut[2];
             ))
         index += 2*(converter.controls[:v_meas_filt].n_f) 
+        init_x = [init_x;Vᴳd;Vᴳq] #Initalize to avoid steady-state solver problems
     else
         push!(exp.args, :(
             (Vᴳd_f, Vᴳq_f) = (Vᴳd, Vᴳq);
@@ -265,7 +268,9 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
             i_d_pcc_f=currentsOut[1];
             i_q_pcc_f=currentsOut[2];
             ))
-        index += 2*(converter.controls[:i_meas_filt].n_f) 
+        # init_x = [init_x;zeros(index-length(init_x))]
+        index += 2*(converter.controls[:i_meas_filt].n_f)
+        # init_x = [init_x;Id;Iq]
 
     else
         push!(exp.args, :(
@@ -298,12 +303,15 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     if in(:q, keys(converter.controls))
         # add voltage support
         if in(:vac_supp, keys(converter.controls))
+            converter.controls[:vac_supp].ref[1] /= vAC_base #Per unitize voltage reference
             push!(exp.args, :(
                 Vᴳ_mag = sqrt(Vᴳd_f^2 + Vᴳq_f^2);
                 Δq_unf = $(converter.controls[:vac_supp].Kₚ)*($(converter.controls[:vac_supp].ref[1])-Vᴳ_mag);
                 F[$index+1] = $(converter.controls[:vac_supp].ω_f) *(Δq_unf - x[$index+1]);
                 q_ref = $(converter.controls[:q].ref[1]) + x[$index+1]))
+            # init_x = [init_x;zeros(index-length(init_x))] #Initalize states before voltage support to zero
             index +=1
+            # init_x = [init_x;converter.controls[:vac_supp].ref[1]]
         else
             push!(exp.args, :(
                 q_ref = $(converter.controls[:q].ref[1])))
@@ -315,6 +323,7 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
                          x[$index+1]);
             F[$index+1] = $(converter.controls[:q].Kᵢ) *(q_ref - Q_ac)))
         index += 1
+         #Small value to converge
     end
     # add control equations
     for (key, val) in (converter.controls)                
@@ -397,8 +406,14 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
        return Base.invokelatest(f, F,x,inputs)
     end
 
+    function g(u)
+        du = similar(u)
+        f!(exp_equilibrium, du, u, vector_inputs)
+        return du
+    end
+
     vector_inputs = [Vdc, Vᴳd, Vᴳq]
-    init_x = [init_x; zeros(index-2,1)]
+    init_x = [init_x; zeros(index-length(init_x))]
     # if in(:v_meas_filt, keys(converter.controls))
     #     init_x[indexVᴳdf] =  Vᴳd
     #     init_x[indexVᴳqf] =  1e-3 # Initialize to a small non-zero value to avoid Inf or NaN problems with nlsolve
@@ -406,12 +421,17 @@ function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     ##################################################Steady state solution###############################################################
     
     g!(du,u,p,t) = f!(exp_equilibrium, du, u, vector_inputs) # g is the state-space formulation used to obtain the steady-state operation point, copy from f, see some lines above
+ 
     println("Starting to solve for Steady-State Solution!")
     prob = SteadyStateProblem(g!, init_x)
-    sol=solve(prob,SSRootfind(TrustRegion()),maxiters=20,abstol = 1e-8,reltol = 1e-8)
+    sol=solve(prob,SSRootfind(TrustRegion()),maxiters=20,abstol = 1e-8,reltol = 1e-8, show_trace = Val(true),trace_level = TraceAll(), store_trace=Val(true))
     
+    steady_state_jacobian = ForwardDiff.jacobian(g, init_x)
+    converter.debug = [steady_state_jacobian, sol]
+
     # Command to show solver results
-    # sol.trace
+    println(sol.trace)
+    # converter.debug = sol
     if SciMLBase.successful_retcode(sol)
         println("TLC steady-state solution found!")
     else
