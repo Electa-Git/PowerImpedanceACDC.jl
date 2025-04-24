@@ -23,6 +23,7 @@ SymEngine = "123dc426-2d89-5057-bbad-38513e3affd8"
 
 [compat]
 ForwardDiff = "0.10.38"
+Ipopt = "1.7.1"
 LinearAlgebra = "1.11.0"
 Markdown = "1.11.0"
 PowerModels = "0.19.10"
