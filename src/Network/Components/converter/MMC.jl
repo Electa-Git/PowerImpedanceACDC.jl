@@ -668,7 +668,7 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
                     F[$index+2]=-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+2] + iΔq;
                     iΔqₜᵥᵣ=(iΔq-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+2]);
                     ))
-
+                index += 2
                 # FFVI with transient damping term
                
                 push!(exp.args, :(
