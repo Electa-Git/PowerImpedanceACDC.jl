@@ -214,3 +214,33 @@ function make_power_flow_dc!(t :: Transformer, dict :: Dict{String, Any},
     rs = real(b/tap) / global_dict["Z"]
     ((dict["branchdc"])[string(key)])["r"] = rs
 end
+
+function  make_power_flow!(t :: Transformer, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
+    
+    # Initialize an AC branch between both nodes
+    key_branch = branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+
+    # Add transformer data)
+    ((data["branch"])[string(key_branch)])["transformer"] = true
+
+    ((data["branch"])[string(key_branch)])["shift"] = 0
+    ((data["branch"])[string(key_branch)])["c_rating_a"] = 1
+
+    abcd = eval_abcd(t, global_dict["omega"] * 1im)
+    n = 3
+    (a, b, c, d) = (abcd[1:n,1:n], abcd[1:n, n+1:end], abcd[n+1:end,1:n], abcd[n+1:end,n+1:end])
+    Y = [d*inv(b) c-d*inv(b)*a; -inv(b) a*inv(b)] * global_dict["Z"]
+
+    tap = sqrt(real(Y[n+1,n+1]/Y[1,1]))
+    ys = -Y[1,n+1]*tap
+    yc = Y[n+1,n+1] - ys
+
+    ((data["branch"])[string(key_branch)])["tap"] = tap
+    ((data["branch"])[string(key_branch)])["br_r"] = real(1/ys)
+    ((data["branch"])[string(key_branch)])["br_x"] = imag(1/ys)
+    ((data["branch"])[string(key_branch)])["g_fr"] = real(yc)/2
+    ((data["branch"])[string(key_branch)])["b_fr"] = imag(yc)/2
+    ((data["branch"])[string(key_branch)])["g_to"] = real(yc)/2
+    ((data["branch"])[string(key_branch)])["b_to"] = imag(yc)/2  
+end
+

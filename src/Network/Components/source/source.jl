@@ -74,3 +74,27 @@ function make_power_flow_ac!(source :: Source, dict :: Dict{String, Any},
     ((dict["gen"])[string(key)])["cost"] = 0
     ((dict["gen"])[string(key)])["ncost"] = 0
 end
+function make_power_flow!(source:: Source, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
+    
+    # Check if AC or DC source (second one not implemented)
+    is_three_phase(elem) ? nothing : error("DC sources are currently not implemented")
+
+    ### MAKE BUSES OUT OF THE NODES
+    # Find the nodes not connected to the ground
+    ground_nodes = Set(bus2nodes["gnd"]) #Collect ground nodes and make them a set for faster lookup
+    ac_nodes = Tuple(collect(Iterators.filter(x -> !(x in ground_nodes), values(elem.pins)))) #Look in the nodes of this component and convert into tuple
+    
+    # Make busses for the non-ground nodes 
+    ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes)
+
+    # Make the generator component for injection
+    injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem)
+    key = string((elem2comp[elem.symbol])[2]) # Of form "gen", 1 so convert 2nd element to string
+
+    # Change bus information
+    ((data["bus"])[string(ac_bus)])["vmin"] =  0.9*((data["gen"])[key])["vg"]
+    ((data["bus"])[string(ac_bus)])["vmax"] =  1.1*((data["gen"])[key])["vg"]
+    ((data["bus"])[string(ac_bus)])["vm"] = ((data["gen"])[key])["vg"]
+
+    ((data["bus"])[string(ac_bus)]) = set_bus_type((data["bus"])[string(ac_bus)], 3)
+end

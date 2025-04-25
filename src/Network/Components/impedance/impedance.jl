@@ -123,3 +123,55 @@ function make_power_flow_dc!(imp :: Impedance, dict :: Dict{String, Any},
     Z = abcd[1,2] / global_dict["Z"]
     ((dict["branchdc"])[string(key)])["r"] = real(Z)
 end
+
+function  make_power_flow!(imp:: Impedance, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
+    
+    if is_three_phase(elem)
+        if is_load(elem) #This means it's a ground connected impedance --> shunt impedance
+            ### MAKE BUSES OUT OF THE NODES
+            # Find the nodes not connected to the ground
+            ground_nodes = Set(bus2nodes["gnd"]) #Collect ground nodes and make them a set for faster lookup
+            ac_nodes = Tuple(collect(Iterators.filter(x -> !(x in ground_nodes), values(elem.pins)))) #Look in the nodes of this component and convert into tuple
+        
+            ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes)
+            key = comp_elem_interface!(data, elem2comp, comp2elem, elem, "shunt")
+
+            (data["shunt"])[string(key)] = Dict{String, Any}()
+            ((data["shunt"])[string(key)])["source_id"] = Any["bus", ac_bus]
+            ((data["shunt"])[string(key)])["index"] = key
+            ((data["shunt"])[string(key)])["shunt_bus"]  = ac_bus
+            data["shunt"][string(key)]["status"] = 1
+
+            abcd = eval_abcd(imp, global_dict["omega"] * 1im)
+            n = 3
+            Z = (abcd[1:n,n+1:end])[1,1] / global_dict["Z"]
+            data["shunt"][string(key)]["gs"] = real(1/Z)
+            data["shunt"][string(key)]["bs"] = imag(1/Z)
+        else
+            # Initialize an AC branch between both nodes
+            key = branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+            ((data["branch"])[string(key)])["transformer"] = false
+            ((data["branch"])[string(key)])["tap"] = 1
+            ((data["branch"])[string(key)])["shift"] = 0
+            ((data["branch"])[string(key)])["c_rating_a"] = 1
+
+            abcd = eval_abcd(imp, global_dict["omega"] * 1im)
+            n = 3
+            Z = (abcd[1:n,n+1:end])[1,1] / global_dict["Z"] # Assuming impedance with equal values for all phases 
+            ((data["branch"])[string(key)])["br_r"] = real(Z)
+            ((data["branch"])[string(key)])["br_x"] = imag(Z)
+            ((data["branch"])[string(key)])["g_fr"] = 0
+            ((data["branch"])[string(key)])["b_fr"] = 0
+            ((data["branch"])[string(key)])["g_to"] = 0
+            ((data["branch"])[string(key)])["b_to"] = 0
+        end
+    else
+        ## DC impedance
+        key = branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+
+        abcd = eval_abcd(imp, 1e-6*1im)
+        Z = abcd[1,2] / global_dict["Z"]
+        ((data["branchdc"])[string(key)])["r"] = real(Z)
+    end
+    
+end
