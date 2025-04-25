@@ -41,7 +41,7 @@ bodeplot(H, ω, legend="Low-pass Filter")
 
 
 """
-function bodeplot(L, omegas; legend = [""])
+function bodeplot(L, omegas; legend = [""], plots = nothing)
 
     # Do single figure plots, as this is the most generalizable case. Shooting out each single bode plot
     # Have a script handy that generates one plot with subplots
@@ -65,17 +65,17 @@ function bodeplot(L, omegas; legend = [""])
         dim=size(L[1])
         dim[1]*dim[2]
 
-        plots=Vector{Any}(undef, dim[1]*dim[2]) #Preallocation of array
+        new_plots= isnothing(plots) ? [plot(layout=(2,1)) for _ in 1:dim[1]*dim[2]] :  plots #Make new layout if no existent plots
         for i in 1:dim[1] # Loop over rows
             for j in 1:dim[2] #Loop over columns
             
-               index=max((i-1)*dim[2],0)+j #Index for legend
+               index=max((i-1)*dim[2],0)+j #Index for legend & plot
                SISO=[] 
                for ω in 1:length(omegas) # Loop over frequencies
                 push!(SISO,L[ω][i,j])
                end
                
-               f = omegas/(2*π)
+               f = real(omegas/(2*π)) #Omega coming from Z-tool was complex number saved
                L_mag = abs.(SISO)
                L_mag_dB = 20*log10.(L_mag)
                L_ph = angle.(SISO).*(180/π)
@@ -87,28 +87,28 @@ function bodeplot(L, omegas; legend = [""])
                    ylims_ph = (maximum(L_ph)-90, maximum(L_ph)+90)
                end
 
+               pmag = new_plots[index][1]
+               pph = new_plots[index][2]
+
                if legend == [""]
-                 p1 = plot(f, L_mag_dB, legend = :none, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
+                    plot!(pmag, f, L_mag_dB, legend = :none, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
                else
-                   p1 = plot(f, L_mag_dB, label = legend[index], linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto   
+                   plot!(pmag, f, L_mag_dB, label = legend[index], linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto   
                end
 
-               plot!(ylabel = "Magnitude [dB]", framestyle = :box, xaxis = :log10)
-               plot!(xlims = (minimum(f), maximum(f)), ylims = ylims_mag)
-               p2 = plot(f, L_ph, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
-               plot!(xlabel = "Frequency [Hz]", ylabel = "Phase [deg]", framestyle = :box, legend = :none, xaxis = :log10)
-               plot!(xlims = (minimum(f), maximum(f)), ylims = ylims_ph)
-               plot!(yticks = -360:90:360)
-               plots[index]=plot(p1, p2, layout = (2, 1))
-               display(plot(p1, p2, layout = (2, 1)))
-
+               plot!(pmag, ylabel = "Magnitude [dB]", framestyle = :box, xaxis = :log10)
+               plot!(pmag, xlims = (minimum(f), maximum(f)), ylims = ylims_mag)
+               plot!(pph, f, L_ph, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
+               plot!(pph, xlabel = "Frequency [Hz]", ylabel = "Phase [deg]", framestyle = :box, legend = :none, xaxis = :log10)
+               plot!(pph, xlims = (minimum(f), maximum(f)), ylims = ylims_ph)
+               plot!(pph, yticks = -360:90:360)
 
             end
         end
-        return plots
+        return new_plots
 
     elseif isa(L[1], Number) #Vector of complex numbers SISO
-
+        new_plots= isnothing(plots) ? plot(layout=(2,1)) :  plots #Make new layout if no existent plots
         dim=1
         f = omegas/(2*π)
         L_mag = abs.(L)
@@ -123,17 +123,17 @@ function bodeplot(L, omegas; legend = [""])
         end
         
         if legend == [""]
-            p1 = plot(f, L_mag_dB, legend = :none, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
+            plot!(new_plots[1], f, L_mag_dB, legend = :none, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
         else
-            p1 = plot(f, L_mag_dB, label = legend, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto   
+            plot!(new_plots[1], f, L_mag_dB, label = legend, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto   
         end
         plot!(ylabel = "Magnitude [dB]", framestyle = :box, xaxis = :log10)
         plot!(xlims = (minimum(f), maximum(f)), ylims = ylims_mag)
-        p2 = plot(f, L_ph, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
+        plot!(new_plots[2], f, L_ph, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
         plot!(xlabel = "Frequency [Hz]", ylabel = "Phase [deg]", framestyle = :box, legend = :none, xaxis = :log10)
         plot!(xlims = (minimum(f), maximum(f)), ylims = ylims_ph)
         plot!(yticks = -360:90:360)
-        return  plot(p1, p2, layout = (2, 1))
+        return new_plots
 
 
     else

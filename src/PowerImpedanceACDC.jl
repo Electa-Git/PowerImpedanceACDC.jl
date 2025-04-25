@@ -41,6 +41,7 @@ You should have received a copy of the GNU General Public License along with thi
 
     # Including network
     include("Network/Network.jl")
+
     
     # Including network solvers
     include("Network/Solvers/make_abcd.jl")
@@ -90,5 +91,6 @@ You should have received a copy of the GNU General Public License along with thi
     include("Network/Components/machine/machine.jl")
     include("Network/Components/machine/SynchronousMachine.jl")
 
-    
+    # New power flow
+    include("Network/new_power_flow.jl")
 end

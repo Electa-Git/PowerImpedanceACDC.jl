@@ -747,7 +747,7 @@ macro network(cdef)
     # here you can add functions for network before the end of the code
     push!(ccode.args, :(check_lumped_elements(network)))
     push!(ccode.args, :(connect!(network)))
-    push!(ccode.args, :(power_flow(network)))
+    # push!(ccode.args, :(power_flow(network)))
     push!(ccode.args, :(network))
     return ccode
 end
