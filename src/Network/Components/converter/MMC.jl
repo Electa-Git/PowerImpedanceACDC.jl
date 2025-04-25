@@ -49,44 +49,67 @@ export mmc
 end
 
 """
-    function mmc(;args...)
-It constructs MMC operating both as a rectifier and an inverter. MMC is constructed as a struct with the
-following fields.
+    mmc(;args...)
+
+Constructs a Modular Multilevel Converter (MMC) operating in either grid-following or grid-forming mode.
+The MMC can function as both a rectifier and an inverter. The struct contains the following main fields:
+
+# Base Parameters
+- `ω₀::Union{Int,Float64} = 100π`: Base angular frequency [rad/s]
+- `vACbase_LL_RMS::Union{Int,Float64} = 380`: AC voltage base [kV]
+- `Sbase::Union{Int,Float64} = 1000`: Power base [MW]
+- `vDCbase::Union{Int,Float64} = 640`: DC voltage base [kV]
+
+# Power Parameters
+- `P::Union{Int,Float64} = -10`: Active power [MW]
+- `Q::Union{Int,Float64} = 3`: Reactive power [MVA]
+- `P_dc::Union{Int,Float64} = 100`: DC power [MW]
+- `P_min,P_max::Union{Float64,Int} = (-100,100)`: Active power limits [MW]
+- `Q_min,Q_max::Union{Float64,Int} = (-50,50)`: Reactive power limits [MVA]
+
+# Voltage Parameters
+- `θ::Union{Int,Float64} = 0`: Voltage angle [rad]
+- `Vₘ::Union{Int,Float64} = 333`: AC voltage amplitude [kV]
+- `Vᵈᶜ::Union{Int,Float64} = 640`: DC-bus voltage [kV]
+
+# Circuit Parameters
+- `Lₐᵣₘ::Union{Int,Float64} = 50e-3`: Arm inductance [H]
+- `Rₐᵣₘ::Union{Int,Float64} = 1.07`: Equivalent arm resistance [Ω]
+- `Cₐᵣₘ::Union{Int,Float64} = 10e-3`: Capacitance per submodule [F]
+- `N::Int = 400`: Number of submodules per arm [-]
+- `Lᵣ::Union{Int,Float64} = 60e-3`: Transformer inductance (converter side) [H]
+- `Rᵣ::Union{Int,Float64} = 0.535`: Transformer resistance (converter side) [Ω]
+- `turnsRatio::Union{Int,Float64} = 1`: Transformer turns ratio (converter/AC side) [-]
+
+# Control Parameters
+- `gfm::Bool = false`: Grid-forming mode flag (true = GFM, false = GFL). Default is GFL.
+- `controls::OrderedDict{Symbol,Controller}`: Control system configuration
+- `timeDelay::Float64 = 0`: Control system time delay [s]
+- `padeOrderNum,padeOrderDen::Int = 0`: Padé approximation orders [-]
+
+# State Space Matrices
+- `equilibrium::Array{Union{Int,Float64}}`: Operating point
+- `A,B,C,D::Array{Float64}`: State space matrices
+
+# Terminal Configuration
+The MMC has three connection pins:
+- DC side: pin `1.1`
+- AC side: pins `2.1`, `2.2`
+
+# The implemented state space model is based on:
+[1] G. Bergna-Diaz, J. Freytes, X. Guillaud, S. D’Arco, and J. A. Suul, “Generalized Voltage-Based State-Space Modeling of Modular Multilevel Converters With Constant Equilibrium in Steady State,” IEEE Journal of Emerging and Selected Topics in Power Electronics, vol. 6, no. 2, pp. 707–725, Jun. 2018, doi: 10.1109/JESTPE.2018.2793159.
+The dq-frame convention is: d-leading, q-lagging.
+
+# Example construction: 
 ```julia
-ω₀ :: Union{Int, Float64} = 100*π
-
-P :: Union{Int, Float64} = -10              # active power [MW]
-Q :: Union{Int, Float64} = 3                # reactive power [MVA]
-P_dc :: Union{Int, Float64} = 100           # DC power [kW]
-P_min :: Union{Float64, Int} = -100         # min active power output [MW]
-P_max :: Union{Float64, Int} = 100          # max active power output [MW]
-Q_min :: Union{Float64, Int} = -50          # min reactive power output [MVA]
-Q_max :: Union{Float64, Int} = 50           # max reactive power output [MVA]
-
-θ :: Union{Int, Float64} = 0
-Vₘ :: Union{Int, Float64} = 333             # AC voltage [kV]
-Vᵈᶜ :: Union{Int, Float64} = 640            # DC-bus voltage [kV]
-
-Lₐᵣₘ :: Union{Int, Float64}  = 50e-3        # arm inductance [H]
-Rₐᵣₘ :: Union{Int, Float64}  = 1.07         # equivalent arm resistance [Ω]
-Cₐᵣₘ :: Union{Int, Float64}  = 10e-3        # capacitance per submodule [F]
-N :: Int = 401                              # number of submodules per arm [-]
-
-Lᵣ :: Union{Int, Float64}  = 60e-3          # inductance of the phase reactor [H]
-Rᵣ :: Union{Int, Float64}  = 0.535          # resistance of the phase reactor [Ω]
-
-controls :: OrderedDict{Symbol, Controller} = OrderedDict{Symbol, Controller}()
-equilibrium :: Array{Union{Int, Float64}} = [0]
-A :: Array{Complex} = [0]
-B :: Array{Complex} = [0]
-C :: Array{Complex} = [0]
-D :: Array{Complex} = [0]
-........................
-
-```
-
-The constructed MMC has 2 pins on the AC side: `2.1`, `2.2`, and 1 pin on its
-DC-side: `1.1`.
+    MMC2 = mmc(Vᵈᶜ = 640, vDCbase = 640, Sbase = 1000, vACbase_LL_RMS = 333, turnsRatio = 333/220, Vₘ = 220/sqrt(3), Lᵣ = (0.18*(333^2/1000))/2/pi/50, Rᵣ = 0.005*(333^2/1000), 
+        P_max = 1500, P_min = -1500, P = (-2/3)*700, Q = 0, Q_max = 500, Q_min = -500,
+        occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
+        ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
+        pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
+        p = PI_control(Kₚ = 0.1, Kᵢ = 31.4159),
+        q = PI_control(Kₚ = 0.1, Kᵢ = 31.4159)
+        )  
 """
 function mmc(;args...) #Constructor 
     converter = MMC()
@@ -98,6 +121,14 @@ function mmc(;args...) #Constructor
             setfield!(converter, key, val)
         end
     end
+
+    #TODO:Add check for reasonable converter controller combinations
+    # if and else statements 
+    # Check what is needed based on the control mode in the power flow 
+    # :ccc needed
+    # :occ needed if not VI-FFVI is used 
+
+
     elem = Element(input_pins = 1, output_pins = 2, element_value = converter)
 end
 
@@ -152,11 +183,11 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
     Vᴳd = Vm * cos(θ)   
     Vᴳq = -Vm * sin(θ)  
  
-    #TODO: Equations correct, see Q compare to TLC
+
     Id = ((Vᴳd*converter.turnsRatio * Pac - Vᴳq*converter.turnsRatio * Qac) / ((Vᴳd*converter.turnsRatio)^2 + (Vᴳq*converter.turnsRatio)^2)) 
     Iq = ((Vᴳq*converter.turnsRatio * Pac + Vᴳd*converter.turnsRatio * Qac) / ((Vᴳd*converter.turnsRatio)^2 + (Vᴳq*converter.turnsRatio)^2)) 
 
-###############################Manipulating controller references and defining steady-state values for the MMC model###################
+###############################Manipulating controller references and defining initial steady-state values for the MMC model###################
     init_x = zeros(12, 1) # Initial steady-state values for MMC model
 
     
@@ -575,40 +606,47 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
         index +=1
         # epsilon_vac_index = index + 1
 
-    else # No explicit control of Q for grid-following
+    else # No explicit control of Q for converter
 
-        push!(exp.args, :(
+        if (converter.gfm)
+
+            push!(exp.args, :(
+                Vⱽd_ref = 0))
+        
+        else
+            push!(exp.args, :(
             iΔq_ref = $(converter.controls[:q].ref[1])/Vᴳd;))
+
+        end
     end
 ###############################################################Virtual impedance########################################################
     
     if in(:VI, keys(converter.controls))
 
-        if ((converter.controls[:VI].n_f)) >=1  # Voltage filtering
-
-            Abutt, Bbutt, Cbutt, Dbutt =  butterworthMatrices(converter.controls[:VI].n_f, converter.controls[:VI].ω_f, 2);
-            push!(exp.args, :(
-                voltagesIn = [Vᴳd;Vᴳq];
-                statesButt= x[$index + 1 : $index + 2*$(converter.controls[:VI].n_f)]; 
-                F[$index + 1 : $index + 2*$(converter.controls[:VI].n_f)] = $Abutt*statesButt + $Bbutt*voltagesIn;
-                voltagesOut=$Cbutt*statesButt+$Dbutt*voltagesIn;
-                Vᴳd_f=voltagesOut[1];
-                Vᴳq_f=voltagesOut[2];
-                ))
-            index += 2*(converter.controls[:VI].n_f) 
-
-        else  # No voltage filtering
-
-            push!(exp.args, :(
-                Vᴳd_f=Vᴳd;
-                Vᴳq_f=Vᴳq;
-            ))
-
-        end
-
-        
-        if isa(converter.controls[:VI], CCQSEM)
+        if isa(converter.controls[:VI], CCQSEM) #CCQSEM grid-forming converter
             
+            if ((converter.controls[:VI].n_f)) >=1  # Voltage filtering
+
+                Abutt, Bbutt, Cbutt, Dbutt =  butterworthMatrices(converter.controls[:VI].n_f, converter.controls[:VI].ω_f, 2);
+                push!(exp.args, :(
+                    voltagesIn = [Vᴳd;Vᴳq];
+                    statesButt= x[$index + 1 : $index + 2*$(converter.controls[:VI].n_f)]; 
+                    F[$index + 1 : $index + 2*$(converter.controls[:VI].n_f)] = $Abutt*statesButt + $Bbutt*voltagesIn;
+                    voltagesOut=$Cbutt*statesButt+$Dbutt*voltagesIn;
+                    Vᴳd_f=voltagesOut[1];
+                    Vᴳq_f=voltagesOut[2];
+                    ))
+                index += 2*(converter.controls[:VI].n_f) 
+
+            else  # No voltage filtering
+
+                push!(exp.args, :(
+                    Vᴳd_f=Vᴳd;
+                    Vᴳq_f=Vᴳq;
+                ))
+
+            end
+
             push!(exp.args, :(
                 
                 iΔd_ref=($(converter.controls[:VI].Rᵥ)*(($(converter.controls[:VI].ref_vd)+Vⱽd_ref)-Vᴳd_f) + ωᵥ*$(converter.controls[:VI].Lᵥ)*(Vᴳq_f-$(converter.controls[:VI].ref_vq)))/(($(converter.controls[:VI].Rᵥ))^2+ωᵥ^2*($(converter.controls[:VI].Lᵥ))^2);
@@ -616,8 +654,44 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
 
                 ))
         
-        else
+        elseif isa(converter.controls[:VI],FFVI) #FFVI grid-forming converter
 
+
+            #FFVI implemenation
+
+            if (converter.controls[:VI].TVR >0) && (converter.controls[:VI].ω_ₜᵥᵣ >0)#FFVI with transient damping term
+
+               # State-space of washout filter
+                push!(exp.args, :(
+                    F[$index+1]=-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+1] + iΔd;
+                    iΔdₜᵥᵣ=(iΔd-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+1]);
+                    F[$index+2]=-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+2] + iΔq;
+                    iΔqₜᵥᵣ=(iΔq-($(converter.controls[:VI].ω_ₜᵥᵣ))*x[$index+2]);
+                    ))
+                index += 2
+                # FFVI with transient damping term
+               
+                push!(exp.args, :(
+                    vMΔd_ref_c = 2/Vdc*(($(converter.controls[:VI].ref_vd)+Vⱽd_ref) -($(converter.controls[:VI].Rᵥ)*iΔd) - (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔq) - $(converter.controls[:VI].TVR)*iΔdₜᵥᵣ);
+                    vMΔq_ref_c = 2/Vdc*($(converter.controls[:VI].ref_vq) +  (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔd) - ($(converter.controls[:VI].Rᵥ)*iΔq) - $(converter.controls[:VI].TVR)*iΔqₜᵥᵣ);
+                    (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c] # Transformation from converter dq frame to grid dq frame 
+                ))
+
+
+               # Calculation of modulation indices
+
+            else # FFVI without transient damping term
+
+                push!(exp.args, :(
+                    vMΔd_ref_c = 2/Vdc*(($(converter.controls[:VI].ref_vd)+Vⱽd_ref) -($(converter.controls[:VI].Rᵥ)*iΔd) - (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔq) );
+                    vMΔq_ref_c = 2/Vdc*($(converter.controls[:VI].ref_vq) +  (ωᵥ*$(converter.controls[:VI].Lᵥ)*iΔd) - ($(converter.controls[:VI].Rᵥ)*iΔq) );
+                    (vMΔd_ref, vMΔq_ref) = I_θ * [vMΔd_ref_c; vMΔq_ref_c] # Transformation from converter dq frame to grid dq frame 
+                ))
+
+
+            end
+
+        else
 
 
         end
@@ -702,11 +776,11 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
     push!(exp.args,
                 :(vMΔZd_ref = 0;
                   vMΔZq_ref = 0;))
-    if !in(:occ, keys(converter.controls))
-        push!(exp.args,
-                    :(vMΔd_ref = 0;
-                      vMΔq_ref = 0;))
-    end
+    # if !in(:occ, keys(converter.controls))
+    #     push!(exp.args,
+    #                 :(vMΔd_ref = 0;
+    #                   vMΔq_ref = 0;))
+    # end
     if !in(:ccc, keys(converter.controls))
         push!(exp.args,
                     :(vMΣd_ref = 0;
@@ -717,13 +791,13 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
     end
 ###########################################################Time delays##################################################################
     # add time delays here, if there are controllers implemented
-    if (converter.timeDelay != 0.0) && (in(:occ, keys(converter.controls)) || in(:ccc, keys(converter.controls)) || in(:zcc, keys(converter.controls)))
+    if (converter.timeDelay != 0.0) 
         push!(exp.args,
             :(
             T_ab_dq=0.5*[1 im;-im 1];# from alpha-beta to dq
             T_dq_ab=0.5*[1 -im;im 1];#from dq to alpha-beta
             ))
-        if in(:occ, keys(converter.controls))
+        # Insert time delays for delta modulation indicies 
             push!(exp.args,
             :(
                 timeDelayIn = [vMΔd_ref;vMΔq_ref];
@@ -743,8 +817,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
                 vMΔq_ref = vMΔ_dq_ref[2];
             ))
             index += 2*converter.padeOrderDen
-        end
-        if in(:ccc, keys(converter.controls))
+       
+        ## Insert time delays for sigma modulation indicies
             push!(exp.args,
             :(
                 timeDelayIn = [vMΣd_ref;vMΣq_ref];
@@ -764,8 +838,8 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
                 vMΣq_ref = vMΣ_dq_ref[2];
             ))
             index += 2*converter.padeOrderDen
-        end
-        if in(:zcc, keys(converter.controls))
+       
+        ## Insert time delays for z modulation indicies
             push!(exp.args,
             :(
                 timeDelayIn = vMΣz_ref;
@@ -782,14 +856,14 @@ function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to c
                 vMΣz_ref = timeDelayOut;
             ))
             index += converter.padeOrderDen
-        end
+        
     end
 ###########################################################MMC State variables##########################################################
     # add state variables
     # x = [iΔd, iΔq, iΣd, iΣq, iΣz, vCΔd, vCΔq, vCΔZd, vCΔZq, vCΣd, vCΣq, vCΣz] = [x[1], x[2], ...]
     # add corresponding differential equations [diΔd_dt, diΔq_dt, ...] = [F[1], F[2], ...]
     # m = [mΔd, mΔq, mΔZd, mΔZq, mΣd, mΣq, mΣz], vM = [vMΔd, vMΔq, vMΔZd, vMΔZq,vMΣd, vMΣq, vMΣz]
-    # vM_ref = [vMΔd_ref, vMΔq_ref, vMΔZd_ref, vMΔZq_ref, vMΣd_ref, vMΣq_ref, vMΣz_ref] = s
+    # vM_ref = [vMΔd_ref, vMΔq_ref, vMΔZd_ref, vMΔZq_ref,vMΣd_ref, vMΣq_ref, vMΣz_ref] = s
     push!(exp.args,
     :(
     (mΔd, mΔq, mΔZd, mΔZq, mΣd, mΣq, mΣz) = 1 * [-vMΔd_ref * $baseConv1; -vMΔq_ref * $baseConv1; -vMΔZd_ref * $baseConv1; -vMΔZq_ref * $baseConv1; vMΣd_ref; vMΣq_ref; vMΣz_ref];
