@@ -44,7 +44,7 @@ end
 function make_power_flow!(tl :: Transmission_line, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
  
     if is_three_phase(elem)    
-        key = branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+        key = branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
         ((data["branch"])[string(key)])["transformer"] = false
         ((data["branch"])[string(key)])["tap"] = 1
         ((data["branch"])[string(key)])["shift"] = 0
@@ -65,7 +65,7 @@ function make_power_flow!(tl :: Transmission_line, data, nodes2bus, bus2nodes, e
         ((data["branch"])[string(key)])["b_to"] = imag(Y)/2
 
     else
-        key = branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+        key = branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
         abcd = eval_abcd(tl, 1e-6*1im)
         n = Int(size(abcd, 1)/2)
         Z = (abcd[1:n,n+1:end])[1,1] / global_dict["Z"]

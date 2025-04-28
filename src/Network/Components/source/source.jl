@@ -85,10 +85,10 @@ function make_power_flow!(source:: Source, data, nodes2bus, bus2nodes, elem2comp
     ac_nodes = Tuple(collect(Iterators.filter(x -> !(x in ground_nodes), values(elem.pins)))) #Look in the nodes of this component and convert into tuple
     
     # Make busses for the non-ground nodes 
-    ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes)
+    ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes, global_dict)
 
     # Make the generator component for injection
-    key = injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem)
+    key = injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem, global_dict)
     key = string(key) # Of form "gen", 1 so convert 2nd element to string
 
     # Change bus information

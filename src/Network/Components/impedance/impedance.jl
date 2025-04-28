@@ -133,7 +133,7 @@ function  make_power_flow!(imp:: Impedance, data, nodes2bus, bus2nodes, elem2com
             ground_nodes = Set(bus2nodes["gnd"]) #Collect ground nodes and make them a set for faster lookup
             ac_nodes = Tuple(collect(Iterators.filter(x -> !(x in ground_nodes), values(elem.pins)))) #Look in the nodes of this component and convert into tuple
         
-            ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes)
+            ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes, global_dict)
             key = comp_elem_interface!(data, elem2comp, comp2elem, elem, "shunt")
 
             (data["shunt"])[string(key)] = Dict{String, Any}()
@@ -149,7 +149,7 @@ function  make_power_flow!(imp:: Impedance, data, nodes2bus, bus2nodes, elem2com
             data["shunt"][string(key)]["bs"] = imag(1/Z)
         else
             # Initialize an AC branch between both nodes
-            key = branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+            key = branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
             ((data["branch"])[string(key)])["transformer"] = false
             ((data["branch"])[string(key)])["tap"] = 1
             ((data["branch"])[string(key)])["shift"] = 0
@@ -167,7 +167,7 @@ function  make_power_flow!(imp:: Impedance, data, nodes2bus, bus2nodes, elem2com
         end
     else
         ## DC impedance
-        key = branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+        key = branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
 
         abcd = eval_abcd(imp, 1e-6*1im)
         Z = abcd[1,2] / global_dict["Z"]

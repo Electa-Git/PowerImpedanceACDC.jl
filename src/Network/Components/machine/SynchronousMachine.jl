@@ -91,7 +91,7 @@ function synchronousmachine(;args...)
     elem = Element(input_pins = 2, output_pins = 2, element_value = gen)
 end
 
-function update_gen(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed Pac and Qac from this function, see if it will be necessary.
+function update!(gen :: SynchronousMachine, Pac, Qac, Vm, θ) # TODO: Removed Pac and Qac from this function, see if it will be necessary.
     Ld = gen.La_d + gen.Ll + gen.lt
     Lf1_d = gen.La_d + gen.L23_d
     Lff_d = Lf1_d + gen.Lf_d

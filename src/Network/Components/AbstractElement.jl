@@ -132,6 +132,7 @@ end
 function is_generator(element :: Element)
     isa(element.element_value, SynchronousMachine)
 end
+ 
 
 function is_impedance(element :: Element)
     isa(element.element_value, Impedance) && !any(occursin("gnd", string(x)) for x in element.pins)

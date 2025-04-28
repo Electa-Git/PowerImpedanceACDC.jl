@@ -1,6 +1,6 @@
-export new_power_flow, result, data
-function new_power_flow(net:: Network)
-    global global_dict, result, ang_min, ang_max, data
+export power_flow, result, nodes2bus, elem2comp, data
+function power_flow(net:: Network)
+    global ang_min, ang_max, result, nodes2bus, elem2comp, data
     global_dict = PowerModelsACDC.get_pu_bases(1000, net.voltageBase[1]) # 3-PH MVA, LL-RMS, Original setting was 100,320
     global_dict["omega"] = 2π * 50
 
@@ -12,7 +12,7 @@ function new_power_flow(net:: Network)
 
     # PowerModelsACDC network dictoniary
     data = Dict{String, Any}()
-    data = data_init(data)
+    data = data_init(data, global_dict)
    
     ### 2-way dicts so we can have O(1) time complexity (node, elem:PowerImpedance ↔ bus, component:PowerModelsACDC)
     nodes2bus = Dict()
@@ -24,17 +24,84 @@ function new_power_flow(net:: Network)
     ground_nodes = [k for k in keys(net.nets) if startswith(string(k), "gnd")] #TODO: add other ground identifiers (GND, Gnd, Ground, ground)
     push!(nodes2bus, ground_nodes => "gnd")
     push!(bus2nodes, "gnd" => ground_nodes) 
-    #### 1. Create interface between PowerImp element and PowerModels dict key
+    
+    #### 1. Create PowerModelsACDC dictionary and make interface 
     for (elem) in values(elem_dict)
         make_powerflow!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
     end
+
+    #### 2. Run PowerModelsACDC power flow
     PowerModelsACDC.process_additional_data!(data)
     ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
     result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
     println(result["termination_status"])
 
-    return data, nodes2bus, bus2nodes, elem2comp, comp2elem
+    #### 3. Update setpoints of active elements
+    for (key, element) in net.elements
+        #Find the corresponding PowerModels component
+        comp_type, key = elem2comp[element.symbol]
+        elem_dict = result["solution"][comp_type][string(key)]
+        pins = element.pins
+        
+        if is_converter(element) # In converter bus1 is DC and bus2 is AC
+            node1 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "1.")]...)
+            node2 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "2.")]...)
+            _, dc_bus = nodes2bus[node1]
+            _, ac_bus = nodes2bus[node2]
+            
+            Pdc = elem_dict["pdc"] * global_dict["S"] / 1e6
+            Vm = (result["solution"]["bus"][string(ac_bus)]["vm"] * global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
+            θ = result["solution"]["bus"][string(ac_bus)]["va"]
+            Vdc = result["solution"]["busdc"][string(dc_bus)]["vm"] * global_dict["V"] / 1e3
+            Pac = -elem_dict["pgrid"] * global_dict["S"] / 1e6
+            Qac = elem_dict["qgrid"] * global_dict["S"] / 1e6 # Think about this!
+
+            update!(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
+            # if isa(element.element_value, MMC)
+            #     update_string = "MMC #"
+            #     update_mmc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
+            # else
+            #     update_string = "TLC #"
+            #     update_tlc(element.element_value, Vm, θ, Pac, Qac, Vdc, Pdc)
+            # end
+            update_string = string(key)
+            print(update_string * " Active Power [MW]: ")
+            println(Pac)
+            print(update_string * " Reactive Power [MVar]: ")
+            println(Qac)
+            print(update_string * " AC Voltage Magnitude [pu]: ")
+            println(result["solution"]["bus"][string(ac_bus)]["vm"])
+            print(update_string * " AC Voltage Angle [rad]: ")
+            println(θ)
+            print(update_string * " DC Voltage [kV]: ")
+            println(Vdc)
+        elseif is_generator(element) #ac bus is the one with no ground in it's name
+            ground_nodes = Set(bus2nodes["gnd"]) #Collect ground nodes and make them a set for faster lookup
+            ac_node = Tuple(collect(Iterators.filter(x -> !(x in ground_nodes), values(element.pins)))) #Look in the nodes of this component and convert into tuple
+            bus_type, ac_bus = nodes2bus[ac_node]
+
+            Pgen = elem_dict["pg"] * global_dict["S"] / 1e6 #MW
+            Qgen = elem_dict["qg"] * global_dict["S"] / 1e6 #MVAr
+            Vm = (result["solution"]["bus"][string(ac_bus)]["vm"] *
+                    global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
+            θ = result["solution"]["bus"][string(ac_bus)]["va"]
+            update_string = string(key)
+
+            update!(element.element_value, Pgen, Qgen, Vm, θ)
+            
+            print(update_string * " Active Power [MW]: ")
+            println(Pgen)
+            print(update_string * " Reactive Power [MVar]: ")
+            println(Qgen)
+            print(update_string * " AC Voltage Magnitude [pu]: ")
+            println(result["solution"]["bus"][string(ac_bus )]["vm"])
+            print(update_string * " AC Voltage Angle [rad]: ")
+            println(θ)
+        end
+    end
+
+    return result, data, nodes2bus, elem2comp
 
 end
 
@@ -51,7 +118,7 @@ end
 ## THis function makes sure we dispatch on the right component
 make_powerflow!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict) = make_power_flow!(elem.element_value, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem,global_dict)
 
-function injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem)
+function injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem, global_dict)
     ## A lot of initialization for source and machine are the same so combined in here
     
 
@@ -100,7 +167,7 @@ function injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem)
     ((data["gen"])[key])["ncost"] = 0
     return parse(Int, key)
 end
-function branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+function branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
     
     # Add busses for the branch
     pins = elem.pins
@@ -108,8 +175,8 @@ function branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
     # Handle any amount of input and output pins
     node1 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "1.")]...) #(pins[Symbol(1.1)], pins[Symbol(1.2)]) 
     node2 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "2.")]...) #(pins[Symbol(2.1)], pins[Symbol(2.2)])
-    bus1 = add_bus_ac!(data, nodes2bus, bus2nodes, node1)
-    bus2 = add_bus_ac!(data, nodes2bus, bus2nodes, node2)
+    bus1 = add_bus_ac!(data, nodes2bus, bus2nodes, node1, global_dict)
+    bus2 = add_bus_ac!(data, nodes2bus, bus2nodes, node2, global_dict)
 
     # Interface element
     key_branch = comp_elem_interface!(data, elem2comp, comp2elem, elem, "branch")
@@ -128,14 +195,14 @@ function branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
     return key_branch
 end
 
-function branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+function branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
     # Add busses for the branch
     pins = elem.pins
     
     node1 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "1.")]...) #pins[Symbol(1.1)] 
     node2 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "2.")]...) #pins[Symbol(2.1)]
-    bus1 = add_bus_dc!(data, nodes2bus, bus2nodes, node1)
-    bus2 = add_bus_dc!(data, nodes2bus, bus2nodes, node2)
+    bus1 = add_bus_dc!(data, nodes2bus, bus2nodes, node1, global_dict)
+    bus2 = add_bus_dc!(data, nodes2bus, bus2nodes, node2, global_dict)
 
     # Interface element
     key_branch = comp_elem_interface!(data, elem2comp, comp2elem, elem, "branchdc")
@@ -172,7 +239,7 @@ function comp_elem_interface!(data, elem2comp, comp2elem, elem, component)
     return key
 end
 
-function add_bus_dc!(data, nodes2bus, bus2nodes, node)
+function add_bus_dc!(data, nodes2bus, bus2nodes, node, global_dict)
     # Check if node is already in interface
     if node ∉ values(bus2nodes) 
         
@@ -203,7 +270,7 @@ function add_bus_dc!(data, nodes2bus, bus2nodes, node)
     return bus
 end
 
-function add_bus_ac!(data, nodes2bus, bus2nodes, node)
+function add_bus_ac!(data, nodes2bus, bus2nodes, node, global_dict)
 
     if node ∉ values(bus2nodes)
         bus = length(data["bus"]) + 1# We make new DC bus, key should be string apparently
@@ -239,7 +306,7 @@ end
 Add intermediate AC bus to PowerModels data, which has no corresponding node(s). 
 An example is the Synchronous Machine wich has an intermediate bus, connecting the generator and RL-branch (transformer)
 """
-function add_interm_bus_ac!(data)
+function add_interm_bus_ac!(data, global_dict)
 
     bus = length(data["bus"]) + 1# We make new DC bus, key should be string apparently
     bus = string(bus)
@@ -260,7 +327,7 @@ function add_interm_bus_ac!(data)
     return bus
 end
 
-function data_init(data)
+function data_init(data, global_dict)
     data["source_type"] = "matpower"
     data["name"] = "network"
     data["source_version"] = "0.0.0"

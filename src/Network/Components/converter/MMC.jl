@@ -101,7 +101,7 @@ function mmc(;args...) #Constructor
     elem = Element(input_pins = 1, output_pins = 2, element_value = converter)
 end
 
-function update_mmc(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to calculate state space and impedance of MMC with respect to power flow solution
+function update!(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to calculate state space and impedance of MMC with respect to power flow solution
     
 
     wbase = 100*pi

@@ -218,7 +218,7 @@ end
 function  make_power_flow!(t :: Transformer, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
     
     # Initialize an AC branch between both nodes
-    key_branch = branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
+    key_branch = branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
 
     # Add transformer data)
     ((data["branch"])[string(key_branch)])["transformer"] = true

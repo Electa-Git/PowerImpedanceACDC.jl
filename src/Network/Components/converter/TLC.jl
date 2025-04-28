@@ -98,7 +98,7 @@ function tlc(;args...)
     elem = Element(input_pins = 1, output_pins = 2, element_value = converter)
 end
 
-function update_tlc(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
+function update!(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
     
 
     wbase = 100*pi

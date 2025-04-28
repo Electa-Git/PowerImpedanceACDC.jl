@@ -61,17 +61,17 @@ function make_power_flow!(machine:: Machine, data, nodes2bus, bus2nodes, elem2co
     # Find the nodes not connected to the ground
     ground_nodes = Set(bus2nodes["gnd"]) #Collect ground nodes and make them a set for faster lookup
     ac_nodes = Tuple(collect(Iterators.filter(x -> !(x in ground_nodes), values(elem.pins)))) #Look in the nodes of this component and convert into tuple
-    ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes)
+    ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes, global_dict)
     # Make busses for the non-ground nodes 
-    interm_bus = add_interm_bus_ac!(data) # No mapping to node, bcs no corresponding node in PowerImpedance
+    interm_bus = add_interm_bus_ac!(data, global_dict) # No mapping to node, bcs no corresponding node in PowerImpedance
 
     # Make the generator component for injection
-    key = injection_initialization!(data, elem2comp, comp2elem, interm_bus, elem)
+    key = injection_initialization!(data, elem2comp, comp2elem, interm_bus, elem, global_dict)
     key = string(key)
 
     # Add additional branch & bus for SM transformer (RL-branch)
     
-    key_branch = comp_elem_interface!(data, elem2comp, comp2elem, elem, "branch")
+    key_branch = length(data["branch"]) + 1
     key_branch_str = string(key_branch)
 
     (data["branch"])[key_branch_str] = Dict{String, Any}()

@@ -39,28 +39,6 @@ You should have received a copy of the GNU General Public License along with thi
     # Including all components    
     include("Network/Components/AbstractElement.jl")
 
-    # Including network
-    include("Network/Network.jl")
-
-    
-    # Including network solvers
-    include("Network/Solvers/make_abcd.jl")
-    include("Network/Solvers/make_y.jl")
-    include("Network/Solvers/make_z.jl")
-    include("Network/Solvers/determine_impedance.jl")
-    include("Network/Solvers/make_y_matrix.jl")
-    include("Network/Solvers/stability.jl")
-
-    # Including tools
-    include("Tools/abcd_parameters.jl")
-    include("Tools/kron.jl")
-    include("Tools/nyquistplot.jl")
-    include("Tools/small_gain.jl")
-    include("Tools/stabilitymargin.jl")
-    include("Tools/EVD.jl")
-    include("Tools/bodeplot.jl")
-    include("Tools/passivity.jl")
-
     # Impedance
     include("Network/Components/impedance/impedance.jl")
 
@@ -91,6 +69,31 @@ You should have received a copy of the GNU General Public License along with thi
     include("Network/Components/machine/machine.jl")
     include("Network/Components/machine/SynchronousMachine.jl")
 
+
+    # Including network
+    include("Network/Network.jl")
+
     # New power flow
-    include("Network/new_power_flow.jl")
+    include("Network/power_flow.jl")
+    
+    # Including network solvers
+    include("Network/Solvers/make_abcd.jl")
+    include("Network/Solvers/make_y.jl")
+    include("Network/Solvers/make_z.jl")
+    include("Network/Solvers/determine_impedance.jl")
+    include("Network/Solvers/make_y_matrix.jl")
+    include("Network/Solvers/stability.jl")
+
+    # Including tools
+    include("Tools/abcd_parameters.jl")
+    include("Tools/kron.jl")
+    include("Tools/nyquistplot.jl")
+    include("Tools/small_gain.jl")
+    include("Tools/stabilitymargin.jl")
+    include("Tools/EVD.jl")
+    include("Tools/bodeplot.jl")
+    include("Tools/passivity.jl")
+
+    
+    
 end
