@@ -42,7 +42,6 @@ function make_power_flow_dc!(tl :: Transmission_line, dict :: Dict{String, Any},
 end
 
 function make_power_flow!(tl :: Transmission_line, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
-    pins = elem.pins
  
     if is_three_phase(elem)    
         key = branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)

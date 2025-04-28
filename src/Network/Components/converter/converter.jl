@@ -109,8 +109,8 @@ function make_power_flow!(converter:: Converter, data, nodes2bus, bus2nodes, ele
     pins = elem.pins
 
     # Busses interface (dc_bus --> 1.1 & ac_bus --> 2.1 and 2.2)
-    dc_node = pins[Symbol(1.1)] # This is the node wherefore nodes_dict gives us all the pins, we have to map this to a dc_bus
-    ac_nodes = (pins[Symbol(2.1)], pins[Symbol(2.2)]) #Similar AC bus
+    dc_node = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "1.")]...) # This is the node wherefore nodes_dict gives us all the pins, we have to map this to a dc_bus
+    ac_nodes = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "2.")]...) #Similar AC bus
     dc_bus = add_bus_dc!(data, nodes2bus, bus2nodes, dc_node)
     ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes)
     

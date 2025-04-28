@@ -88,8 +88,8 @@ function make_power_flow!(source:: Source, data, nodes2bus, bus2nodes, elem2comp
     ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes)
 
     # Make the generator component for injection
-    injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem)
-    key = string((elem2comp[elem.symbol])[2]) # Of form "gen", 1 so convert 2nd element to string
+    key = injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem)
+    key = string(key) # Of form "gen", 1 so convert 2nd element to string
 
     # Change bus information
     ((data["bus"])[string(ac_bus)])["vmin"] =  0.9*((data["gen"])[key])["vg"]

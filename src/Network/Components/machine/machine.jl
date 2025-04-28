@@ -55,60 +55,58 @@ end
 function make_power_flow!(machine:: Machine, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
 
     # Check if AC or DC source (second one not implemented)
-    is_three_phase(elem) ? nothing : error("DC sources are currently not implemented")
+    # is_three_phase(elem) ? nothing : error("DC sources are currently not implemented")
 
     ### MAKE BUSES OUT OF THE NODES
     # Find the nodes not connected to the ground
     ground_nodes = Set(bus2nodes["gnd"]) #Collect ground nodes and make them a set for faster lookup
     ac_nodes = Tuple(collect(Iterators.filter(x -> !(x in ground_nodes), values(elem.pins)))) #Look in the nodes of this component and convert into tuple
-    
+    ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes)
     # Make busses for the non-ground nodes 
     interm_bus = add_interm_bus_ac!(data) # No mapping to node, bcs no corresponding node in PowerImpedance
 
     # Make the generator component for injection
-    injection_initialization!(data, elem2comp, comp2elem, interm_bus, elem)
-    key = string(elem2comp(elem.symbol))
+    key = injection_initialization!(data, elem2comp, comp2elem, interm_bus, elem)
+    key = string(key)
 
     # Add additional branch & bus for SM transformer (RL-branch)
-    key_branch = String(length(data["branch"])+1)
-    ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes)
-    # Interface element
+    
     key_branch = comp_elem_interface!(data, elem2comp, comp2elem, elem, "branch")
-    key_branch = string(key_branch)
+    key_branch_str = string(key_branch)
 
-    (data["branch"])[key_branch] = Dict{String, Any}()
-    ((data["branch"])[key_branch])["f_bus"] = interm_bus
-    ((data["branch"])[key_branch])["t_bus"] = ac_bus
-    ((data["branch"])[key_branch])["source_id"] = Any["branch", parse(Int, key_branch)]
-    ((data["branch"])[key_branch])["index"] = parse(Int, key_branch)
-    ((data["branch"])[key_branch])["rate_a"] = 1
-    ((data["branch"])[key_branch])["rate_b"] = 1
-    ((data["branch"])[key_branch])["rate_c"] = 1
-    ((data["branch"])[key_branch])["br_status"] = 1
-    ((data["branch"])[key_branch])["angmin"] = ang_min
-    ((data["branch"])[key_branch])["angmax"] = ang_max
-    ((data["branch"])[key_branch])["transformer"] = false
-    ((data["branch"])[key_branch])["tap"] = 1
-    ((data["branch"])[key_branch])["shift"] = 0
-    ((data["branch"])[key_branch])["c_rating_a"] = 1
+    (data["branch"])[key_branch_str] = Dict{String, Any}()
+    ((data["branch"])[key_branch_str])["f_bus"] = interm_bus
+    ((data["branch"])[key_branch_str])["t_bus"] = ac_bus
+    ((data["branch"])[key_branch_str])["source_id"] = Any["branch", key_branch]
+    ((data["branch"])[key_branch_str])["index"] = key_branch
+    ((data["branch"])[key_branch_str])["rate_a"] = 1
+    ((data["branch"])[key_branch_str])["rate_b"] = 1
+    ((data["branch"])[key_branch_str])["rate_c"] = 1
+    ((data["branch"])[key_branch_str])["br_status"] = 1
+    ((data["branch"])[key_branch_str])["angmin"] = ang_min
+    ((data["branch"])[key_branch_str])["angmax"] = ang_max
+    ((data["branch"])[key_branch_str])["transformer"] = false
+    ((data["branch"])[key_branch_str])["tap"] = 1
+    ((data["branch"])[key_branch_str])["shift"] = 0
+    ((data["branch"])[key_branch_str])["c_rating_a"] = 1
 
     
-    ((data["branch"])[key_branch])["br_r"] = machine.rt * (machine.Vᵃᶜ_base^2 / machine.S_base) / global_dict["Z"]
-    ((data["branch"])[key_branch])["br_x"] = machine.lt * (machine.Vᵃᶜ_base^2 / machine.S_base) / global_dict["Z"]
-    ((data["branch"])[key_branch])["g_fr"] = 0
-    ((data["branch"])[key_branch])["b_fr"] = 0
-    ((data["branch"])[key_branch])["g_to"] = 0
-    ((data["branch"])[key_branch])["b_to"] = 0
+    ((data["branch"])[key_branch_str])["br_r"] = machine.rt * (machine.Vᵃᶜ_base^2 / machine.S_base) / global_dict["Z"]
+    ((data["branch"])[key_branch_str])["br_x"] = machine.lt * (machine.Vᵃᶜ_base^2 / machine.S_base) / global_dict["Z"]
+    ((data["branch"])[key_branch_str])["g_fr"] = 0
+    ((data["branch"])[key_branch_str])["b_fr"] = 0
+    ((data["branch"])[key_branch_str])["g_to"] = 0
+    ((data["branch"])[key_branch_str])["b_to"] = 0
 
     # Change type of final bus, intermediate bus is PQ-bus
-    if isapprox(source_machine.P_max, source_machine.P)
-        ((data["bus"])[string(ac_bus)]) = set_bus_type((data["bus"])[string(ac_bus)], 1)
+    if isapprox(machine.P_max, machine.P)
+        ((data["bus"])[string(interm_bus)]) = set_bus_type((data["bus"])[string(interm_bus)], 1)
     else
-        ((data["bus"])[string(ac_bus)]) = set_bus_type((data["bus"])[string(ac_bus)], 2)
+        ((data["bus"])[string(interm_bus)]) = set_bus_type((data["bus"])[string(interm_bus)], 2)
     end
 
-    ((data["bus"])[string(ac_bus)])["vm"] = ((data["gen"])[key_branch])["vg"]
-    ((data["bus"])[string(ac_bus)])["vmin"] =  0.9*((data["gen"])[key_branch])["vg"]
-    ((data["bus"])[string(ac_bus)])["vmax"] =  1.1*((data["gen"])[key_branch])["vg"]
+    ((data["bus"])[string(interm_bus)])["vm"] = ((data["gen"])[key])["vg"]
+    ((data["bus"])[string(interm_bus)])["vmin"] =  0.9*((data["gen"])[key])["vg"]
+    ((data["bus"])[string(interm_bus)])["vmax"] =  1.1*((data["gen"])[key])["vg"]
 end
 

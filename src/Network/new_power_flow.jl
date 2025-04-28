@@ -1,6 +1,6 @@
-export new_power_flow, result
+export new_power_flow, result, data
 function new_power_flow(net:: Network)
-    global global_dict, result
+    global global_dict, result, ang_min, ang_max, data
     global_dict = PowerModelsACDC.get_pu_bases(1000, net.voltageBase[1]) # 3-PH MVA, LL-RMS, Original setting was 100,320
     global_dict["omega"] = 2π * 50
 
@@ -98,14 +98,16 @@ function injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem)
     ((data["gen"])[key])["model"] = 1
     ((data["gen"])[key])["cost"] = 0
     ((data["gen"])[key])["ncost"] = 0
+    return parse(Int, key)
 end
 function branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
     
     # Add busses for the branch
     pins = elem.pins
     
-    node1 = (pins[Symbol(1.1)], pins[Symbol(1.2)]) 
-    node2 = (pins[Symbol(2.1)], pins[Symbol(2.2)])
+    # Handle any amount of input and output pins
+    node1 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "1.")]...) #(pins[Symbol(1.1)], pins[Symbol(1.2)]) 
+    node2 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "2.")]...) #(pins[Symbol(2.1)], pins[Symbol(2.2)])
     bus1 = add_bus_ac!(data, nodes2bus, bus2nodes, node1)
     bus2 = add_bus_ac!(data, nodes2bus, bus2nodes, node2)
 
@@ -130,8 +132,8 @@ function branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem)
     # Add busses for the branch
     pins = elem.pins
     
-    node1 = pins[Symbol(1.1)] 
-    node2 = pins[Symbol(2.1)]
+    node1 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "1.")]...) #pins[Symbol(1.1)] 
+    node2 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "2.")]...) #pins[Symbol(2.1)]
     bus1 = add_bus_dc!(data, nodes2bus, bus2nodes, node1)
     bus2 = add_bus_dc!(data, nodes2bus, bus2nodes, node2)
 
