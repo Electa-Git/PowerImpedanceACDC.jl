@@ -1,4 +1,4 @@
-export power_flow, result, nodes2bus, elem2comp, data
+export power_flow, result, data
 function power_flow(net:: Network)
     global ang_min, ang_max, result, nodes2bus, elem2comp, data
     global_dict = PowerModelsACDC.get_pu_bases(1000, net.voltageBase[1]) # 3-PH MVA, LL-RMS, Original setting was 100,320

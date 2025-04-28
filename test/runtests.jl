@@ -88,3 +88,5 @@ imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g4], input_pins=Any[
 output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
 
 @test imp_ac[1000][1] ≈ -191.82832692869695 - 568.4935477983634im atol=1e-8
+
+include("power_flow_test.jl")
