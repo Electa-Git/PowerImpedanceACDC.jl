@@ -22,7 +22,7 @@ You should have received a copy of the GNU General Public License along with thi
     # Symbolic and numerical calculations
     using SymEngine
     using LinearAlgebra
-    using NLsolve, ForwardDiff,NonlinearSolve, SteadyStateDiffEq  # solve diffs and nonlinear equations
+    using ForwardDiff, NonlinearSolve, SteadyStateDiffEq  # solve diffs and nonlinear equations
     
     # Power flow
     using PowerModels, PowerModelsACDC
