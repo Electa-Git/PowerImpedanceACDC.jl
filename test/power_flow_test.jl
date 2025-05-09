@@ -1,9 +1,3 @@
-using JLD2
-using SymEngine
-using LinearAlgebra
-using PowerImpedanceACDC
-
-s = symbols("s")
 Powf = 70
 Qowf = 20
 Vm = 220 /sqrt(3) #Vln,rms !!!!!!!!!!!!Change!!!!!!!!!!!!!!!!!!
