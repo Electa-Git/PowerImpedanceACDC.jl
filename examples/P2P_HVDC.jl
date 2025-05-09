@@ -92,4 +92,11 @@ Z_dd = getindex.(imp_ac,1,1)
 impedance_bode = bodeplot(Z_dd, omega_ac)
 display(impedance_bode)
 
+Z_dq=bodeplot(imp_ac, omega_ac)
+
+display(Z_dq[1])
+display(Z_dq[2])
+display(Z_dq[3])
+display(Z_dq[4])
+
 
