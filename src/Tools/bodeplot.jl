@@ -127,12 +127,12 @@ function bodeplot(L, omegas; legend = [""], plots = nothing)
         else
             plot!(new_plots[1], f, L_mag_dB, label = legend, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto   
         end
-        plot!(ylabel = "Magnitude [dB]", framestyle = :box, xaxis = :log10)
-        plot!(xlims = (minimum(f), maximum(f)), ylims = ylims_mag)
+        plot!(new_plots[1],ylabel = "Magnitude [dB]", framestyle = :box, xaxis = :log10)
+        plot!(new_plots[1],xlims = (minimum(f), maximum(f)), ylims = ylims_mag)
         plot!(new_plots[2], f, L_ph, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
-        plot!(xlabel = "Frequency [Hz]", ylabel = "Phase [deg]", framestyle = :box, legend = :none, xaxis = :log10)
-        plot!(xlims = (minimum(f), maximum(f)), ylims = ylims_ph)
-        plot!(yticks = -360:90:360)
+        plot!(new_plots[2],xlabel = "Frequency [Hz]", ylabel = "Phase [deg]", framestyle = :box, legend = :none, xaxis = :log10)
+        plot!(new_plots[2],xlims = (minimum(f), maximum(f)), ylims = ylims_ph)
+        plot!(new_plots[2],yticks = -360:90:360)
         return new_plots
 
 
