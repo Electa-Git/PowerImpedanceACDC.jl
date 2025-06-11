@@ -15,9 +15,6 @@ export tlc
     Vₘ :: Union{Int, Float64} = 333             # AC voltage, amplitude [kV]
     Vᵈᶜ :: Union{Int, Float64} = 640            # DC-bus voltage [kV]
 
-    Lₐᵣₘ :: Union{Int, Float64}  = 0        # filter inductance [H]
-    Rₐᵣₘ :: Union{Int, Float64}  = 0        # equivalent filter resistance
-
     Lᵣ :: Union{Int, Float64}  = 60e-3         # inductance of the converter transformer at the converter side [H]
     Rᵣ :: Union{Int, Float64}  = 0.535         # resistance of the converter transformer at the converter side [H]
 
@@ -89,16 +86,19 @@ function tlc(;args...)
 
     for (key, val) in pairs(args)
         if isa(val, Controller)
+            if key ∈ (:vac_supp, :v_ac)
+                error("AC voltage support is not yet implemented")
+            end
             converter.controls[key] = val
         elseif in(key, propertynames(converter))
             setfield!(converter, key, val)
         end
     end
 
-    elem = Element(input_pins = 1, output_pins = 2, element_value = converter)
+    elem = Element(input_pins = 2, output_pins = 2, element_value = converter)
 end
 
-function update!(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
+function update!(converter :: TLC, Pac, Qac, Vm, θ)
     
 
     wbase = 100*pi
@@ -121,10 +121,12 @@ function update!(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
 
     converter.Vₘ = Vm
     converter.θ = θ
-    converter.Vᵈᶜ = Vdc
+    # converter.Vᵈᶜ = Vdc
+    Vdc = converter.Vᵈᶜ
     converter.P = Pac
     converter.Q = Qac
-    converter.P_dc = Pdc # Has the same sign as Pac
+    # converter.P_dc = Pdc # Has the same sign as Pac
+    Pdc = converter.P_dc
 
     Vm /= vAC_base
     Vdc /= vDC_base
@@ -424,13 +426,13 @@ function update!(converter :: TLC, Vm, θ, Pac, Qac, Vdc, Pdc)
  
     println("Starting to solve for Steady-State Solution!")
     prob = SteadyStateProblem(g!, init_x)
-    sol=solve(prob,SSRootfind(TrustRegion()),maxiters=20,abstol = 1e-8,reltol = 1e-8, show_trace = Val(true),trace_level = TraceAll(), store_trace=Val(true))
+    sol=solve(prob,SSRootfind(TrustRegion()),maxiters=20,abstol = 1e-8,reltol = 1e-8)
     
     steady_state_jacobian = ForwardDiff.jacobian(g, init_x)
     converter.debug = [steady_state_jacobian, sol]
 
     # Command to show solver results
-    println(sol.trace)
+    # println(sol.trace)
     # converter.debug = sol
     if SciMLBase.successful_retcode(sol)
         println("TLC steady-state solution found!")
@@ -463,3 +465,62 @@ function eval_parameters(converter :: TLC, s :: Complex)
     return Y
 end
 
+function make_power_flow!(tlc:: TLC, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
+
+    # Check if AC or DC source (second one not implemented)
+    # is_three_phase(elem) ? nothing : error("DC sources are currently not implemented")
+
+    ### MAKE BUSES OUT OF THE NODES
+    # Find the nodes not connected to the ground
+    ac_nodes = make_non_ground_node(elem, bus2nodes) 
+    ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes, global_dict)
+    # Make busses for the non-ground nodes 
+    interm_bus = add_interm_bus_ac!(data, global_dict) # No mapping to node, bcs no corresponding node in PowerImpedance
+
+    # Make the load component for injection
+    key_load = comp_elem_interface!(data, elem2comp, comp2elem, elem, "load")
+
+    (data["load"])[string(key_load)] = Dict{String, Any}()
+    ((data["load"])[string(key_load)])["status"] = 1
+    data["load"][string(key_load)]["load_bus"] = interm_bus
+    data["load"][string(key_load)]["pd"] = -tlc.P / (global_dict["S"] / 1e6)
+    data["load"][string(key_load)]["qd"] = -tlc.Q / (global_dict["S"] / 1e6)
+
+    # Add additional branch & bus for SM transformer (RL-branch)
+    
+    key_branch = length(data["branch"]) + 1
+    key_branch_str = string(key_branch)
+
+    (data["branch"])[key_branch_str] = Dict{String, Any}()
+    ((data["branch"])[key_branch_str])["f_bus"] = interm_bus
+    ((data["branch"])[key_branch_str])["t_bus"] = ac_bus
+    ((data["branch"])[key_branch_str])["source_id"] = Any["branch", key_branch]
+    ((data["branch"])[key_branch_str])["index"] = key_branch
+    ((data["branch"])[key_branch_str])["rate_a"] = 1
+    ((data["branch"])[key_branch_str])["rate_b"] = 1
+    ((data["branch"])[key_branch_str])["rate_c"] = 1
+    ((data["branch"])[key_branch_str])["br_status"] = 1
+    ((data["branch"])[key_branch_str])["angmin"] = ang_min
+    ((data["branch"])[key_branch_str])["angmax"] = ang_max
+    ((data["branch"])[key_branch_str])["transformer"] = false
+    ((data["branch"])[key_branch_str])["tap"] = 1
+    ((data["branch"])[key_branch_str])["shift"] = 0
+    ((data["branch"])[key_branch_str])["c_rating_a"] = 1
+
+    
+    ((data["branch"])[key_branch_str])["br_r"] = tlc.Rᵣ / global_dict["Z"] # Convert SI to pu
+    ((data["branch"])[key_branch_str])["br_x"] = tlc.Lᵣ*global_dict["omega"] / global_dict["Z"]
+    ((data["branch"])[key_branch_str])["g_fr"] = 0
+    ((data["branch"])[key_branch_str])["b_fr"] = 0
+    ((data["branch"])[key_branch_str])["g_to"] = 0
+    ((data["branch"])[key_branch_str])["b_to"] = 0
+
+    # Only PQ-bus implemented
+    
+    ((data["bus"])[string(interm_bus)]) = set_bus_type((data["bus"])[string(interm_bus)], 1)
+    
+
+    # ((data["bus"])[string(interm_bus)])["vm"] = ((data["gen"])[key])["vg"]
+    # ((data["bus"])[string(interm_bus)])["vmin"] =  0.9*((data["gen"])[key])["vg"]
+    # ((data["bus"])[string(interm_bus)])["vmax"] =  1.1*((data["gen"])[key])["vg"]
+end

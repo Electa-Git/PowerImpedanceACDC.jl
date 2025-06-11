@@ -3,7 +3,7 @@ export determine_impedance
 """
     function determine_impedance(network::Network; input_pins :: Array{Any},
         output_pins :: Array{Any}, elim_elements :: Array{Symbol},
-        omega_range = (-3, 5, 100))
+         freq_range = (0.001, 10000, 100))
 
 Estimation of the impedance visible from the port, between input and
 output pins. Port pins can possibly be connected to some elements, which
@@ -29,7 +29,7 @@ To determine impedance visible from the voltage source `vs`, the following comma
 should be called:
 ```
 imp, omega = determine_impedance(net, elim_elements = [:vs], input_pins = Any[:Node1], output_pins = Any[:gnd],
-        omega_range = (-1,6,10000))
+         freq_range = (0.001, 10000, 100))
 ```
 Impedance is determined inside network `net`, from the element `vs` and the port defined
 with `input_pins` as array consisting of `Node1` and the `output_pins` containing
@@ -41,7 +41,7 @@ array and the second one is frequency array.
 """
 function determine_impedance(network :: Network; input_pins :: Array{Any},
     output_pins :: Array{Any}, elim_elements :: Array{Symbol},
-    omega_range = (-3, 5, 100))
+    freq_range = (0.001, 10000, 100))
 
     """
     function make_lists(net::Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}},
@@ -129,9 +129,12 @@ function determine_impedance(network :: Network; input_pins :: Array{Any},
     dict[:output_list] = dict[:output_list][[output_order; setdiff(1:length(dict[:output_list]), output_order)]]
 
     # make frequency range
-    (min_ω, max_ω, n_ω) = omega_range
-    n = (max_ω - min_ω) / n_ω
-    omegas= 2*pi* 10 .^range(min_ω, max_ω, length= n_ω) 
+    (min_f, max_f, n_f) = freq_range
+    if !isa(n_f,Int)
+        n_f = parse(Int, n_f) #Make Int to work with range (error when 1e4)
+    end
+
+    omegas= 2*pi* 10 .^range(log10(min_f), log10(max_f), length= n_f) 
     # omegas= 2*pi* [1e0:20:1e5;] # Only for debugging
 
     # Solving the network equations for the impedance between input and output pins with Z parameters. Default.

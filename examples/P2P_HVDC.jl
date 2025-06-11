@@ -16,7 +16,7 @@ net = @network begin
         # HVDC link 1
         # MMC1 controls the DC voltage, and is situated at the remote end.
         c1 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
-                P_max = 1500, P_min = -1500, P = -pHVDC1, Q = qC1, Q_max = 500, Q_min = -500,
+                P_max = 100, P_min = -100, P = -pHVDC1, Q = qC1, Q_max = 500, Q_min = -500,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),
                 pll = PI_control(Kₚ = 0.28, Kᵢ = 12.5664),
@@ -25,7 +25,7 @@ net = @network begin
                 )
         # MMC2 controls P&Q. It is connected to bus 7. Define the transformer impedance parameters at the converter side!
         c2 = mmc(Vᵈᶜ = 800, vDCbase = 800, Vₘ = transmissionVoltage,
-                P_max = 1000, P_min = -1000, P = pHVDC1, Q = qC2, Q_max = 1000, Q_min = -1000,
+                P_max = 100, P_min = -100, P = pHVDC1, Q = qC2, Q_max = 1000, Q_min = -1000,
                 vACbase_LL_RMS = 333, turnsRatio = 333/380, Lᵣ = 0.0461, Rᵣ = 0.4103,
                 occ = PI_control(Kₚ = 0.7691, Kᵢ = 522.7654),
                 ccc = PI_control(Kₚ = 0.1048, Kᵢ = 48.1914),

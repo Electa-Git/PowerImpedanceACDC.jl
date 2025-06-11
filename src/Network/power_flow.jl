@@ -10,6 +10,12 @@ function power_flow(net:: Network)
     nodes_dict = net.nets
     elem_dict = net.elements
 
+    ## No power flow when linear (no setpoint updates)
+    if is_linear(net)
+        println("Network only consists of linear elements. Skipping power flow.")
+        return
+    end
+
     # PowerModelsACDC network dictoniary
     data = Dict{String, Any}()
     data = data_init(data, global_dict)
@@ -39,16 +45,23 @@ function power_flow(net:: Network)
 
     #### 3. Update setpoints of active elements
     for (key, element) in net.elements
+
+        # Check if it is an active component
+        if !(is_converter(element) || is_source(element))
+            break
+        end
         #Find the corresponding PowerModels component
         comp_type, key = elem2comp[element.symbol]
-        elem_dict = result["solution"][comp_type][string(key)]
+        if !isa(element.element_value, TLC) #SPecial treatment because of negative load
+            elem_dict = result["solution"][comp_type][string(key)]
+        end
         pins = element.pins
         
-        if is_converter(element) # In converter bus1 is DC and bus2 is AC
-            node1 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "1.")]...)
-            node2 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "2.")]...)
-            _, dc_bus = nodes2bus[node1]
-            _, ac_bus = nodes2bus[node2]
+        if isa(element.element_value, MMC) # In converter bus1 is DC and bus2 is AC
+            dc_node = make_node(element, 1) 
+            ac_node = make_node(element,2) #Similar AC bus
+            _, dc_bus = nodes2bus[dc_node]
+            _, ac_bus = nodes2bus[ac_node]
             
             Pdc = elem_dict["pdc"] * global_dict["S"] / 1e6
             Vm = (result["solution"]["bus"][string(ac_bus)]["vm"] * global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
@@ -76,9 +89,30 @@ function power_flow(net:: Network)
             println(θ)
             print(update_string * " DC Voltage [kV]: ")
             println(Vdc)
+
+        elseif isa(element.element_value, TLC)
+            ac_node = make_non_ground_node(element, bus2nodes)
+            bus_type, ac_bus = nodes2bus[ac_node]
+
+            Pgen = element.element_value.P #PQ bus so P and Q do not change
+            Qgen = -element.element_value.Q
+            Vm = (result["solution"]["bus"][string(ac_bus)]["vm"] * global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
+            θ = result["solution"]["bus"][string(ac_bus)]["va"]
+            update_string = string(key)
+
+            update!(element.element_value, Pgen, Qgen, Vm, θ)
+            
+            print(update_string * " Active Power [MW]: ")
+            println(Pgen)
+            print(update_string * " Reactive Power [MVar]: ")
+            println(Qgen)
+            print(update_string * " AC Voltage Magnitude [pu]: ")
+            println(result["solution"]["bus"][string(ac_bus )]["vm"])
+            print(update_string * " AC Voltage Angle [rad]: ")
+            println(θ)
         elseif is_generator(element) #ac bus is the one with no ground in it's name
-            ground_nodes = Set(bus2nodes["gnd"]) #Collect ground nodes and make them a set for faster lookup
-            ac_node = Tuple(collect(Iterators.filter(x -> !(x in ground_nodes), values(element.pins)))) #Look in the nodes of this component and convert into tuple
+            
+            ac_node= make_non_ground_node(element, bus2nodes)
             bus_type, ac_bus = nodes2bus[ac_node]
 
             Pgen = elem_dict["pg"] * global_dict["S"] / 1e6 #MW
@@ -103,6 +137,24 @@ function power_flow(net:: Network)
 
     return result, data, nodes2bus, elem2comp
 
+end
+
+function is_linear(net::Network)
+    ## Only if no converter or SM, return true
+    for elem in values(net.elements)
+        if (is_converter(elem) || is_generator(elem))
+            return false
+        end
+    end
+    return true
+end
+
+function get_AC_voltage(injecter::Union{SynchronousMachine, Source})
+    return injecter.V
+end
+
+function get_AC_voltage(injecter::TLC)
+    return injecter.Vₘ
 end
 
 function set_bus_type(bus_data, type)
@@ -159,7 +211,7 @@ function injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem, glo
     ((data["gen"])[key])["pmax"] = injecter.P_max / S_base
     ((data["gen"])[key])["qmin"] = injecter.Q_min / S_base
     ((data["gen"])[key])["qmax"] = injecter.Q_max / S_base
-    ((data["gen"])[key])["vg"] = injecter.V / V_base
+    ((data["gen"])[key])["vg"] = get_AC_voltage(injecter) / V_base #Accesor function to treat multiple field names for AC Voltage
 
     # not using
     ((data["gen"])[key])["model"] = 1
@@ -169,12 +221,11 @@ function injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem, glo
 end
 function branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
     
-    # Add busses for the branch
-    pins = elem.pins
+   
     
     # Handle any amount of input and output pins
-    node1 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "1.")]...) #(pins[Symbol(1.1)], pins[Symbol(1.2)]) 
-    node2 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "2.")]...) #(pins[Symbol(2.1)], pins[Symbol(2.2)])
+    node1 =  make_node(elem, 1)
+    node2 =  make_node(elem, 2)
     bus1 = add_bus_ac!(data, nodes2bus, bus2nodes, node1, global_dict)
     bus2 = add_bus_ac!(data, nodes2bus, bus2nodes, node2, global_dict)
 
@@ -199,8 +250,8 @@ function branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, glob
     # Add busses for the branch
     pins = elem.pins
     
-    node1 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "1.")]...) #pins[Symbol(1.1)] 
-    node2 = tuple([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "2.")]...) #pins[Symbol(2.1)]
+    node1 =  make_node(elem, 1)
+    node2 =  make_node(elem, 2)
     bus1 = add_bus_dc!(data, nodes2bus, bus2nodes, node1, global_dict)
     bus2 = add_bus_dc!(data, nodes2bus, bus2nodes, node2, global_dict)
 
@@ -346,4 +397,15 @@ function data_init(data, global_dict)
     data["gen"] = Dict{String, Any}()
     data["convdc"] = Dict{String, Any}()
     return data
+end
+
+function make_non_ground_node(elem::Element, bus2nodes)
+    ground_nodes = Set(bus2nodes["gnd"]) #Collect ground nodes and make them a set for faster lookup
+    ac_nodes = Set(collect(Iterators.filter(x -> !(x in ground_nodes), values(elem.pins)))) #Look in the nodes of this component and convert into Set
+    return ac_nodes
+end
+
+function make_node(elem::Element, side::Int)
+    pins = elem.pins
+    return Set([pins[k] for k in sort(collect(keys(pins))) if startswith(string(k), "$(side).")]) # This is the node wherefore nodes_dict gives us all the pins connected to this node
 end

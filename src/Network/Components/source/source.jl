@@ -33,47 +33,7 @@ function eval_y(source :: Source, s :: Complex)
     return abcd_to_y(abcd)
 end
 
-function make_power_flow_dc!(source :: Source, dict :: Dict{String, Any},
-        global_dict :: Dict{String, Any})
-    nothing
-end
 
-function make_power_flow_ac!(source :: Source, dict :: Dict{String, Any},
-            global_dict :: Dict{String, Any})
-    key = string(length(dict["gen"]))
-    ((dict["gen"])[string(key)])["pc1"] = 0
-    ((dict["gen"])[string(key)])["pc2"] = 0
-    ((dict["gen"])[string(key)])["qc1min"] = 0
-    ((dict["gen"])[string(key)])["qc1max"] = 0
-    ((dict["gen"])[string(key)])["qc2min"] = 0
-    ((dict["gen"])[string(key)])["qc2max"] = 0
-    ((dict["gen"])[string(key)])["ramp_agc"] = 0
-    ((dict["gen"])[string(key)])["ramp_q"] = 0
-    ((dict["gen"])[string(key)])["ramp_10"] = 0
-    ((dict["gen"])[string(key)])["ramp_30"] = 0
-    ((dict["gen"])[string(key)])["apf"] = 0
-    ((dict["gen"])[string(key)])["startup"] = 0
-    ((dict["gen"])[string(key)])["shutdown"] = 0
-
-    ((dict["gen"])[string(key)])["gen_status"] = 1
-    ((dict["gen"])[string(key)])["source_id"] = Any["gen", parse(Int, key)]
-    ((dict["gen"])[string(key)])["index"] = parse(Int, key)
-
-    S_base = global_dict["S"] / 1e6
-    V_base = global_dict["V"] / 1e3
-    ((dict["gen"])[string(key)])["pg"] = source.P / S_base
-    ((dict["gen"])[string(key)])["qg"] = source.Q / S_base
-    ((dict["gen"])[string(key)])["pmin"] = source.P_min / S_base
-    ((dict["gen"])[string(key)])["pmax"] = source.P_max / S_base
-    ((dict["gen"])[string(key)])["qmin"] = source.Q_min / S_base
-    ((dict["gen"])[string(key)])["qmax"] = source.Q_max / S_base
-    ((dict["gen"])[string(key)])["vg"] = source.V / V_base
-
-    # not using
-    ((dict["gen"])[string(key)])["model"] = 1
-    ((dict["gen"])[string(key)])["cost"] = 0
-    ((dict["gen"])[string(key)])["ncost"] = 0
-end
 function make_power_flow!(source:: Source, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
     
     # Check if AC or DC source (second one not implemented)
@@ -81,9 +41,8 @@ function make_power_flow!(source:: Source, data, nodes2bus, bus2nodes, elem2comp
 
     ### MAKE BUSES OUT OF THE NODES
     # Find the nodes not connected to the ground
-    ground_nodes = Set(bus2nodes["gnd"]) #Collect ground nodes and make them a set for faster lookup
-    ac_nodes = Tuple(collect(Iterators.filter(x -> !(x in ground_nodes), values(elem.pins)))) #Look in the nodes of this component and convert into tuple
-    
+    ac_nodes = make_non_ground_node(elem, bus2nodes) 
+
     # Make busses for the non-ground nodes 
     ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes, global_dict)
 
