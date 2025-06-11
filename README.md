@@ -1,9 +1,9 @@
 # PowerImpedanceACDC
-PowerImpedanceACDC is a Julia-based implementation for the frequendy-domain analysis of modern power systems.
+PowerImpedanceACDC is a Julia-based implementation for the frequency-domain analysis of modern power systems.
 The core functionalities are admittance characterization and small-signal stability assessment.
-The analysis relies on analytical models validated against the EMT simulation software PSCAD.
+The analysis relies on analytical models validated against the Elecromagnetic Transient (EMT) simulation software PSCAD.
 The implemented components are:
-- Modular Multilevel Converter with various controls (Grid-Following and Grid-Forming)
+- Modular Multilevel Converter (MMC) with various controls (Grid-Following and Grid-Forming)
 - Two-level converter with various controls
 - Oherhead lines and underground cables
 - Transformers
@@ -11,12 +11,12 @@ The implemented components are:
 - AC-source
 
 Following features are currently implemented:
-- Impedance/admittance identifaction
-- Stability assessment via Generalized Nyquist Criteria applicable to standalone-stable MIMO systems
-- Oscillation mode identification via eigenvalue decomposition (EVD) and bus participation factors
-- Passivity assessment and Singular Value Decomposition functions 
+- Impedance/admittance identification
+- Stability assessment via Generalized Nyquist Criteria (GNC) applicable to standalone-stablev Multiple-Input Multiple-Output (MIMO)systems
+- Oscillation mode identification via Eigenvalue Decomposition (EVD) and bus participation factors
+- Passivity assessment and Singular Value Decomposition (SVD) functions 
 
-Following figure, shows the admittances of an HVDC link with 2 MMC's, validated against PSCAD. In the example folder you can find the example together with some explanations.
+Following figure, shows the admittances of an High Voltage Direct Current (HVDC) link with 2 MMC's, validated against PSCAD. In the example folder you can find the example together with some explanations.
 ![Validation against PSCAD](docs/src/pictures/P2P_validation.png)
 ## Installation
 The latest stable release of PowerModels can be installed using the Julia package manager with
