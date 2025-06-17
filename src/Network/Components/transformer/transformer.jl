@@ -94,6 +94,7 @@ function transformer(;args...)
 
     # determine ABCD parameters pag18 simulator_tutorial
     s = symbols(:s) #allows to use s (in the following passages) as the Laplace operator
+    wk = symbols(:wk) 
     #Definition of the matrices that could be used for the ABCD representation
     Zᵖ_winding = convert(Array{Basic},Diagonal([1 for i in 1:2])) #[1 0; 0 1] Diagonal([1 for i in 1:2]) generates a 2*2 diagonal matrix with 1 on the diagonal
     Zˢ_winding = convert(Array{Basic},Diagonal([1 for i in 1:2])) #[1 0; 0 1]
@@ -101,10 +102,12 @@ function transformer(;args...)
     Y_iron = convert(Array{Basic},Diagonal([1 for i in 1:2]))     #[1 0; 0 1]
     Z_stray = convert(Array{Basic},Diagonal([1 for i in 1:2]))    #[1 0; 0 1]
 
+    #((((-im*s)/(t.ω))^1.1)*t.Rₚ)
+    #((((-im*s)/(t.ω))^1.1)*t.Rₛ)
     #Zp_winding matrix
-    Zᵖ_winding[1,2] += s*t.Lₚ + t.Rₚ #pag18 Zp_winding=[1 sLp+Rp; 0 1]
+    Zᵖ_winding[1,2] += s*t.Lₚ + (t.Rₚ*wk) #pag18 Zp_winding=[1 sLp+Rp; 0 1]
     #Zs_winding matrix
-    Zˢ_winding[1,2] += s*t.Lₛ + t.Rₛ #pag18 Zs_winding=[1 sLs+Rs; 0 1]
+    Zˢ_winding[1,2] += s*t.Lₛ + (t.Rₛ*wk) #pag18 Zs_winding=[1 sLs+Rs; 0 1]
     #Y_turn Matrix
     Y_turn[2,1] += s*t.Cₜ #pag18 Y_turn=[ 1 0; sCt 1]
     #N_tr Matrix
@@ -167,7 +170,10 @@ function transformer(;args...)
 end
 
 function eval_abcd(t :: Transformer, s :: ComplexF64)
-    value = N.(subs.(t.ABCD, symbols(:s), s))
+
+    # the argument s here is already a complex frequency, e.g. s = 2*π*f*im
+    wk=(abs(s)/(2*π*50))^1.1
+    value = N.(subs.(t.ABCD, symbols(:s)=> s, symbols(:wk)=>wk))
     return convert(Array{ComplexF64}, value)
 end
 
