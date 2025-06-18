@@ -24,8 +24,9 @@ export transformer
     Lₘ :: Union{Int, Float64} = 0      # magnetising inductance [H]
     Rₘ :: Union{Int, Float64} = 0      # magnetising resistance [Ω]
     Cₜ :: Union{Int, Float64} = 0       # turn-to-turn capacitance [F]
-    Cₛ :: Union{Int, Float64} = 0       # stray capacitance [F]
-
+    Cₛ :: Union{Int, Float64} = 0       # stray capacitance [F] 
+    hasRω :: Bool = false              # Boolean to set frequency-dependent winding resistance [-]
+    k:: Union{Int, Float64} = 0        # Exponent for frequency-dependent winding resistance [-]
 end
 
 """
@@ -93,8 +94,13 @@ function transformer(;args...)
     end
 
     # determine ABCD parameters pag18 simulator_tutorial
+    # Definition of symbolic expressions
     s = symbols(:s) #allows to use s (in the following passages) as the Laplace operator
-    wk = symbols(:wk) 
+    if t.hasRω
+        wk = symbols(:wk)  #Frequency-dependent scaling factor of the winding resistance, calculated as wk = (ω/(ω₀))^k, when frequency response is evaluated, eg. calling eval_abcd
+    else
+    end
+    
     #Definition of the matrices that could be used for the ABCD representation
     Zᵖ_winding = convert(Array{Basic},Diagonal([1 for i in 1:2])) #[1 0; 0 1] Diagonal([1 for i in 1:2]) generates a 2*2 diagonal matrix with 1 on the diagonal
     Zˢ_winding = convert(Array{Basic},Diagonal([1 for i in 1:2])) #[1 0; 0 1]
@@ -102,12 +108,10 @@ function transformer(;args...)
     Y_iron = convert(Array{Basic},Diagonal([1 for i in 1:2]))     #[1 0; 0 1]
     Z_stray = convert(Array{Basic},Diagonal([1 for i in 1:2]))    #[1 0; 0 1]
 
-    #((((-im*s)/(t.ω))^1.1)*t.Rₚ)
-    #((((-im*s)/(t.ω))^1.1)*t.Rₛ)
     #Zp_winding matrix
-    Zᵖ_winding[1,2] += s*t.Lₚ + (t.Rₚ*wk) #pag18 Zp_winding=[1 sLp+Rp; 0 1]
+    (t.hasRω) ? Zᵖ_winding[1,2] += s*t.Lₚ + (t.Rₚ*wk) : Zᵖ_winding[1,2] += t.Rₚ + s*t.Lₚ  #pag18 Zp_winding=[1 sLp+Rp; 0 1], inclusion of frequency dependent resistance
     #Zs_winding matrix
-    Zˢ_winding[1,2] += s*t.Lₛ + (t.Rₛ*wk) #pag18 Zs_winding=[1 sLs+Rs; 0 1]
+    (t.hasRω) ? Zˢ_winding[1,2] += s*t.Lₛ + (t.Rₛ*wk) : Zˢ_winding[1,2] += t.Rₛ + s*t.Lₛ   #pag18 Zs_winding=[1 sLs+Rs; 0 1], inclusion of frequency dependent resistance
     #Y_turn Matrix
     Y_turn[2,1] += s*t.Cₜ #pag18 Y_turn=[ 1 0; sCt 1]
     #N_tr Matrix
@@ -171,9 +175,15 @@ end
 
 function eval_abcd(t :: Transformer, s :: ComplexF64)
 
-    # the argument s here is already a complex frequency, e.g. s = 2*π*f*im
-    wk=(abs(s)/(2*π*50))^1.1
-    value = N.(subs.(t.ABCD, symbols(:s)=> s, symbols(:wk)=>wk))
+    if t.hasRω
+        # If the transformer has frequency-dependent winding resistance, we need to the scaling factor, wk
+        wk = (abs(s)/(2*π*50))^t.k
+        # Replace s with complex frequency jw and wk with the calculated value
+        value = N.(subs.(t.ABCD, symbols(:s)=> s, symbols(:wk)=>wk))
+    else
+        # Replace s with complex frequency jw 
+        value = N.(subs.(t.ABCD, symbols(:s)=> s))
+    end
     return convert(Array{ComplexF64}, value)
 end
 
