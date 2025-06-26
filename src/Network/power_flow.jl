@@ -47,8 +47,8 @@ function power_flow(net:: Network)
     for (key, element) in net.elements
 
         # Check if it is an active component
-        if !(is_converter(element) || is_source(element))
-            break
+        if !(is_converter(element) || is_generator(element))
+            continue ## Skip iteration if it is active
         end
         #Find the corresponding PowerModels component
         comp_type, key = elem2comp[element.symbol]
