@@ -22,14 +22,28 @@ SteadyStateDiffEq = "9672c7b4-1e72-59bd-8a11-6ac3964bc41f"
 SymEngine = "123dc426-2d89-5057-bbad-38513e3affd8"
 
 [compat]
-ForwardDiff = "0.10.38"
-Ipopt = "1.7.1"
-LinearAlgebra = "1.11.0"
-Markdown = "1.11.0"
-PowerModels = "0.19.10"
-PowerModelsACDC = "0.7.4"
-SteadyStateDiffEq = "2.4.1"
-julia = "≥ 1.2.0"
+ControlSystemsBase = "^1.17.2"
+DataStructures = "^0.18.22"
+
+ForwardDiff = "^1.0.1"
+Ipopt = "^1.10.6"
+JuMP = "^1.26.0"
+LinearAlgebra = "^1.11.0"
+Markdown = "^1.11.0"
+SymEngine = "^0.12.0"
+Munkres = "^0.2.0"
+NonlinearSolve = "^4.9.0"
+Parameters = "^0.12.3"
+Peaks = "^0.5.3"
+Plots = "^1.40.14"
+PowerModels = "^0.19.10"
+PowerModelsACDC = "^0.7.4"
+RobustAndOptimalControl = "^0.4.41"
+SteadyStateDiffEq = "^2.5.0"
+julia = "1.2.0 - 1.11"
+
+
+
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
