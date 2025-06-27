@@ -178,8 +178,6 @@ new_data_dict = data
 
 original_data = jldopen("data/pf_dict.jld")["pf_dict"]
 original_results = jldopen("data/results.jld")["results"]
-@show keys(original_data) == keys(new_data_dict)
-@show typeof(original_data)
-@show typeof(new_data_dict)
-@assert deep_equal(original_data,new_data_dict)
-@assert deep_equal(original_results, new_result)
+
+@test deep_equal(original_data,new_data_dict)
+@test deep_equal(original_results, new_result)
