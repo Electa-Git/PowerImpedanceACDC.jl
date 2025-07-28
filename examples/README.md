@@ -1,9 +1,9 @@
 # P2P HVDC link
-A usage example is provided here to help you getting familiar with the package functions and frequency-domain analysis methods. This a point-to-point HVDC link, which is shown in the figure below.
+A usage example is provided here to help you become familiar with the package functions and frequency-domain analysis methods. This is a point-to-point HVDC link, shown in the figure below:
 ![p2p figure](examples/pictures/P2P_HVDC.png)
 
 ## Initializing a network
-First, we want to set up a network which contains all components and their respective controls. Each component has their respective pins, which will be connected to each other to make the network. Let's start with defining our network. This is done with the `@network` macro:
+First, we set up a network that includes all components and their respective controls. Each component has its own pins, which will be connected to form the network. Let's start by defining the network using the `@network` macro:
 ```julia
 net = @network begin
     voltageBase = transmissionVoltage
@@ -52,7 +52,7 @@ dc_line = cable(length = 100e3, positions = [(-0.5,1), (0.5,1)],
     I2 = Insulator(rᵢ = 46.25e-3, rₒ = 49.75e-3, ϵᵣ = 2.3),
     I3 = Insulator(rᵢ = 60.55e-3, rₒ = 65.75e-3, ϵᵣ = 2.3), transformation = true)
 ```
-And, the two transmission lines, connecting the MMCs with the voltage sources:
+And the two transmission lines connecting the MMCs with the voltage sources:
 ```julia 
 # TL at the remote end
 tl1 = overhead_line(length = 25e3,
@@ -67,7 +67,7 @@ tl78 = overhead_line(length = 90e3,
         groundwires = Groundwires(nᵍ = 2, Rᵍᵈᶜ = 0.92, rᵍ = 0.0062, Δxᵍ = 6.5, Δyᵍ = 7.5, dᵍˢᵃᵍ   = 10),
         earth_parameters = (1,1,100), transformation = true)
 ```
-At last, we connect the pins of all defined components to make the network:
+Finally, we connect the pins of all defined components to form the network:
 
 ```julia
 c1[2.1] ⟷ tl1[2.1] ⟷ B3d
@@ -96,13 +96,13 @@ g1[2.2] == gndq
 This macro will call [PowerModelsACDC](https://github.com/Electa-Git/PowerModelsACDC.jl) to run the powerflow, and update the converter's setpoints based on these results.
 
 ## Determining impedance
-Now, the impedance as seen from the bus 7 will be determined. This is performed like this:
+Now, we determine the impedance as seen from bus 7:
 ```julia
 # Determine impedance seen at the AC side of the HVDC link
 imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:B7d,:B7q], 
 output_pins=Any[:gndd,:gndq], freq_range = (10,1000,1000))
 ```
-At last, we use the `bodeplot` function to plot the dd-channel impedance:
+Finally, we use the `bodeplot` function to plot the dd-channel impedance:
 ```julia
 Z_dd = getindex.(imp_ac,1,1)
 
@@ -111,4 +111,4 @@ display(impedance_bode)
 ```
 Which gives this bodeplot for the P2P HVDC link:
 
-![Bode plot](examples/pictures/plot_6.svg)
+![Bode plot](examples/pictures/impedance_bode.svg)
