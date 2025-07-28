@@ -85,18 +85,8 @@ end
 
 # Determine impedance seen at the AC side of the HVDC link
 imp_ac, omega_ac = determine_impedance(net, elim_elements=[:g1], input_pins=Any[:B7d,:B7q], 
-output_pins=Any[:gndd,:gndq], omega_range = (-2,4,2000))
+output_pins=Any[:gndd,:gndq], freq_range = (10,1000,1000))
 
+# Plot Z_dd
 Z_dd = getindex.(imp_ac,1,1)
-
-impedance_bode = bodeplot(Z_dd, omega_ac)
-display(impedance_bode)
-
-Z_dq=bodeplot(imp_ac, omega_ac)
-
-display(Z_dq[1])
-display(Z_dq[2])
-display(Z_dq[3])
-display(Z_dq[4])
-
-
+bodeplot(Z_dd, omega_ac,legend="Z_dd")
