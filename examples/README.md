@@ -1,6 +1,6 @@
 # P2P HVDC link
 A usage example is provided here to help you getting familiar with the package functions and frequency-domain analysis methods. This a point-to-point HVDC link, which is shown in the figure below.
-![p2p figure] (examples/pictures/P2P_HVDC.png)
+![p2p figure](examples/pictures/P2P_HVDC.png)
 
 ## Initializing a network
 First, we want to set up a network which contains all components and their respective controls. Each component has their respective pins, which will be connected to each other to make the network. Let's start with defining our network. This is done with the `@network` macro:
