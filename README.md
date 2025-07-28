@@ -1,27 +1,30 @@
 # PowerImpedanceACDC
 PowerImpedanceACDC is a Julia-based implementation for the frequency-domain analysis of modern power systems.
-The core functionalities are admittance characterization and small-signal stability assessment.
-The analysis relies on analytical models validated against the Elecromagnetic Transient (EMT) simulation software PSCAD.
+Its core functionalities include impedance/admittance characterization and small-signal stability assessment.
+The analysis relies on analytical models validated against the Electromagnetic Transient (EMT) simulation software PSCAD.
 The implemented components are:
 - Modular Multilevel Converter (MMC) with various controls (Grid-Following and Grid-Forming)
 - Two-level converter with various controls
-- Oherhead lines and underground cables
+- Overhead lines and underground cables
+- Synchronous generator
 - Transformers
-- Impedance
-- AC-source
+- Impedances
+- Ideal voltage sources
 
 Following features are currently implemented:
 - Impedance/admittance identification
-- Stability assessment via Generalized Nyquist Criteria (GNC) applicable to standalone-stablev Multiple-Input Multiple-Output (MIMO)systems
+- Stability assessment via the Generalized Nyquist Criterion (GNC), applicable to standalone-stable Multiple-Input Multiple-Output (MIMO) systems
 - Oscillation mode identification via Eigenvalue Decomposition (EVD) and bus participation factors
 - Passivity assessment and Singular Value Decomposition (SVD) functions 
 
-Following figure, shows the admittances of an High Voltage Direct Current (HVDC) link with 2 MMC's, validated against PSCAD. In the example folder you can find the example together with some explanations.
+The following figure shows the admittances of an High Voltage Direct Current (HVDC) link with two MMCs, validated against PSCAD. You can find this example, along with explanations, in the `example` folder.
+
 ![Validation against PSCAD](docs/src/pictures/P2P_validation.png)
+
 ## Installation
-The latest stable release of PowerModels can be installed using the Julia package manager with
+The latest stable release of PowerImpedanceACDC can be installed using the Julia package manager with
 ```julia
-] add PowerModelsACDC
+] add PowerImpedanceACDC
 ```
 
 ## Citation
@@ -45,4 +48,3 @@ This is a free software: you can redistribute it and/or modify it under the term
 ## Future work
 - $V_{ac}$-droop for two-level converter
 - $V_{ac}$-control for both converters
-- Synchronous machines
