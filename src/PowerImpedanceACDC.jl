@@ -45,14 +45,10 @@ You should have received a copy of the GNU General Public License along with thi
     # Transfromer
     include("Network/Components/transformer/transformer.jl")
 
-    # Shunt reactor
-    include("Network/Components/shunt_reactor/shunt_reactor.jl")
-
     # Cables and transmission lines
     include("Network/Components/transmission_line/transmission_line.jl")
     include("Network/Components/transmission_line/cable.jl")
     include("Network/Components/transmission_line/overhead_line.jl")
-    include("Network/Components/transmission_line/mixed_OHL_cable.jl")
 
     # Grid or source
     include("Network/Components/source/source.jl")
