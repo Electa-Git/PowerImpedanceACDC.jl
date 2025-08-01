@@ -180,8 +180,8 @@ function update!(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to calc
     Qac /= Sbase
     Pdc /= Sbase
     
-    Vᴳd = Vm * cos(θ)   
-    Vᴳq = -Vm * sin(θ)  
+    Vᴳd = Vm * cos(θ)   # d component of the grid voltage in the grid frame  
+    Vᴳq = -Vm * sin(θ)  # q component of the grid voltage in the grid frame
  
 
     Id = ((Vᴳd*converter.turnsRatio * Pac - Vᴳq*converter.turnsRatio * Qac) / ((Vᴳd*converter.turnsRatio)^2 + (Vᴳq*converter.turnsRatio)^2)) 
@@ -307,7 +307,7 @@ function update!(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to calc
     push!(exp.args, :(
         (iΔd, iΔq) = T_θ * [x[1]; x[2]]; # Currents in grid dq frame defined: x1 and x2, see circuit equations far below 
         (iΣd, iΣq) = T_2θ * [x[3]; x[4]];
-        (Vᴳd, Vᴳq) = T_θ * [inputs[2] * $converter.turnsRatio; inputs[3] * $converter.turnsRatio]; #Vd_grid input 2 and Vq_grid input 3 both expressed in the grid frame and at grid side
+        (Vᴳd, Vᴳq) = T_θ * [inputs[2] * $converter.turnsRatio; inputs[3] * $converter.turnsRatio]; #Vd_grid-input 2 and Vq_grid-input 3 both expressed in the grid frame and at grid side
         Vdc = inputs[1];)) #Vdc voltage input 1  
     
 
