@@ -85,7 +85,7 @@ function make_y_matrix(network :: Network; elim_elements :: Array{Symbol} = Arra
 
     Ybus=[] 
 
-    dict[:node_list] = [input_pins; dict[:output_list]] # Replace with input nodes and output nodes to force the order of the matrix.
+    dict[:node_list] = [input_pins; dict[:output_list]] # Replace with input nodes and output nodes to force the order of the matrix as definied in input_pins
     for omega in omegas
         Y = make_y(network, dict, omega*1im)
         push!(Ybus, Y[1:end-length(dict[:output_list]),1:end-length(dict[:output_list])]) # Remove the output nodes that are at the end of the matrix.
