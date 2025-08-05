@@ -22,7 +22,7 @@ for node in keys(network.nets)
 
     # Check whether the current node is part of Yedge
 
-    nets=netfor!(network, node) # Get all elements (designator, pin) connected to the node
+    nets=PowerImpedanceACDC.netfor!(network, node) # Get all elements (designator, pin) connected to the node
     
 
     # Check whether the node is connected to a source
@@ -44,51 +44,141 @@ for node in keys(network.nets)
         continue # Skip the node if it is connected to a source
     end
 
-    isDCnode=false # Flag to check whether the node is a DC node
+    isDCnode= false # Flag to check whether the node is a DC node
     isACnode= false # Flag to check whether the node is an AC node
 
+    # Identify DC or AC node by checking the pins connected to node:
+    # If DC node: Only one pin for each port, e.g. 1.1, 2.1 etc.
+    # If AC node: Two pins for each port, e.g. 1.1, 1.2, 2.1, 2.2 etc.
+    
+    # Get the pin of one of the element connected to the node
+    pin = string(nets[1][2]) # Get the pin name
 
-    # Identify DC or AC node by checking the pins .1 -->DC, .2 --> AC
-    # If DC node elements connected to have only one pin connected
-    # If AC node elements connected to have two pins connected
-    for net in nets # Iterate over all elements connected to the node
+    if occursin(".2", pin) # Check whether the pin is a AC pin
+        
+        isACnode=true # Set the flag to true
+    
+    end
+    if occursin(".1", pin) 
+       
+        pin=replace(pin, ".1" => ".2") # Replace .1 with .2 to search for the other AC pin if exists
 
-       pin = string(net[2]) # Get the pin name
+        designator = nets[1][1] # Get the designator of the element
+        pin=Symbol(pin)
 
-       if occursin(".2",pin)
+        if PowerImpedanceACDC.netfor!(network, (designator,pin)) === Symbol("") # Check whether this net (designator, pin) exists
+        
+            isDCnode= true
 
-        # AC port!
-
-       else # DC or AC port further check base on 
-
-            element=network.elements[net[1]]
+        else
             
-            for (element_pin, node) in element.pins # Iterate over all pins of the element
+            isACnode=true
+        end
+
+    end
+
+
+    if isACnode
+
+        # Get the other AC node
+        if occursin(".2", pin)
+            pin=replace(pin, ".2" => ".1") # Replace .2 with .1 to search for the other AC pin if exists
+        else
+            pin=replace(pin, ".1" => ".2") # Replace .1 with .2 to search for the other AC pin if exists
+
+        end
+
+        designator = nets[1][1] # Get the designator of the element
+        pin=Symbol(pin)
+        node2=PowerImpedanceACDC.netfor!(network, (designator,pin))
+
+        if occursin(".1",pin) # Node 2 is a d node
  
-                if replace(pin, ".1" => ".2") == string(element_pin) # Check if the pin is a AC pin
-                   
-                    # AC pin
-                    push!(node_list, node) # Add node to the list
-                    push!(element_list, net[1]) # Add element to the list
-                    break # Break the loop as we found the DC pin
-                else
-                    #DC pin
+ 
+            push!(node_list, [node2, node]) # Add the node to the list
+
+        else  # Node 2 is a q node
+
+            push!(node_list, [node, node2]) # Add the node to the list
+
+        end
+
+    
+
+    end
 
 
+    isConverternode = false # Flag to check whether the node is a converter node
+    if isDCnode
+        
+
+        # Check whether the DC node is a MMC node
+
+        for net in nets # Iterate over all elements connected to the node
+
+        element=network.elements[net[1]] # Get the element, via the designator net[1]
+        
+        if is_converter(element) 
+            
+            isConverternode=true
+            break # Break the loop if a converter node is found
+
+        end
+
+        end
+
+        if isConverternode # Proper node ordering required to match 3x3 admittance matrix of converter
+
+            triplet=Array{Union{Symbol,Int}}(undef,3)
+            triplet[1]=node # Add the node to the triplet
+        
+            for net in nets # Iterate over all elements connected to the node
+
+            element=network.elements[net[1]] # Get the element, via the designator net[1]
+        
+            if is_converter(element) 
+            
+                for (element_pin,element_node) in element.pins
+
+                    if element_node == node # Check whether the element pin is connected to the current node
+                        continue # Skip the current node
+                    else # AC node
+
+                        if occursin(".1", string(element_pin)) # Check whether the pin is a d pin
+                            triplet[2]=element_node # Add the other node to the triplet
+                        end
+                        if occursin(".2", string(element_pin)) # Check whether the pin is a q pin
+                            triplet[3]=element_node # Add the other node to the triplet
+                        end
+
+                    end
 
                 end
 
-            
-
             end
 
-       end
+        end
+            
+            
+            triplet=[node,]
 
+
+            # AC node pairs could be already part of node_list!
+
+        else
+
+            # If not a converter node, then it is a DC node
+            # No restriction regarding ordering
+            # Add the node to the list
+            push!(node_list, node)
+
+
+        end
 
 
     end
 
-    
+
 
 # If yes order correctly [DC], ACd, ACq
 
