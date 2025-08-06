@@ -6,8 +6,9 @@ export make_y_edge
 
 function make_y_edge(network::Network; freq_range = (1,1e3, 1000))
 
-node_list= Symbol[]
-element_list= Symbol[]
+
+node_list= Symbol[] #Node list to generate Yedge
+element_list= Symbol[] #Element list to generate Yedge
 
 for node in keys(network.nets)
     
@@ -22,25 +23,27 @@ for node in keys(network.nets)
 
     # Check whether the current node is part of Yedge
 
-    nets=PowerImpedanceACDC.netfor!(network, node) # Get all elements (designator, pin) connected to the node
+    nets=PowerImpedanceACDC.netfor!(network, node) # Get nets (designator, pin) connected to the node
     
 
     # Check whether the node is connected to a source
-    # If it is, skip the node
-    skip_node = false # Flag to skip the node if it is connected to a source
+    # If it is, skip the node.
+    # This assumes that AC & DC sources are only connected to an impedance 
+    # TODO: Make this more general
+    isSourceNode= false # Flag to skip the node if it is connected to a source
     for net in nets # Iterate over all elements connected to the node
 
         element=network.elements[net[1]] # Get the element, via the designator net[1]
         
         if is_source(element) 
             
-            skip_node = true # Skip the node if it is connected to a source
-
+            isSourceNode = true # Skip the node if it is connected to a source
+            break
         end
 
     end
 
-    if skip_node
+    if isSourceNode
         continue # Skip the node if it is connected to a source
     end
 
@@ -61,12 +64,12 @@ for node in keys(network.nets)
     end
     if occursin(".1", pin) 
        
-        pin=replace(pin, ".1" => ".2") # Replace .1 with .2 to search for the other AC pin if exists
+        ACpin=replace(pin, ".1" => ".2") # Replace .1 with .2 to search for the other AC pin if existent
 
         designator = nets[1][1] # Get the designator of the element
-        pin=Symbol(pin)
+        ACpin=Symbol(ACpin)
 
-        if PowerImpedanceACDC.netfor!(network, (designator,pin)) === Symbol("") # Check whether this net (designator, pin) exists
+        if PowerImpedanceACDC.netname(network, (designator,ACpin)) === Symbol("") # Check whether this net (designator, pin) exists
         
             isDCnode= true
 
@@ -78,28 +81,31 @@ for node in keys(network.nets)
     end
 
 
-    if isACnode
+    if isACnode 
 
         # Get the other AC node
         if occursin(".2", pin)
-            pin=replace(pin, ".2" => ".1") # Replace .2 with .1 to search for the other AC pin if exists
+            ACpin=replace(pin, ".2" => ".1") # Replace .2 with .1 to search for the other AC pin 
         else
-            pin=replace(pin, ".1" => ".2") # Replace .1 with .2 to search for the other AC pin if exists
+            ACpin=replace(pin, ".1" => ".2") # Replace .1 with .2 to search for the other AC pin 
 
         end
 
         designator = nets[1][1] # Get the designator of the element
-        pin=Symbol(pin)
-        node2=PowerImpedanceACDC.netfor!(network, (designator,pin))
+        ACpin=Symbol(ACpin)
+        node2=PowerImpedanceACDC.netname(network, (designator,ACpin))
 
-        if occursin(".1",pin) # Node 2 is a d node
+        # Proper node ordering required to match 2x2 admittance matrix of elements [ACd, ACq]
+        if occursin(".1", string(ACpin)) # Node 2 is a d node
  
  
-            push!(node_list, [node2, node]) # Add the node to the list
+            push!(node_list,node2) # Add the node to the list [ACd, ACq]
+            push!(node_list,node)
 
         else  # Node 2 is a q node
 
-            push!(node_list, [node, node2]) # Add the node to the list
+            push!(node_list,node) # Add the node to the list [ACd, ACq]
+            push!(node_list,node2)
 
         end
 
@@ -127,48 +133,55 @@ for node in keys(network.nets)
 
         end
 
-        if isConverternode # Proper node ordering required to match 3x3 admittance matrix of converter
+        if isConverternode # Proper node ordering required to match 3x3 admittance matrix of converter [DC, ACd, ACq]
 
-            triplet=Array{Union{Symbol,Int}}(undef,3)
-            triplet[1]=node # Add the node to the triplet
+            triplet=Array{Union{Symbol}}(undef,3)
+            triplet[1]=node # Add the node to the triplet 
         
             for net in nets # Iterate over all elements connected to the node
 
-            element=network.elements[net[1]] # Get the element, via the designator net[1]
+                element=network.elements[net[1]] # Get the element, via the designator net[1]
         
-            if is_converter(element) 
-            
-                for (element_pin,element_node) in element.pins
 
-                    if element_node == node # Check whether the element pin is connected to the current node
-                        continue # Skip the current node
-                    else # AC node
+                if is_converter(element) 
+                
+                    for (element_pin,element_node) in element.pins
 
-                        if occursin(".1", string(element_pin)) # Check whether the pin is a d pin
-                            triplet[2]=element_node # Add the other node to the triplet
-                        end
-                        if occursin(".2", string(element_pin)) # Check whether the pin is a q pin
-                            triplet[3]=element_node # Add the other node to the triplet
+                        if element_node == node # Check whether the element pin is connected to the current node
+                            continue # Skip the current node
+                        else # AC node
+
+                            if occursin(".1", string(element_pin)) # Check whether the pin is a d pin
+                                triplet[2]=element_node # Add the other node to the triplet
+                            end
+                            if occursin(".2", string(element_pin)) # Check whether the pin is a q pin
+                                triplet[3]=element_node # Add the other node to the triplet
+                            end
+
                         end
 
                     end
+                    break
 
                 end
-
+            end
+            # Check whether the AC nodes are already in the node list
+            # 
+            index = findfirst(p -> p == triplet[2], node_list) 
+            if index === nothing # AC nodes are not in the list add the entire triplet :) 
+                push!(node_list, triplet[1])
+                push!(node_list, triplet[2])
+                push!(node_list, triplet[3])
+            else # AC nodes are in the list, place the DC node at the correction position
+                
+                insert!(node_list, index, triplet[1]) # Insert the DC node at the correct position
             end
 
-        end
-            
-            
-            triplet=[node,]
-
-
-            # AC node pairs could be already part of node_list!
-
+        # If not a converter node, then it is a DC node
+        # No restriction regarding ordering
+        
         else
-
-            # If not a converter node, then it is a DC node
-            # No restriction regarding ordering
+        
             # Add the node to the list
             push!(node_list, node)
 
@@ -178,37 +191,45 @@ for node in keys(network.nets)
 
     end
 
-
-
-# If yes order correctly [DC], ACd, ACq
-
-    # If AC node, then get the other node --> pair
-        # Push to node_list
-
-    # If DC node 
-        #Check whether MMC node or not
-            # If MMC node, then get the triplet
-                # Push to node_list
-            # If not MMC node
-                # Push to node_list
-
-
-
-
-
-
-
-
-
-
-    push!(node_list, node.name) # Add node to the list
 end
 
 
-
-
-
 # Elements weed out all active elements, i.e. MMC, sources, SG, TLC
+for (designator, element) in network.elements
+    isSourceNode=false
+    if is_passive(element) # Check whether the element is passive
+        
+        # Check whether the element is connected to a source and hence not part of Yedge 
+       
+        for (pin,element_node) in element.pins
+
+
+            if occursin("gnd", string(element_node)) # Skip elements connected to ground
+                continue
+            end
+
+            for net in netfor!(network,element_node)
+
+                if is_source(network.elements[net[1]])# Get the element, via the designator net[1]
+                    
+                    isSourceNode=true
+                    break # Break the loop if a source is found
+                end
+            end
+
+
+        end
+
+        if isSourceNode # Skip elements connected to a source
+            continue
+        else
+            push!(element_list, designator)
+        end
+    
+    end
+
+    # Rid element when part of source :)
+end
 
 
 # Initialize dict to hold the nodes and elements for the admittance matrix
@@ -217,16 +238,30 @@ dict= Dict{Symbol, Array{Union{Symbol,Int}}}(:node_list => Symbol[], :element_li
 dict[:node_list]=node_list
 dict[:element_list]=element_list
 
+
+# make frequency range
+(min_f, max_f, n_f) = freq_range
+if !isa(n_f,Int)
+    n_f = parse(Int, n_f) #Make Int to work with range (error when 1e4)
+end
+omegas= 2*pi* 10 .^range(log10(min_f), log10(max_f), length= n_f) 
+
+
+
+
 Yedge=[] # Preallocate the admittance matrix for each frequency
 
-    for frequencies in freq_range
+for omega in omegas
 
-        # Get the admittance matrix for the current frequency
-        Y = make_y(network, dict, frequencies*1im*2*pi)
-        push!(Yedge,Y)
+    # Get the admittance matrix for the current frequency
+    Y = make_y(network, dict, omega*1im)
+    push!(Yedge,Y)
 
-    end
+end
 
-    return Yedge
+#Debugging
+#return Yedge, node_list
+
+return Yedge
 
 end

@@ -119,7 +119,7 @@ function netname(n::Network, name::Symbol)
         throw(ArgumentError("Unknown net name $name."))
     end
 end
-
+# Returns the node for the given net (designator, pin)
 function netname(n::Network, pin::Tuple{Symbol,Symbol})
     for (name, pins) in n.nets
         pin ∈ pins && return name
