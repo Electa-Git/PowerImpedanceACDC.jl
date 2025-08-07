@@ -79,6 +79,7 @@ You should have received a copy of the GNU General Public License along with thi
     include("Network/Solvers/determine_impedance.jl")
     include("Network/Solvers/make_y_matrix.jl")
     include("Network/Solvers/make_y_edge.jl")
+    include("Network/Solvers/make_y_node.jl")
     include("Network/Solvers/stability.jl")
 
     # Including tools

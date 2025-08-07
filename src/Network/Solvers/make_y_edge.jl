@@ -212,6 +212,7 @@ for (designator, element) in network.elements
     if is_passive(element) # Check whether the element is passive
         
         # Check whether the element is connected to a source and hence not part of Yedge 
+        # Then it is part of Ynode!
        
         for (pin,element_node) in element.pins
 

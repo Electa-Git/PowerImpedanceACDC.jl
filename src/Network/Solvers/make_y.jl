@@ -30,7 +30,10 @@ function make_y(net :: Network, dict::Dict{Symbol, Array{Union{Symbol,Int}}}, s 
     for element in dict[:element_list]
         element = net.elements[element]
             Y = get_y(element, s) 
-            if_passive(element) && phase = Int(length(element.pins) / 2) # Required to achieve correct indexing with different domains for passives: dq & abc
+            phase = 1 
+            if is_passive(element) 
+                (phase = Int(length(element.pins) / 2)) # Required to achieve correct indexing with different domains for passives: dq & abc
+            end
             for (key₁, val₁) in element.pins, (key₂, val₂) in element.pins # key is the pin name, val is the node name
                 # Find the i,j element in the element admittance matrix for (key₁, key₂)
                 i = (parse(Int, string(key₁)[1]) - 1) * phase + parse(Int, string(key₁)[3]) # Find row index 

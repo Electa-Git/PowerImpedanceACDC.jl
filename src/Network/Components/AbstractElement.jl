@@ -131,9 +131,6 @@ function is_converter(element :: Element)
     (isa(element.element_value, MMC) || isa(element.element_value, TLC))
 end
 
-function is_shunt_reactor(element :: Element)
-    isa(element.element_value, Shunt_reactor)
-end
 
 function is_generator(element :: Element)
     isa(element.element_value, SynchronousMachine)
