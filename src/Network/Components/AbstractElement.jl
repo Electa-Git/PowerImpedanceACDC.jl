@@ -69,17 +69,17 @@ end
 ################### ABCD functions ################################
 function get_abcd(element::Element, s::Complex)
     
-    if (element.transformation)
-        if np(element) == 2
+    if (element.transformation) # Transformation property is only used for passives!
+        if np(element) == 2 # Transformation from two phase to single phase: 2 pins --> 1 pin
             abcd = eval_abcd(element.element_value, s)
             return transformation_dc(abcd)
-        elseif is_three_phase(element)
+        elseif is_three_phase(element) # Transformation from abc to dq: 3 pins --> 2 pins
             ω₀ = 100*π
             abcd₁ = eval_abcd(element.element_value, s + 1im*ω₀)
             abcd₂ = eval_abcd(element.element_value, s - 1im*ω₀)
             return transformation_dq(abcd₁, abcd₂)
         end
-    else
+    else # No transformation, return ABCD directly. In case of actives, return Y
         abcd = eval_abcd(element.element_value, s)
     end
     return abcd
@@ -105,9 +105,15 @@ end
 np_abcd(e::Element) = Int((nip_abcd(e) + nop_abcd(e))/2) # number pins
 
 ########################## Y functions #############################
-# TODO: Crashes when using with MMC, TLC, SynchronousMachine. Still needed?
+
 function get_y(element :: Element, s :: Complex)
-    abcd = get_abcd(element, s)
+
+    abcd = get_abcd(element, s) # Return ABCD for passives, returns Y for actives
+    
+    if is_converter(element) || is_generator(element) # If converter or generator, return Y
+        return abcd
+    end
+
     return abcd_to_y(abcd)
 end
 
