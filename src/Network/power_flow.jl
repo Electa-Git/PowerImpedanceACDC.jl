@@ -40,7 +40,7 @@ function power_flow(net:: Network)
     PowerModelsACDC.process_additional_data!(data)
     ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
-    result = run_acdcpf(data, ACPPowerModel, ipopt; setting = s)
+    result = solve_acdcpf(data, ACPPowerModel, ipopt; setting = s)
     println(result["termination_status"])
 
     #### 3. Update setpoints of active elements
@@ -167,6 +167,16 @@ function set_bus_type(bus_data, type)
     return bus_data
 end
 
+function set_bus_type_dc(bus_data, type)
+    ## This function makes sure we dont overwrite higher bus type (only for AC bus now)
+    ## PQ (1) < PV (2) < slack (3)
+    current_type = bus_data["bus_type"] 
+    if type > current_type
+        bus_data["bus_type"] = type
+    end
+    return bus_data
+end
+
 ## THis function makes sure we dispatch on the right component
 make_powerflow!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict) = make_power_flow!(elem.element_value, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem,global_dict)
 
@@ -219,6 +229,56 @@ function injection_initialization!(data, elem2comp, comp2elem, ac_bus, elem, glo
     ((data["gen"])[key])["ncost"] = 0
     return parse(Int, key)
 end
+
+function injection_initialization_dc!(data, elem2comp, comp2elem, dc_bus, elem, global_dict)
+    ## A lot of initialization for source and machine are the same so combined in here
+    
+
+    ### ELEMENT TO COMPONENT
+    # Interface
+    # Interface element
+    key = comp_elem_interface!(data, elem2comp, comp2elem, elem, "gendc")
+    key = string(key)
+
+    # Network component
+    (data["gendc"])[key] = Dict{String, Any}()
+    ((data["gendc"])[key])["mBase"] = global_dict["S"] / 1e6
+    ((data["gendc"])[key])["gen_bus"] = dc_bus   
+    # Necessary fields (but not relevant)  
+    ((data["gendc"])[key])["quadratic_cost"] = 0
+    ((data["gendc"])[key])["linear_cost"] = 0
+    ((data["gendc"])[key])["idle_cost"] = 0
+    # ((data["dcgen"])[key])["ramp_q"] = 0
+    # ((data["dcgen"])[key])["ramp_10"] = 0
+    # ((data["dcgen"])[key])["ramp_30"] = 0
+    # ((data["dcgen"])[key])["apf"] = 0
+    # ((data["dcgen"])[key])["startup"] = 0
+    # ((data["dcgen"])[key])["shutdown"] = 0
+
+    # Different from AC generator
+    ((data["gendc"])[key])["control_type"] = 2 # Only slack bus atm
+    ((data["gendc"])[key])["droop_const"] = 0 # To be implemented
+
+    ((data["gendc"])[key])["gen_status"] = 1
+    ((data["gendc"])[key])["source_id"] = Any["gen", parse(Int, key)]
+    ((data["gendc"])[key])["index"] = parse(Int, key)
+
+    injecter = elem.element_value
+    S_base = global_dict["S"] / 1e6
+    V_base = global_dict["V"] / 1e3
+    ((data["gendc"])[key])["pgdcset"] = injecter.P / S_base
+    ((data["gendc"])[key])["pmin"] = injecter.P_min / S_base
+    ((data["gendc"])[key])["pmax"] = injecter.P_max / S_base
+
+    ((data["gendc"])[key])["vgdc"] = (injecter).V / V_base #Accesor function to treat multiple field names for AC Voltage
+
+    # not using
+    ((data["gendc"])[key])["model"] = 1
+    ((data["gendc"])[key])["cost"] = 0
+    ((data["gendc"])[key])["ncost"] = 0
+    return parse(Int, key)
+end
+
 function branch_ac!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
     
    
@@ -312,6 +372,7 @@ function add_bus_dc!(data, nodes2bus, bus2nodes, node, global_dict)
         ((data["busdc"])[bus])["Vdcmin"] = 0.9
         ((data["busdc"])[bus])["Pdc"] = 0
         ((data["busdc"])[bus])["basekVdc"] = global_dict["V"] / 1e3
+        ((data["busdc"])[bus])["bus_type"] = 1 # bus type - depends on components 1 is default PQ
         bus = parse(Int, bus)
     else
         #Return bus of this node, nodes correspond to one bus so no risk of same values with different keys
@@ -396,6 +457,8 @@ function data_init(data, global_dict)
     data["branchdc"] = Dict{String, Any}()
     data["gen"] = Dict{String, Any}()
     data["convdc"] = Dict{String, Any}()
+    data["pst"] = Dict{String, Any}() ## Empty (Phase shifting transformer)
+    data["gendc"] = Dict{String, Any}()
     return data
 end
 

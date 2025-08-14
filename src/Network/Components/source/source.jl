@@ -37,8 +37,12 @@ end
 function make_power_flow!(source:: Source, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
     
     # Check if AC or DC source (second one not implemented)
-    is_three_phase(elem) ? nothing : error("DC sources are currently not implemented")
+    is_three_phase(elem) ? ac_source_power_flow!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict) : dc_source_power_flow!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
 
+    
+end
+
+function ac_source_power_flow!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
     ### MAKE BUSES OUT OF THE NODES
     # Find the nodes not connected to the ground
     ac_nodes = make_non_ground_node(elem, bus2nodes) 
@@ -56,4 +60,26 @@ function make_power_flow!(source:: Source, data, nodes2bus, bus2nodes, elem2comp
     ((data["bus"])[string(ac_bus)])["vm"] = ((data["gen"])[key])["vg"]
 
     ((data["bus"])[string(ac_bus)]) = set_bus_type((data["bus"])[string(ac_bus)], 3)
+end
+
+function dc_source_power_flow!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
+    ### MAKE BUSES OUT OF THE NODES
+    # Find the nodes not connected to the ground
+    dc_nodes = make_non_ground_node(elem, bus2nodes) 
+
+    # Make busses for the non-ground nodes 
+    dc_bus = add_bus_dc!(data, nodes2bus, bus2nodes, dc_nodes, global_dict)
+
+    # Make the generator component for injection
+    key = injection_initialization_dc!(data, elem2comp, comp2elem, dc_bus, elem, global_dict)
+    key = string(key) # Of form "gen", 1 so convert 2nd element to string
+
+
+
+
+    ((data["busdc"])[string(dc_bus)])["Vdc"] = elem.element_value.V * 1e3 / global_dict["V"]
+    ((data["busdc"])[string(dc_bus)])["Vdcmax"] = 1.1 * ((data["busdc"])[string(dc_bus)])["Vdc"]
+    ((data["busdc"])[string(dc_bus)])["Vdcmin"] = 0.9 * ((data["busdc"])[string(dc_bus)])["Vdc"]
+
+    ((data["busdc"])[string(dc_bus)]) = set_bus_type_dc((data["busdc"])[string(dc_bus)], 2)
 end
