@@ -461,7 +461,7 @@ function eval_parameters(converter :: TLC, s :: Complex)
     I = Matrix{Complex}(Diagonal([1 for dummy in 1:size(converter.A,1)]))
     # Y = (converter.C*inv(s*I-converter.A))*converter.B + converter.D # This matrix is in pu
     Y = converter.C * ((s*I-converter.A) \ converter.B) + converter.D # This matrix is in pu
-    Y *= converter.iACbase / converter.vACbase
+    Y *= converter.iACbase / converter.vACbase # Correct? DC base?
     return Y
 end
 
