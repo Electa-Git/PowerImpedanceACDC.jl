@@ -35,6 +35,7 @@ You should have received a copy of the GNU General Public License along with thi
     # Miscellaneous
     using Munkres
     using Markdown
+    using Interpolations
 
     # Including all components    
     include("Network/Components/AbstractElement.jl")
@@ -49,6 +50,7 @@ You should have received a copy of the GNU General Public License along with thi
     include("Network/Components/transmission_line/transmission_line.jl")
     include("Network/Components/transmission_line/cable.jl")
     include("Network/Components/transmission_line/overhead_line.jl")
+    include("Network/Components/transmission_line/blackbox_line.jl")
 
     # Grid or source
     include("Network/Components/source/source.jl")
