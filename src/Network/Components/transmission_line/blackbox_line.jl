@@ -3,18 +3,20 @@
 # It is a blackbox model, meaning that the internal structure of the line is not modeled.
 # The line is represented by its imported frequency-dependent parameters, e.g. line costants (Z,Y)
 # or the ABCD two-port parameters. The parameters are in total length.
-#
+# The respective parameters can be imported from PSCAD, Ztool or LCMjl.
+
 export blackbox_line
 
 @with_kw mutable struct Blackbox_line <: Transmission_line 
 
     n :: Int = 3 # Number of phases
-    data_type :: Symbol = :ABCD # :ABCD or :ZY # Type of data provided by the user
+    length :: Float64 = 1 # Line length [m]
+    data_type :: Symbol = :PSCAD # :PSCAD, :Ztool, :LCMjl #Type of data to be imported
     path :: String = "" # Path to the file containing the data
-    Y :: Array{Basic} = [] # Imported shunt admittance matrix [Ohms]
-    Z :: Array{Basic} = [] # Imported series impedance matrix [Siemens]
-    ABCD :: Array{Basic} = [] # Imported ABCD matrix
-    f:: Array{Basic} = [] # Frequency vector for the imported data [Hz]
+    Y ::Vector{Matrix{ComplexF64}} = [] # Imported shunt admittance matrix [Ohms/m]
+    Z :: Vector{Matrix{ComplexF64}} = [] # Imported series impedance matrix [Siemens/m]
+    ABCD :: Vector{Matrix{ComplexF64}} = [] # Imported ABCD matrix
+    f:: Vector{Float64} = [] # Imported frequency vector [Hz]
 
 end
 
@@ -32,27 +34,58 @@ function blackbox_line(;args...)
             throw(ArgumentError("Unknown power line property name.")) #If no one of the value specified above -> display an error
         end
     end
-    # Importing happening here, read data from file and store it in the struct
-    
 
-    # f =
-    # Y=[zeros(ComplexF64,nodes, nodes) for _ in 1:f]
-    # Z=[zeros(ComplexF64,nodes, nodes) for _ in 1:f]
-    
-    # First read in frequency vector, then read in the matrices
-    #bbl.f =f
+    # Import line constants Z,Y from PSCAD
+    if bbl.data_type == :PSCAD
+    # TODO: Do interface to PSCAD
 
-    if bbl.data_type == :ABCD
-    
-        #bbl.ABCD =
-    
-    elseif bbl.data_type == :ZY
-
+   
         #bbl.Y =
         #bbl.Z =
+
+    
+    # Import two-port Y matrix from Ztool
+    elseif bbl.data_type == :Ztool
+    # TODO: Do interface to Ztool, convert Y to ABCD matrix
+
+         #bbl.ABCD
+
+    # Import line constants Z,Y from LCMjl
+    elseif bbl.data_type == :LCMjl
+
+        
+        # Read the tab-delimited file (as strings to parse complex numbers)
+        raw_data = readdlm(bbl.path, '\t', skipstart=1, String)
+
+        # Determine dimensions
+        num_rows = size(raw_data, 1)
+        num_cols = size(raw_data, 2)
+        half = div(num_cols - 1, 2)
+        rows_per_matrix = bbl.n 
+        cols_per_matrix = div(half, rows_per_matrix)
+
+        # Initialize arrays
+        bbl.f = zeros(Float64, num_rows)
+        bbl.Z = Vector{Matrix{ComplexF64}}(undef, num_rows)
+        bbl.Y = Vector{Matrix{ComplexF64}}(undef, num_rows)
+
+        # Parse each row
+        for i in 1:num_rows
+        bbl.f[i] = real(parse(ComplexF64, raw_data[i, 1]))
+
+        # Parse Z and Y values
+        Z_flat = [parse(ComplexF64, raw_data[i, j]) for j in 2:1+half]
+        Y_flat = [parse(ComplexF64, raw_data[i, j]) for j in 2+half:num_cols]
+
+        # Reshape into matrices
+        bbl.Z[i] = reshape(Z_flat, cols_per_matrix, rows_per_matrix)'  # transpose to match original orientation
+        bbl.Y[i] = reshape(Y_flat, cols_per_matrix, rows_per_matrix)'
+        end
+
+
     else 
 
-        throw(ArgumentError("Unknown data type. Use :ABCD or :ZY"))
+        throw(ArgumentError("Unknown data type. Use :PSCAD, :Ztool, :LCMjl"))
 
     end 
 
@@ -63,12 +96,15 @@ function blackbox_line(;args...)
 end
 
 
-# Never called externally, only used inside the element!
+
 function eval_parameters(bbl :: Blackbox_line, s :: Complex) #function eval_parameters with in input two variables: blackbox_line c and s variable
 
+    if bbl.data_type == :Ztool
+        error("No line parameters (Z,Y) available!")
+    end
 
     # Take the imported Y and Z values 
-    if s/(2pi*1im) ∈ freq
+    if s/(2pi*1im) ∈ bbl.f
 
         Z=bbl.Z[findfirst(==(s/(2pi*1im)), bbl.f)] #Find the index of the frequency point in the frequency vector f that is equal to s/(2pi*1im) and use this index to get the corresponding Z matrix from the list of Z matrices
         Y=bbl.Y[findfirst(==(s/(2pi*1im)), bbl.f)] 
@@ -81,7 +117,7 @@ function eval_parameters(bbl :: Blackbox_line, s :: Complex) #function eval_para
 
     end
 
-    return (Z,Y) #This function returns the value of series impedance Z and shunt admittance Y.
+    return (Z,Y) #This function returns the value of series impedance Z [Ohm/m] and shunt admittance Y [S/m].
 
 end
 
@@ -91,7 +127,7 @@ end
 function eval_abcd(bbl :: Blackbox_line, s :: Complex)
     
     
-    if data_type == :ZY
+    if bbl.data_type == :PSCAD || bbl.data_type == :LCMjl 
     # Case 1: User provides Z and Y directly, calculation of the ABCD matrix as in a normal transmission line!
     (Z, Y) = eval_parameters(bbl, s) #function eval_parameters receives in input variables c and s and gives in output the series impedance matrix Z and the shunt admittance matrix Y
     γ = sqrt(convert(Array{Complex}, Z*Y)) # conversion of arrays product Z*Y and then Γ=sqrt(Z*Y) -> Simulator tutorial pag 19, bottom page (Calculations same as transmission line case)
@@ -100,17 +136,17 @@ function eval_abcd(bbl :: Blackbox_line, s :: Complex)
     n = Int(size(Yc,1)) #Saves in n the number of rows present in the vector Yc
     abcd = zeros(Complex, 2n, 2n) #Creation of the ABCD matrix-> zeros matrix with dimension 2n*2n
 
-    abcd[1:n, 1:n] = cosh(γ*1) #Eq 33 pag 19 simulator_tutorial. Matrix A[n*n]=cosh(Γl)
-    abcd[1:n,n+1:end] = Yc \ sinh(γ*1) #Eq 33 pag 19 simulator_tutorial. Matrix B[n*n]=Yc^-1sinh(Γl)
-    abcd[n+1:end,1:n] = Yc * sinh(γ*1) #Eq 33 pag 19 simulator_tutorial. Matrix C[n*n]=Ycsinh(Γl)
-    abcd[n+1:end, n+1:end] = cosh(γ*1) #Eq 33 pag 19 simulator_tutorial. Matrix D[n*n]=cosh(Γl)
+    abcd[1:n, 1:n] = cosh(γ*bbl.length) #Eq 33 pag 19 simulator_tutorial. Matrix A[n*n]=cosh(Γl)
+    abcd[1:n,n+1:end] = Yc \ sinh(γ*bbl.length) #Eq 33 pag 19 simulator_tutorial. Matrix B[n*n]=Yc^-1sinh(Γl)
+    abcd[n+1:end,1:n] = Yc * sinh(γ*bbl.length) #Eq 33 pag 19 simulator_tutorial. Matrix C[n*n]=Ycsinh(Γl)
+    abcd[n+1:end, n+1:end] = cosh(γ*bbl.length) #Eq 33 pag 19 simulator_tutorial. Matrix D[n*n]=cosh(Γl)
 
     # Case 2: User provides the ABCD matrix directly, no calculation needed!
 
     else
 
     # Take the imported ABCD matrix 
-        if s/(2pi*1im) ∈ freq
+        if s/(2pi*1im) ∈ bbl.f
 
             Z=bbl.ABCD[findfirst(==(s/(2pi*1im)), bbl.f)] #Find the index of the frequency point in the frequency vector f that is equal to s/(2pi*1im) and use this index to get the corresponding ABDC matrix from the list of ABCD matrices
 

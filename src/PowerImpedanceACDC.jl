@@ -36,6 +36,7 @@ You should have received a copy of the GNU General Public License along with thi
     using Munkres
     using Markdown
     using Interpolations
+    using DelimitedFiles
 
     # Including all components    
     include("Network/Components/AbstractElement.jl")
