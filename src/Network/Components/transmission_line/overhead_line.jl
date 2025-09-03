@@ -30,7 +30,7 @@ end
 end
 
 @with_kw mutable struct Overhead_line <: Transmission_line
-    length :: Union{Int, Float64} = 0       # line length [km]
+    length :: Union{Int, Float64} = 0       # line length [m]
     conductors :: Conductors = Conductors()
     groundwires :: Groundwires = Groundwires()
     earth_parameters :: NTuple{N, Union{Int,Float64}} where N = (1,1,1) # (μᵣ_earth, ϵᵣ_earth, ρ_earth) in units ([], [], [Ωm])
