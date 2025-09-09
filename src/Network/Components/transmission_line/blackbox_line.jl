@@ -37,13 +37,55 @@ function blackbox_line(;args...)
 
     # Import line constants Z,Y from PSCAD
     if bbl.data_type == :PSCAD
-    # TODO: Do interface to PSCAD
 
-   
-        #bbl.Y =
-        #bbl.Z =
 
-    
+        # Get line constants in polar format from PSCAD
+        zm = readdlm(bbl.path * "_zm.out",skipstart=1)
+        zp = readdlm(bbl.path * "_zp.out",skipstart=1)
+        ym = readdlm(bbl.path * "_ym.out",skipstart=1)
+        yp = readdlm(bbl.path * "_yp.out",skipstart=1)
+
+        num_rows = size(zm, 1)
+        num_cols = size(zm, 2) -2 # Substract for log(f) and f
+
+        if num_cols/2 != bbl.n
+
+        throw(ArgumentError("Dimension mismatch: Number of phases does not match import data!"))
+
+        end
+
+        rows_per_matrix = bbl.n
+        cols_per_matrix = rows_per_matrix
+
+
+        f = zeros(Float64, num_rows)
+        Z = Vector{Matrix{ComplexF64}}(undef, num_rows)
+        Y = Vector{Matrix{ComplexF64}}(undef, num_rows)
+
+
+        for i in 1:num_rows
+        f[i] = zm[i, 2]
+
+        # Parse Z and Y values
+        # Magnitudes first [Ohms/m] and [Siemens/m]
+        Z_flat = [zm[i, j] for j in 3:(3+rows_per_matrix*rows_per_matrix)-1]
+        Z[i] = reshape(Z_flat, cols_per_matrix, rows_per_matrix)'  # transpose to match original orientation
+        Y_flat = [ym[i, j] for j in 3:(3+rows_per_matrix*rows_per_matrix)-1]
+        Y[i] = reshape(Y_flat, cols_per_matrix, rows_per_matrix)'  # transpose to match original orientation
+
+
+        # Angles second [degrees]
+        Z_flat = [exp(im*deg2rad(zp[i, j])) for j in 3:(3+rows_per_matrix*rows_per_matrix)-1]
+        Z[i] = Z[i].*transpose(reshape(Z_flat, cols_per_matrix, rows_per_matrix))  # transpose to match original orientation
+        Y_flat = [exp(im*deg2rad(yp[i, j])) for j in 3:(3+rows_per_matrix*rows_per_matrix)-1]
+        Y[i] = Y[i].*transpose(reshape(Y_flat, cols_per_matrix, rows_per_matrix)) # transpose to match original orientation
+
+        end
+
+        bbl.Z=Z
+        bbl.Y=Y
+        bbl.f=f
+
     # Import two-port Y matrix from Ztool
     elseif bbl.data_type == :Ztool
     # TODO: Do interface to Ztool, convert Y to ABCD matrix
