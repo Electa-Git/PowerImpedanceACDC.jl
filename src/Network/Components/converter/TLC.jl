@@ -18,6 +18,9 @@ export tlc
     Lᵣ :: Union{Int, Float64}  = 60e-3         # inductance of the converter transformer at the converter side [H]
     Rᵣ :: Union{Int, Float64}  = 0.535         # resistance of the converter transformer at the converter side [H]
 
+    Lₐᵣₘ :: Union{Int, Float64}  = 0        # filter inductance [H] Needed for power flow calculation so default zero
+    Rₐᵣₘ :: Union{Int, Float64}  = 0        # equivalent filter resistance
+
     controls :: OrderedDict{Symbol, Controller} = OrderedDict{Symbol, Controller}()
     equilibrium :: Array{Union{Int, Float64}} = [0]
     A :: Array{Complex} = [0]
@@ -32,6 +35,7 @@ export tlc
     vACbase_LL_RMS :: Union{Int, Float64} = 220 # Voltage base in kV
     Sbase :: Union{Int, Float64} = 500 # Power base in MW
     vDCbase :: Union{Int, Float64} = 640        # DC voltage base [kV]
+    iDCbase :: Union{Int, Float64} = 0
 
     vACbase :: Float64 = 0 # AC voltage base for impedance/admittance calculation
     iACbase :: Float64 = 0 # AC current base for impedance/admittance calculation
@@ -95,22 +99,24 @@ function tlc(;args...)
         end
     end
 
-    elem = Element(input_pins = 2, output_pins = 2, element_value = converter)
+    elem = Element(input_pins = 1, output_pins = 2, element_value = converter)
 end
 
-function update!(converter :: TLC, Pac, Qac, Vm, θ)
+function update!(converter :: TLC, Vm, θ,Pac, Qac, Vdc, Pdc)
     
 
     wbase = 100*pi
     vAC_base = converter.vACbase_LL_RMS*sqrt(2/3)
     Sbase = converter.Sbase
     vDC_base = converter.vDCbase
+    iDC_base = Sbase/vDC_base
     iAC_base = 2*Sbase/3/vAC_base
     zAC_base = (3/2)*vAC_base^2/Sbase
     lAC_base = zAC_base/wbase
 
     converter.vACbase = vAC_base
     converter.iACbase = iAC_base
+    converter.iDCbase = iDC_base
 
     Lᵣ = converter.Lᵣ / lAC_base
     Rᵣ = converter.Rᵣ / zAC_base
@@ -121,12 +127,12 @@ function update!(converter :: TLC, Pac, Qac, Vm, θ)
 
     converter.Vₘ = Vm
     converter.θ = θ
-    # converter.Vᵈᶜ = Vdc
-    Vdc = converter.Vᵈᶜ
+    converter.Vᵈᶜ = Vdc
+    # Vdc = converter.Vᵈᶜ
     converter.P = Pac
     converter.Q = Qac
-    # converter.P_dc = Pdc # Has the same sign as Pac
-    Pdc = converter.P_dc
+    converter.P_dc = Pdc # Has the same sign as Pac
+    # Pdc = converter.P_dc
 
     Vm /= vAC_base
     Vdc /= vDC_base
@@ -336,9 +342,9 @@ function update!(converter :: TLC, Pac, Qac, Vm, θ)
                         F[$index+2] = $(converter.controls[:occ].Kᵢ) * (iq_ref - i_q_pcc_f);
 
                         md_c = 2 * ( x[$index+1] +
-                                    $(converter.controls[:occ].Kₚ) * (id_ref - i_d_pcc_f) + $Lᵣ * (1 + Δω) * i_q_pcc_f + Vᴳd_f) / Vdc;
+                                    $(converter.controls[:occ].Kₚ) * (id_ref - i_d_pcc_f) + $Lᵣ * (1 + Δω) * i_q_pcc_f + Vᴳd_f) ; # / Vdc
                         mq_c = 2 * ( x[$index+2] +
-                                    $(converter.controls[:occ].Kₚ) * (iq_ref - i_q_pcc_f) - $Lᵣ * (1 + Δω) * i_d_pcc_f + Vᴳq_f) / Vdc;
+                                    $(converter.controls[:occ].Kₚ) * (iq_ref - i_q_pcc_f) - $Lᵣ * (1 + Δω) * i_d_pcc_f + Vᴳq_f) ; # / Vdc
                         (md, mq) = I_θ * [md_c; mq_c]))
             index += 2
         end
@@ -385,7 +391,7 @@ function update!(converter :: TLC, Pac, Qac, Vm, θ)
     # add state variables
     push!(exp.args,
     :(
-        (vMd, vMq) = 0.5 * Vdc * [md; mq];
+        (vMd, vMq) =  0.5 .* [md; mq]; # 0.5 * Vdc
         
         # dw neglected here
         F[1] = (vMd - inputs[2] - $Rᵣ*x[1] - $Lᵣ*x[2])/$Lᵣ;             
@@ -461,66 +467,18 @@ function eval_parameters(converter :: TLC, s :: Complex)
     I = Matrix{Complex}(Diagonal([1 for dummy in 1:size(converter.A,1)]))
     # Y = (converter.C*inv(s*I-converter.A))*converter.B + converter.D # This matrix is in pu
     Y = converter.C * ((s*I-converter.A) \ converter.B) + converter.D # This matrix is in pu
-    Y *= converter.iACbase / converter.vACbase
+    
+    #Conversion of admittance from pu to SI
+    Y[1,:] *= converter.iDCbase
+    Y[:,1] /= converter.vDCbase
+    Y[2:3,:] *= converter.iACbase # Base current of the converter side 
+    # # # Multiplication with the AC voltage base converts the pu admittance to SI.
+    # # # The double division with the turns ratio is actually a multiplication,
+    # # # and is needed to bring the grid-side voltage to the converter side.
+    Y[:,2:3] /= (converter.vACbase) # Base voltage at the grid side 
+    
+    # Y *= converter.iACbase / converter.vACbase
     return Y
 end
 
-function make_power_flow!(tlc:: TLC, data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
 
-    # Check if AC or DC source (second one not implemented)
-    # is_three_phase(elem) ? nothing : error("DC sources are currently not implemented")
-
-    ### MAKE BUSES OUT OF THE NODES
-    # Find the nodes not connected to the ground
-    ac_nodes = make_non_ground_node(elem, bus2nodes) 
-    ac_bus = add_bus_ac!(data, nodes2bus, bus2nodes, ac_nodes, global_dict)
-    # Make busses for the non-ground nodes 
-    interm_bus = add_interm_bus_ac!(data, global_dict) # No mapping to node, bcs no corresponding node in PowerImpedance
-
-    # Make the load component for injection
-    key_load = comp_elem_interface!(data, elem2comp, comp2elem, elem, "load")
-
-    (data["load"])[string(key_load)] = Dict{String, Any}()
-    ((data["load"])[string(key_load)])["status"] = 1
-    data["load"][string(key_load)]["load_bus"] = interm_bus
-    data["load"][string(key_load)]["pd"] = -tlc.P / (global_dict["S"] / 1e6)
-    data["load"][string(key_load)]["qd"] = -tlc.Q / (global_dict["S"] / 1e6)
-
-    # Add additional branch & bus for SM transformer (RL-branch)
-    
-    key_branch = length(data["branch"]) + 1
-    key_branch_str = string(key_branch)
-
-    (data["branch"])[key_branch_str] = Dict{String, Any}()
-    ((data["branch"])[key_branch_str])["f_bus"] = interm_bus
-    ((data["branch"])[key_branch_str])["t_bus"] = ac_bus
-    ((data["branch"])[key_branch_str])["source_id"] = Any["branch", key_branch]
-    ((data["branch"])[key_branch_str])["index"] = key_branch
-    ((data["branch"])[key_branch_str])["rate_a"] = 1
-    ((data["branch"])[key_branch_str])["rate_b"] = 1
-    ((data["branch"])[key_branch_str])["rate_c"] = 1
-    ((data["branch"])[key_branch_str])["br_status"] = 1
-    ((data["branch"])[key_branch_str])["angmin"] = ang_min
-    ((data["branch"])[key_branch_str])["angmax"] = ang_max
-    ((data["branch"])[key_branch_str])["transformer"] = false
-    ((data["branch"])[key_branch_str])["tap"] = 1
-    ((data["branch"])[key_branch_str])["shift"] = 0
-    ((data["branch"])[key_branch_str])["c_rating_a"] = 1
-
-    
-    ((data["branch"])[key_branch_str])["br_r"] = tlc.Rᵣ / global_dict["Z"] # Convert SI to pu
-    ((data["branch"])[key_branch_str])["br_x"] = tlc.Lᵣ*global_dict["omega"] / global_dict["Z"]
-    ((data["branch"])[key_branch_str])["g_fr"] = 0
-    ((data["branch"])[key_branch_str])["b_fr"] = 0
-    ((data["branch"])[key_branch_str])["g_to"] = 0
-    ((data["branch"])[key_branch_str])["b_to"] = 0
-
-    # Only PQ-bus implemented
-    
-    ((data["bus"])[string(interm_bus)]) = set_bus_type((data["bus"])[string(interm_bus)], 1)
-    
-
-    # ((data["bus"])[string(interm_bus)])["vm"] = ((data["gen"])[key])["vg"]
-    # ((data["bus"])[string(interm_bus)])["vmin"] =  0.9*((data["gen"])[key])["vg"]
-    # ((data["bus"])[string(interm_bus)])["vmax"] =  1.1*((data["gen"])[key])["vg"]
-end

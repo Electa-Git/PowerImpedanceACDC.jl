@@ -52,12 +52,10 @@ function power_flow(net:: Network)
         end
         #Find the corresponding PowerModels component
         comp_type, key = elem2comp[element.symbol]
-        if !isa(element.element_value, TLC) #SPecial treatment because of negative load
-            elem_dict = result["solution"][comp_type][string(key)]
-        end
+        elem_dict = result["solution"][comp_type][string(key)]
         pins = element.pins
         
-        if isa(element.element_value, MMC) # In converter bus1 is DC and bus2 is AC
+        if is_converter(element) # In converter bus1 is DC and bus2 is AC
             dc_node = make_node(element, 1) 
             ac_node = make_node(element,2) #Similar AC bus
             _, dc_bus = nodes2bus[dc_node]
@@ -90,26 +88,6 @@ function power_flow(net:: Network)
             print(update_string * " DC Voltage [kV]: ")
             println(Vdc)
 
-        elseif isa(element.element_value, TLC)
-            ac_node = make_non_ground_node(element, bus2nodes)
-            bus_type, ac_bus = nodes2bus[ac_node]
-
-            Pgen = element.element_value.P #PQ bus so P and Q do not change
-            Qgen = -element.element_value.Q
-            Vm = (result["solution"]["bus"][string(ac_bus)]["vm"] * global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
-            θ = result["solution"]["bus"][string(ac_bus)]["va"]
-            update_string = string(key)
-
-            update!(element.element_value, Pgen, Qgen, Vm, θ)
-            
-            print(update_string * " Active Power [MW]: ")
-            println(Pgen)
-            print(update_string * " Reactive Power [MVar]: ")
-            println(Qgen)
-            print(update_string * " AC Voltage Magnitude [pu]: ")
-            println(result["solution"]["bus"][string(ac_bus )]["vm"])
-            print(update_string * " AC Voltage Angle [rad]: ")
-            println(θ)
         elseif is_generator(element) #ac bus is the one with no ground in it's name
             
             ac_node= make_non_ground_node(element, bus2nodes)

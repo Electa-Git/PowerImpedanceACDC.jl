@@ -96,7 +96,7 @@ power_grid= @network begin
     G1 = ac_source(pins = 3, V = Vm, transformation = true)
 
     G2 = ac_source(pins = 3, V = 400/sqrt(3), transformation = true)  
-
+    G_DC = dc_source(pins=2, V=Vdc, transformation=true)
         
     G1[2.1] ⟷ gndD
     G1[2.2] ⟷ gndQ
@@ -118,8 +118,9 @@ power_grid= @network begin
     TF1[1.1] ⟷ MMC2[2.1] ⟷ TLC1[2.1] #⟷ # NodeMMC1d
     TF1[1.2] ⟷ MMC2[2.2] ⟷ TLC1[2.2] ⟷ NodeMMC1q
 
-    TLC1[1.1] ⟷ gndD
-    TLC1[1.2] ⟷ gndQ
+    TLC1[1.1] ⟷ G_DC[2.1]
+    
+    G_DC[1.1] ⟷ gndDC
 
     TF1[2.1] ⟷ tl1[1.1] #⟷ # NodeMMC1d
     TF1[2.2] ⟷ tl1[1.2]
