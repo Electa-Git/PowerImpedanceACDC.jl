@@ -37,7 +37,7 @@ export mmc
     padeOrderNum :: Int = 0                     # Order of the numerator polynominal of pade approximation [-]
     padeOrderDen :: Int = 0                     # Order of the denominator polynominal of pade approximation [-]
 
-    vACbase_LL_RMS :: Union{Int, Float64} = 380 # Voltage base [kV]
+    vACbase_LL_RMS :: Union{Int, Float64} = 380 # Voltage base LL converter side [kV]
     Sbase :: Union{Int, Float64} = 1000         # Power base [MW]
     vDCbase :: Union{Int, Float64} = 640        # DC voltage base [kV]
 
