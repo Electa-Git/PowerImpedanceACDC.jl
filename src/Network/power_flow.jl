@@ -38,7 +38,7 @@ function power_flow(net:: Network)
 
     #### 2. Run PowerModelsACDC power flow
     PowerModelsACDC.process_additional_data!(data)
-    ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
+    ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0, "max_iter" => 4000)
     s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => false)
     result = solve_acdcpf(data, ACPPowerModel, ipopt; setting = s)
     println(result["termination_status"])
@@ -64,7 +64,7 @@ function power_flow(net:: Network)
             Pdc = elem_dict["pdc"] * global_dict["S"] / 1e6
             Vm = (result["solution"]["bus"][string(ac_bus)]["vm"] * global_dict["V"] / 1e3) * sqrt(2) # Convert the LN-RMS voltage coming from the PF to LN-PK
             θ = result["solution"]["bus"][string(ac_bus)]["va"]
-            Vdc = result["solution"]["busdc"][string(dc_bus)]["vm"] * global_dict["V"] / 1e3
+            Vdc = 2*result["solution"]["busdc"][string(dc_bus)]["vm"] * global_dict["V"] / 1e3 # Convert the pole-ground voltage coming from PF to pole-pole voltage
             Pac = -elem_dict["pgrid"] * global_dict["S"] / 1e6
             Qac = elem_dict["qgrid"] * global_dict["S"] / 1e6 # Think about this!
 

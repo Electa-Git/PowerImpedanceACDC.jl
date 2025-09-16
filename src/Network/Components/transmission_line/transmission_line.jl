@@ -39,8 +39,7 @@ function make_power_flow!(tl :: Transmission_line, data, nodes2bus, bus2nodes, e
         key = branch_dc!(data, nodes2bus, bus2nodes, elem2comp, comp2elem, elem, global_dict)
         abcd = eval_abcd(tl, 1e-6*1im)
         n = Int(size(abcd, 1)/2)
-        Z = (abcd[1:n,n+1:end])[1,1] / global_dict["Z"]
-        Y = (abcd[n+1:end,1:n] * inv(abcd[n+1:end,n+1:end]))[1,1] * global_dict["Z"]
+        Z = (abcd[1:n,n+1:end])[1,1] / (global_dict["Z"] / 3) 
         ((data["branchdc"])[string(key)])["r"] = real(Z)
     end
 
