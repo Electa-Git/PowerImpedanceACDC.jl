@@ -66,7 +66,7 @@ function make_power_flow!(converter:: Converter, data, nodes2bus, bus2nodes, ele
     # droop control - not implemented
     ((data["convdc"])[string(key)])["droop"] = 0
     ((data["convdc"])[string(key)])["Pdcset"] = converter.P_dc
-    ((data["convdc"])[string(key)])["Vdcset"] = converter.Vᵈᶜ * 1e3 / global_dict["V"]
+    ((data["convdc"])[string(key)])["Vdcset"] = converter.Vᵈᶜ * 1e3 / global_dict["V"]/2
     ((data["convdc"])[string(key)])["dVdcSet"] = 0
     # LCC converter
     ((data["convdc"])[string(key)])["islcc"] = 0
@@ -81,10 +81,18 @@ function make_power_flow!(converter:: Converter, data, nodes2bus, bus2nodes, ele
     ((data["convdc"])[string(key)])["bf"] = 0
     # with reactor
     ((data["convdc"])[string(key)])["reactor"] = 1
-    ((data["convdc"])[string(key)])["rc"] = (converter.Rᵣ + converter.Rₐᵣₘ / 2) / global_dict["Z"]
-    ((data["convdc"])[string(key)])["xc"] = (converter.Lᵣ + converter.Lₐᵣₘ / 2) * global_dict["omega"] / global_dict["Z"]
-    converter.ω₀ = global_dict["omega"]
+    #Discrimination needed, as TLC's R & L refers to grid side, where in MMC R & L refered to converter side
 
+    if typeof(converter) == TLC
+            ((data["convdc"])[string(key)])["rc"] = 1*(converter.Rᵣ + converter.Rₐᵣₘ / 2) / global_dict["Z"]
+            ((data["convdc"])[string(key)])["xc"] = 1*(converter.Lᵣ + converter.Lₐᵣₘ / 2) * global_dict["omega"] / global_dict["Z"]
+    end
+    if typeof(converter) == MMC
+            ((data["convdc"])[string(key)])["rc"] = converter.turnsRatio^(-2)*(converter.Rᵣ + converter.Rₐᵣₘ / 2) / global_dict["Z"]
+            ((data["convdc"])[string(key)])["xc"] = converter.turnsRatio^(-2)*(converter.Lᵣ + converter.Lₐᵣₘ / 2) * global_dict["omega"] / global_dict["Z"]
+    end
+
+    converter.ω₀ = global_dict["omega"]
     # default values
     ((data["convdc"])[string(key)])["Vmmax"] = 1.1 * converter.Vₘ * 1e3 / global_dict["V"]
     ((data["convdc"])[string(key)])["Vmmin"] = 0.9 * converter.Vₘ * 1e3 / global_dict["V"]
@@ -96,8 +104,8 @@ function make_power_flow!(converter:: Converter, data, nodes2bus, bus2nodes, ele
 
     ((data["convdc"])[string(key)])["LossA"] = 0
     ((data["convdc"])[string(key)])["LossB"] = 0
-    ((data["convdc"])[string(key)])["LossCrec"] = converter.Rₐᵣₘ / 2
-    ((data["convdc"])[string(key)])["LossCinv"] = converter.Rₐᵣₘ / 2
+    ((data["convdc"])[string(key)])["LossCrec"] = 0
+    ((data["convdc"])[string(key)])["LossCinv"] = 0
 
     ((data["convdc"])[string(key)])["Qacmax"] = converter.Q_max
     ((data["convdc"])[string(key)])["Qacmin"] = converter.Q_min
@@ -112,7 +120,7 @@ function make_power_flow!(converter:: Converter, data, nodes2bus, bus2nodes, ele
         ((data["bus"])[string(ac_bus)])["vmin"] = 0.9 * data["bus"][string(ac_bus)]["vm"]
         ((data["bus"])[string(ac_bus)])["vmax"] = 1.1 * data["bus"][string(ac_bus)]["vm"]
     end
-    ((data["busdc"])[string(dc_bus)])["Vdc"] = converter.Vᵈᶜ * 1e3 / global_dict["V"]
+    ((data["busdc"])[string(dc_bus)])["Vdc"] = converter.Vᵈᶜ * 1e3 / global_dict["V"]         #TODO: Make sense of this 
     ((data["busdc"])[string(dc_bus)])["Vdcmax"] = 1.1 * ((data["busdc"])[string(dc_bus)])["Vdc"]
     ((data["busdc"])[string(dc_bus)])["Vdcmin"] = 0.9 * ((data["busdc"])[string(dc_bus)])["Vdc"]
     

@@ -77,7 +77,7 @@ function dc_source_power_flow!(data, nodes2bus, bus2nodes, elem2comp, comp2elem,
 
 
 
-    ((data["busdc"])[string(dc_bus)])["Vdc"] = elem.element_value.V * 1e3 / global_dict["V"]
+    ((data["busdc"])[string(dc_bus)])["Vdc"] = elem.element_value.V * 1e3 / global_dict["V"] 
     ((data["busdc"])[string(dc_bus)])["Vdcmax"] = 1.1 * ((data["busdc"])[string(dc_bus)])["Vdc"]
     ((data["busdc"])[string(dc_bus)])["Vdcmin"] = 0.9 * ((data["busdc"])[string(dc_bus)])["Vdc"]
 
