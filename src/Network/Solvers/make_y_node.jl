@@ -217,8 +217,10 @@ for (designator, element) in network.elements
     end
 
     # If not passive then SG, converter or source
-    if is_source(element) # If source, add the source impedance to the element list
-
+    # If source, add (everything that is connected to the source to the element list)
+    # If the connected element is a converter, then can skip it, as we only need the AC-side contribution,
+    # when an ideal DC source is connected to the DC side
+    if is_source(element) 
         for (pin,element_node) in element.pins # Search for the impedance 
 
             if occursin("gnd", string(element_node)) # Skip elements connected to ground
@@ -232,7 +234,11 @@ for (designator, element) in network.elements
                     continue
                 else
                     if !in(designator, element_list)
-                        push!(element_list, designator) # Add the source to the list
+
+                        if !is_converter(network.elements[designator] ) # Only add to the element list when it is not a converter 
+                            push!(element_list, designator) # Add the source to the list
+                        end
+
                     end
 
                 end
