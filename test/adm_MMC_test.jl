@@ -36,7 +36,7 @@ grid=@network begin
 end
 
 # Read in validation data
-lines=readlines("data_MMC_validation.txt")
+lines=readlines("test/data/data_MMC_validation.txt")
 validation_data = [split(line) for line in lines[2:end]]
 frequency = real([parse(Complex{Float64},  replace(row[1], "(" => "")) for row in validation_data])
 omegas=2*pi*frequency
