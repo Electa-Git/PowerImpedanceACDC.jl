@@ -5,26 +5,55 @@ export make_y_node
 
 function make_y_node(network::Network; nodelist = [], freq_range = (1,1e3, 1000))
 
-node_list= Symbol[] #Node list to generate Yedge
-element_list= Symbol[] #Element list to generate Yedge
+node_list= Symbol[] #Node list to generate Ynode
+element_list= Symbol[] #Element list to generate Ynode
 
 if nodelist == []
 
+        for elements in network.elements
+
+            # Check whether element is an active element: converter, SG, source
+            if is_passive(elements) 
+                continue # Skip passives 
+            end
+            if is_source(elements) || is_converter(elements) || is_generator(elements)
+                
+                if is_converter(elements)
+
+                    for (pin,node) in elements.pins # Iterate over all pins of the element
 
 
-        # Create node list for Yedge
+                        # Do AC DC pin ordering for MMC! See below copy paste
+
+                         if occursin("2.", pin) 
+
+                            if !in(node, node_list)
+                                 push!(node_list,node) # Add the node to the list [ACd, ACq]
+                            end
+                            
+
+                         end
+
+                        end
+                end
+
+            end
+
+        end
+
+        # Create node list for Ynode
         for node in keys(network.nets)
 
         if occursin("gnd", string(node))
             continue # Skip ground nodes
         end
 
-        # Check whether node is already part of the node list of Yedge
+        # Check whether node is already part of the node list of Ynode
         if in(node, node_list)
             continue # Skip nodes that are already in the list
         end
 
-        # Check whether the current node is part of Yedge
+        # Check whether the current node is part of Ynode
 
         nets=PowerImpedanceACDC.netfor!(network, node) # Get nets (designator, pin) connected to the node
 

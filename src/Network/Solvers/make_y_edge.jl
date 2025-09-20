@@ -251,7 +251,7 @@ dict[:node_list]=node_list
 dict[:element_list]=element_list
 
 
-#TODO: Make sense of it
+
 # make frequency range
 (min_f, max_f, n_f) = freq_range
 if !isa(n_f,Int)
@@ -266,11 +266,29 @@ Yedge=[] # Preallocate the admittance matrix for each frequency
 
 for omega in omegas
 
-    # Get the admittance matrix for the current frequency
+    # Get the admittance matrix of the passives for the current frequency
     Y = make_y(network, dict, omega*1im)
     push!(Yedge,Y)
 
 end
+
+# The returned Yedge contains all the buses of the network
+# In order to match Ynode, the buses where no source is connected need to be removed
+# This is done with Kron reduction
+
+# First get the source nodes
+source_nodes= Symbol[] # List to hold the source nodes, to be kept in Yedge
+
+# Implement here the new code from make_y_node to get the source nodes
+
+# Apply Kron reduction to Yedge for each frequency
+
+
+
+
+
+
+
 
 # Return Yedge and the node list
 return Yedge, node_list
