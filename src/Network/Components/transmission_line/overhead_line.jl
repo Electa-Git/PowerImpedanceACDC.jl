@@ -288,11 +288,11 @@ end
 function eval_parameters(tl :: Overhead_line, s :: Complex)
     P = N.(subs.(tl.P, symbols(:s), s))
     P = convert(Array{Float64}, real(P)) + 1im*convert(Array{Float64}, imag(P))
-    P = convert(Array{Complex}, P)
+    P = convert(Array{ComplexF64}, P)
 
     Z = N.(subs.(tl.Z, symbols(:s), s))
     Z = convert(Array{Float64}, real(Z)) + 1im*convert(Array{Float64}, imag(Z))
-    Z = convert(Array{Complex}, Z)
+    Z = convert(Array{ComplexF64}, Z)
 
     #apply Kron elimination to bundled subconductors
     if (tl.groundwires.nᵍ + tl.conductors.nˢᵇ > 1)
@@ -317,7 +317,7 @@ Form ABCD representation from known values for Y and Z and write values in the d
 """
 function eval_abcd(tl :: Overhead_line, s :: Complex)
     (Z, Y) = eval_parameters(tl, s)
-    γ = sqrt(convert(Array{Complex},Z*Y))
+    γ = sqrt(convert(Array{ComplexF64},Z*Y))
     Yc = inv(Z) * γ
 
     n = Int(size(Yc,1))
