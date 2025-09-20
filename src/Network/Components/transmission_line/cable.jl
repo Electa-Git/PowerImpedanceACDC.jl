@@ -251,11 +251,11 @@ end
 function eval_parameters(c :: Cable, s :: Complex) #function eval_parameters with in input two variables: cable c and s variable
     P = N.(subs.(c.P, symbols(:s), s)) #TBC
     P = convert(Array{Float64}, real(P)) + 1im*convert(Array{Float64}, imag(P)) #converts the Real part of P in a float 64 array + imaginary part of P (always float 64), multiplied by 1im because imag(P) returns a real value
-    P = convert(Array{Complex}, P) #convert P in a complex array and save it in P
+    P = convert(Array{ComplexF64}, P) #convert P in a complex array and save it in P
 
     Z = N.(subs.(c.Z, symbols(:s), s)) #TBC
     Z = convert(Array{Float64}, real(Z)) + 1im*convert(Array{Float64}, imag(Z)) #converts the Real part of Z in a float 64 array + imaginary part of Z (always float 64), multiplied by 1im because imag(P) returns a real value
-    Z = convert(Array{Complex}, Z) #convert Z in a complex array and save it in Z
+    Z = convert(Array{ComplexF64}, Z) #convert Z in a complex array and save it in Z
 
     if (c.eliminate)            #apply Kron elimination to additional layers -> eliminate = boolean variable with predifined value= true. If we don't want to operate the lines in this cycle: define eliminate = false (in the variable c)
         nₗ = length(c.conductors) #nₗ indicates the number of layers present
@@ -270,7 +270,7 @@ end
 
 function eval_abcd(c :: Cable, s :: Complex)
     (Z, Y) = eval_parameters(c, s) #function eval_parameters receives in input variables c and s and gives in output the series impedance matrix Z and the shunt admittance matrix Y
-    γ = sqrt(convert(Array{Complex}, Z*Y)) # conversion of arrays product Z*Y and then Γ=sqrt(Z*Y) -> Simulator tutorial pag 19, bottom page (Calculations same as transmission line case)
+    γ = sqrt(convert(Array{ComplexF64}, Z*Y)) # conversion of arrays product Z*Y and then Γ=sqrt(Z*Y) -> Simulator tutorial pag 19, bottom page (Calculations same as transmission line case)
     # γ = sqrt(Z*Y) #TODO: This line is added to replace the one on the top, which was giving problems for single DC cables (no transformation). Need to see if this will cause any issue with other components, but so far so good.
     Yc = Z \ γ #Always ottom page 19 simulator_tutorial
     n = Int(size(Yc,1)) #Saves in n the number of rows present in the vector Yc

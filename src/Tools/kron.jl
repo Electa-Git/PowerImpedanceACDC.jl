@@ -1,4 +1,4 @@
-function kron(matrix :: Array{Complex}, no_eliminate :: Array{Int})
+function kron(matrix :: Matrix{ComplexF64}, no_eliminate :: Vector{Int})
     # Old approach
     # n = size(matrix, 1)
     # eliminate = setdiff(1:n, no_eliminate)
