@@ -106,7 +106,7 @@ netfor!(n::Network, p::Tuple{Symbol,Any}) = netfor!(n, (p[1], Symbol(p[2])))
 
 function netfor!(n::Network, name::Symbol) # Returns nets, eg. pairs of element designator and pin name for the given node name
     if !haskey(n.nets, name)
-        n.nets[name] = []
+        n.nets[name] = [] # Create new node if it does not exist!
     end
     n.nets[name]
 end
