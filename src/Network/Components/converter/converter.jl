@@ -120,10 +120,10 @@ function make_power_flow!(converter:: Converter, data, nodes2bus, bus2nodes, ele
         ((data["bus"])[string(ac_bus)])["vmin"] = 0.9 * data["bus"][string(ac_bus)]["vm"]
         ((data["bus"])[string(ac_bus)])["vmax"] = 1.1 * data["bus"][string(ac_bus)]["vm"]
     end
-    ((data["busdc"])[string(dc_bus)])["Vdc"] = converter.Vᵈᶜ * 1e3 / global_dict["V"]         #TODO: Make sense of this 
+    ((data["busdc"])[string(dc_bus)])["Vdc"] = 1/2* converter.Vᵈᶜ * 1e3 / global_dict["V"]  # Convert from pp to pg for PMACDC       #TODO: Make sense of this 
     ((data["busdc"])[string(dc_bus)])["Vdcmax"] = 1.1 * ((data["busdc"])[string(dc_bus)])["Vdc"]
     ((data["busdc"])[string(dc_bus)])["Vdcmin"] = 0.9 * ((data["busdc"])[string(dc_bus)])["Vdc"]
-    
+    ((data["busdc"])[string(dc_bus)]) = set_bus_type_dc((data["busdc"])[string(dc_bus)], 1)
 end
 
 function timeDelayPadeMatrices(padeOrderNum,padeOrderDen,t_delay,numberVars)

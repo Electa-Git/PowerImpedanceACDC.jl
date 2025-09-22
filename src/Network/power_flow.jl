@@ -146,10 +146,13 @@ function set_bus_type(bus_data, type)
 end
 
 function set_bus_type_dc(bus_data, type)
-    ## This function makes sure we dont overwrite higher bus type (only for AC bus now)
-    ## PQ (1) < PV (2) < slack (3)
-    current_type = bus_data["bus_type"] 
-    if type > current_type
+
+    ## P(1) < Vdcdroop (3) < Vdc(2) < Vac_droop (4)
+    order = [1,3,2,4] # Change up order bcs cst Vdc is above droop
+    current_type = bus_data["bus_type"]
+    imp_type = findfirst(isequal(type), order) # You parse type to integer and then find the index which gives its relative importance
+    imp_current = findfirst(isequal(current_type), order)
+    if imp_type > imp_current # If new type has higher importance we put it n place
         bus_data["bus_type"] = type
     end
     return bus_data
@@ -350,7 +353,7 @@ function add_bus_dc!(data, nodes2bus, bus2nodes, node, global_dict)
         ((data["busdc"])[bus])["Vdcmin"] = 0.9
         ((data["busdc"])[bus])["Pdc"] = 0
         ((data["busdc"])[bus])["basekVdc"] = global_dict["V"] / 1e3
-        ((data["busdc"])[bus])["bus_type"] = 1 # bus type - depends on components 1 is default PQ
+        ((data["busdc"])[bus])["bus_type"] = 1 # bus type - depends on components 1 is default P
         bus = parse(Int, bus)
     else
         #Return bus of this node, nodes correspond to one bus so no risk of same values with different keys

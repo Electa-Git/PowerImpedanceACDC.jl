@@ -342,9 +342,9 @@ function update!(converter :: TLC, Vm, θ,Pac, Qac, Vdc, Pdc)
                         F[$index+2] = $(converter.controls[:occ].Kᵢ) * (iq_ref - i_q_pcc_f);
 
                         md_c = 2 * ( x[$index+1] +
-                                    $(converter.controls[:occ].Kₚ) * (id_ref - i_d_pcc_f) + $Lᵣ * (1 + Δω) * i_q_pcc_f + Vᴳd_f) ; # / Vdc
+                                    $(converter.controls[:occ].Kₚ) * (id_ref - i_d_pcc_f) + $Lᵣ * (1 + Δω) * i_q_pcc_f + Vᴳd_f) / Vdc; # 
                         mq_c = 2 * ( x[$index+2] +
-                                    $(converter.controls[:occ].Kₚ) * (iq_ref - i_q_pcc_f) - $Lᵣ * (1 + Δω) * i_d_pcc_f + Vᴳq_f) ; # / Vdc
+                                    $(converter.controls[:occ].Kₚ) * (iq_ref - i_q_pcc_f) - $Lᵣ * (1 + Δω) * i_d_pcc_f + Vᴳq_f) / Vdc; # 
                         (md, mq) = I_θ * [md_c; mq_c]))
             index += 2
         end
@@ -391,7 +391,7 @@ function update!(converter :: TLC, Vm, θ,Pac, Qac, Vdc, Pdc)
     # add state variables
     push!(exp.args,
     :(
-        (vMd, vMq) =  0.5 .* [md; mq]; # 0.5 * Vdc
+        (vMd, vMq) =  0.5* Vdc .* [md; mq]; # 0.5 
         
         # dw neglected here
         F[1] = (vMd - inputs[2] - $Rᵣ*x[1] - $Lᵣ*x[2])/$Lᵣ;             

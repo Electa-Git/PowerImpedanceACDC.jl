@@ -100,7 +100,7 @@ function bodeplot(L, omegas; legend = [""], plots = nothing)
                plot!(pmag, xlims = (minimum(f), maximum(f)), ylims = ylims_mag)
                plot!(pph, f, L_ph, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
                plot!(pph, xlabel = "Frequency [Hz]", ylabel = "Phase [deg]", framestyle = :box, legend = :none, xaxis = :log10)
-               plot!(pph, xlims = (minimum(f), maximum(f)), ylims = ylims_ph)
+               plot!(pph, xlims = (minimum(f), maximum(f)), ylims = (-180,180))
                plot!(pph, yticks = -360:90:360)
 
             end
@@ -131,7 +131,7 @@ function bodeplot(L, omegas; legend = [""], plots = nothing)
         plot!(new_plots[1],xlims = (minimum(f), maximum(f)), ylims = ylims_mag)
         plot!(new_plots[2], f, L_ph, linewidth = :auto, linestyle = :auto,minorgrid=true)  # For different line styles: linestyle = :auto
         plot!(new_plots[2],xlabel = "Frequency [Hz]", ylabel = "Phase [deg]", framestyle = :box, legend = :none, xaxis = :log10)
-        plot!(new_plots[2],xlims = (minimum(f), maximum(f)), ylims = ylims_ph)
+        plot!(new_plots[2],xlims = (minimum(f), maximum(f)), ylims = (-180,180))
         plot!(new_plots[2],yticks = -360:90:360)
         return new_plots
 
