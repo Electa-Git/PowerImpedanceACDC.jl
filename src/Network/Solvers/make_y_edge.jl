@@ -162,7 +162,7 @@ end
 
 node_list=node_list[1:length(nodelist)]
 
-return Yedge, node_list
+return Yedge, node_list, omegas
 
 
 

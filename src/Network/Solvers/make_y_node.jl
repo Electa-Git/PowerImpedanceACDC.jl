@@ -293,7 +293,7 @@ for omega in omegas
 
 end
 
-return Ynode,node_list
+return Ynode,node_list,omegas
 
 
 end
