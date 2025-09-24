@@ -719,6 +719,13 @@ function update!(converter :: MMC, Vm, θ, Pac, Qac, Vdc, Pdc) #Function to calc
 
  ######################################################Total energy controller##########################################################
         elseif (key == :energy)
+            if !in(:p, keys(converter.controls)) # In this case we havent defined a P controller, so we need to define the Pacf for the energy controller
+
+                        push!(exp.args, :(
+                                P_ac_f = (Vᴳd * iΔd + Vᴳq * iΔq);))
+
+            end
+
             # zero energy control
             push!(exp.args, :(
                         # wΣz = (vCΔd^2 + vCΔq^2 + vCΔZd^2 + vCΔZq^2 + vCΣd^2 + vCΣq^2 + 2*vCΣz^2)/(2)
