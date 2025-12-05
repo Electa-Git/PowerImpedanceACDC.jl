@@ -53,8 +53,9 @@ This is a free software: you can redistribute it and/or modify it under the term
 
 ## Future work
 - Integration of blackbox EMT converter models
+- Bipolar DC 
 - $V_{ac}$-droop for two-level converter
 - $V_{ac}$-control for both converters
 - Compensated MMC modulation
 - Speed improvements
-- 
+  
